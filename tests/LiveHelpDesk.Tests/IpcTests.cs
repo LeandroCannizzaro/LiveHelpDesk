@@ -37,8 +37,10 @@ internal sealed class FakeApi : ILiveHelpDeskApi
     public Task<IReadOnlyList<NotificationInfo>> ClaimNotificationsAsync(IReadOnlyList<string> channels)
     {
         Claims.Add([.. channels]);
-        return Task.FromResult<IReadOnlyList<NotificationInfo>>(
-            [new NotificationInfo(7, "k1", "toast", "Nuovo ticket #261000001", "corpo", Severity.Critical, new Uri("https://crm.example/t/1"))]);
+        var items = new[] { "toast", "overlay" }
+            .Where(c => channels.Contains(c))
+            .Select((c, i) => new NotificationInfo(7 + i, "k1", c, "Nuovo ticket #261000001", "corpo", Severity.Critical, new Uri("https://crm.example/t/1")));
+        return Task.FromResult<IReadOnlyList<NotificationInfo>>([.. items]);
     }
 
     public ChannelSettings Settings { get; set; } = new()
@@ -69,10 +71,10 @@ internal sealed class FakeApi : ILiveHelpDeskApi
     public Task<IReadOnlyList<ChannelInfo>> GetChannelStatusAsync() =>
         Task.FromResult<IReadOnlyList<ChannelInfo>>([new ChannelInfo("email", true, "Closed", T.At(1), null, null, 3, 0), new ChannelInfo("sms", false, "Closed", null, null, null, 0, 0)]);
 
-    public Task<TestResult> TestChannelAsync(string channelId)
+    public Task<ChannelTestResult> TestChannelAsync(string channelId)
     {
         Tested.Add(channelId);
-        return Task.FromResult(channelId == "email" ? new TestResult(true, null) : new TestResult(false, "canale non attivo"));
+        return Task.FromResult(channelId == "email" ? new ChannelTestResult(true, null) : new ChannelTestResult(false, "canale non attivo"));
     }
 
     public Task<DryRunResult> DryRunRulesAsync() =>
@@ -85,9 +87,9 @@ internal sealed class PipeHarness : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _running;
 
-    public PipeHarness(Func<string, ILiveHelpDeskApi>? resolve = null)
+    public PipeHarness(Func<string, ILiveHelpDeskApi>? resolve = null, string? name = null)
     {
-        Name = $"LiveHelpDeskTest-{Guid.NewGuid():N}";
+        Name = name ?? $"LiveHelpDeskTest-{Guid.NewGuid():N}";
         var server = new PipeServer(
             Name,
             (sid, _) =>
@@ -144,9 +146,9 @@ public class IpcTests
         Assert.Equal(T.At(5), status.LastPollAt);
         Assert.Equal("ABC123", login.UserCode);
         Assert.Equal(T.At(15), login.ExpiresAt);
-        var note = Assert.Single(claimed);
-        Assert.Equal(Severity.Critical, note.Severity);
-        Assert.Equal(new Uri("https://crm.example/t/1"), note.Url);
+        Assert.Equal(["toast", "overlay"], claimed.Select(c => c.Channel).ToArray());
+        Assert.All(claimed, note => Assert.Equal(Severity.Critical, note.Severity));
+        Assert.Equal(new Uri("https://crm.example/t/1"), claimed[0].Url);
         Assert.Equal(["toast", "overlay"], harness.Api.Claims[0]);
         Assert.Equal(2, Assert.Single(dryRun.Rules).Matches);
     }

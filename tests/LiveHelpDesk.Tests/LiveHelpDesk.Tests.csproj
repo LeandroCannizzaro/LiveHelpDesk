@@ -1,15 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- The tests pass their own cancellation tokens on purpose. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
-    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="Avalonia.Headless.XUnit" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
 
@@ -20,6 +25,7 @@
     <ProjectReference Include="..\..\src\LiveHelpDesk.Ipc\LiveHelpDesk.Ipc.csproj" />
     <ProjectReference Include="..\..\src\LiveHelpDesk.Channels\LiveHelpDesk.Channels.csproj" />
     <ProjectReference Include="..\..\src\LiveHelpDesk.Service\LiveHelpDesk.Service.csproj" />
+    <ProjectReference Include="..\..\src\LiveHelpDesk.App\LiveHelpDesk.App.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LiveHelpDesk.App.ViewModels"
+        x:Class="LiveHelpDesk.App.Views.OverlayWindow"
+        x:DataType="vm:OverlayViewModel"
+        Title="LiveHelpDesk"
+        Width="720"
+        SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        WindowDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        WindowStartupLocation="Manual">
+  <Window.Styles>
+    <Style Selector="Border#Pill">
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border#Pill.attention">
+      <Setter Property="Background" Value="#F59E0B" />
+      <Setter Property="TextElement.Foreground" Value="#1F1300" />
+    </Style>
+    <Style Selector="Border#Pill.critical">
+      <Setter Property="Background" Value="#DC2626" />
+      <Setter Property="TextElement.Foreground" Value="White" />
+    </Style>
+    <Style Selector="Border#Pill.pulse">
+      <Setter Property="Opacity" Value="0.55" />
+    </Style>
+    <Style Selector="Border#Badge">
+      <Setter Property="Background" Value="#33000000" />
+    </Style>
+    <Style Selector="Border#Pill Button">
+      <Setter Property="Background" Value="#26000000" />
+      <Setter Property="Foreground" Value="{Binding $parent[Border].(TextElement.Foreground)}" />
+      <Setter Property="Padding" Value="12,6" />
+    </Style>
+  </Window.Styles>
+
+  <Border x:Name="Pill"
+          Margin="12"
+          Padding="16,12"
+          CornerRadius="16"
+          BoxShadow="0 4 18 0 #66000000"
+          Classes.attention="{Binding IsAttention}"
+          Classes.critical="{Binding IsCritical}"
+          Classes.pulse="{Binding Pulse}">
+    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+      <Border x:Name="Badge" Grid.Column="0" Width="42" Height="42" CornerRadius="21" VerticalAlignment="Center">
+        <TextBlock Text="{Binding CountText}" FontSize="18" FontWeight="Bold"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+
+      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis" />
+        <TextBlock Text="{Binding Subtitle}" Opacity="0.85" TextTrimming="CharacterEllipsis" />
+      </StackPanel>
+
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+        <Button Content="Apri" Command="{Binding OpenCommand}" />
+        <Button Content="Riconosci" Command="{Binding AcknowledgeAllCommand}" />
+        <Button Content="15 min" Command="{Binding SnoozeQuarterHourCommand}" ToolTip.Tip="Posticipa di 15 minuti" />
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>

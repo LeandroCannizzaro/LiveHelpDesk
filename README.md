@@ -18,7 +18,7 @@ Solo Windows (10/11). C# / .NET 10, Avalonia 12.
 | `src/LiveHelpDesk.Channels` | canali di uscita: e-mail (MailKit), Teams (webhook), SMS/WhatsApp (Twilio) |
 | `src/LiveHelpDesk.Ipc` | contratti, server e client della pipe servizio↔app |
 | `src/LiveHelpDesk.Service` | servizio Windows (Worker) |
-| `src/LiveHelpDesk.App` | app Avalonia con WebView |
+| `src/LiveHelpDesk.App` | app Avalonia: tray, toast, overlay, eventi, accesso, browser Dynamics |
 | `tests/LiveHelpDesk.Tests` | test unitari |
 | `tools/` | sonde usa e getta della Fase 0 (`DataverseProbe`, `TokenDeltaSpike`) |
 
@@ -53,6 +53,9 @@ Opzione `--data <cartella>` per tenere i dati altrove (prove).
 
 Requisiti: .NET 10 SDK e il WebView2 Runtime (già presente in Windows 11 e con Office/Edge).
 
+L'app resta nell'area di notifica (chiudere la finestra la nasconde). Per vederla in azione senza ticket veri:
+`LiveHelpDesk.exe --demo` (toast e overlay di esempio); `--minimized` parte solo nel tray.
+
 L'app tiene il profilo della WebView in `%LocalAppData%\LiveHelpDesk\webview`. Con l'accesso tramite passkey
 (Windows Hello) Entra non emette cookie persistenti: la WebView chiede di nuovo l'accesso a ogni riavvio dell'app,
 per questo l'app resterà residente nell'area di notifica. Il monitoraggio non ne dipende (usa il token del servizio).
@@ -61,4 +64,4 @@ Gli eventi di navigazione (solo host e percorso) vanno in `%LocalAppData%\LiveHe
 
 ## Stato
 
-Fasi 1-4 (scheletro, nucleo, servizio, canali esterni) in corso; l'app mostra per ora solo Dynamics nella WebView. Repository privato.
+Fasi 1-5 (scheletro, nucleo, servizio, canali esterni, app) in corso; mancano l'editor delle regole e dei canali nell'app e l'installer. Repository privato.

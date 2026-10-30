@@ -1,17 +1,46 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:LiveHelpDesk.App.Views"
         x:Class="LiveHelpDesk.App.MainWindow"
         Title="LiveHelpDesk"
-        Width="1280" Height="820">
-  <DockPanel>
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,*" Margin="8" ColumnSpacing="6">
-      <Button x:Name="BackButton" Grid.Column="0" Content="◀" ToolTip.Tip="Indietro" />
-      <Button x:Name="ForwardButton" Grid.Column="1" Content="▶" ToolTip.Tip="Avanti" />
-      <Button x:Name="RefreshButton" Grid.Column="2" Content="⟳" ToolTip.Tip="Ricarica" />
-      <Button x:Name="HomeButton" Grid.Column="3" Content="⌂" ToolTip.Tip="Dashboard assistenza" />
-      <TextBox x:Name="AddressBox" Grid.Column="4" PlaceholderText="Indirizzo" />
+        Width="1280" Height="820" MinWidth="760" MinHeight="480">
+  <Window.Styles>
+    <Style Selector="ToggleButton.nav">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+  </Window.Styles>
+
+  <Grid ColumnDefinitions="160,*">
+    <Border Grid.Column="0" Background="#14808080">
+      <DockPanel Margin="8">
+        <TextBlock x:Name="LinkText" DockPanel.Dock="Bottom" Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="8" />
+        <StackPanel Spacing="4">
+          <TextBlock Text="LiveHelpDesk" FontWeight="Bold" FontSize="16" Margin="8,8,8,16" />
+          <ToggleButton x:Name="NavBrowser" Classes="nav" Content="Dynamics" IsChecked="True" />
+          <ToggleButton x:Name="NavEvents" Classes="nav" Content="Eventi" />
+          <ToggleButton x:Name="NavStatus" Classes="nav" Content="Servizio" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Grid Grid.Column="1">
+      <DockPanel x:Name="BrowserPane">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,*" Margin="8" ColumnSpacing="6">
+          <Button x:Name="BackButton" Grid.Column="0" Content="◀" ToolTip.Tip="Indietro" />
+          <Button x:Name="ForwardButton" Grid.Column="1" Content="▶" ToolTip.Tip="Avanti" />
+          <Button x:Name="RefreshButton" Grid.Column="2" Content="⟳" ToolTip.Tip="Ricarica" />
+          <Button x:Name="HomeButton" Grid.Column="3" Content="⌂" ToolTip.Tip="Dashboard assistenza" />
+          <TextBox x:Name="AddressBox" Grid.Column="4" PlaceholderText="Indirizzo" />
+        </Grid>
+        <TextBlock x:Name="StatusText" DockPanel.Dock="Bottom" Margin="8,4" Opacity="0.7" />
+        <NativeWebView x:Name="Web" />
+      </DockPanel>
+
+      <views:EventsView x:Name="EventsPane" IsVisible="False" />
+      <views:StatusView x:Name="StatusPane" IsVisible="False" />
     </Grid>
-    <TextBlock x:Name="StatusText" DockPanel.Dock="Bottom" Margin="8,4" Opacity="0.7" />
-    <NativeWebView x:Name="Web" />
-  </DockPanel>
+  </Grid>
 </Window>

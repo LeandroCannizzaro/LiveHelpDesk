@@ -1,0 +1,49 @@
+using System.Text.Json;
+using LiveHelpDesk.Core;
+
+namespace LiveHelpDesk.App.Services;
+
+/// <summary>This user's look-and-feel choices, kept next to the WebView profile. A missing or damaged file means defaults.</summary>
+public sealed class UiSettings
+{
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { WriteIndented = true };
+
+    public bool OverlayEnabled { get; set; } = true;
+
+    /// <summary>Sideways shift from the centre of the screen, in device-independent pixels (set by dragging the overlay).</summary>
+    public double OverlayOffsetX { get; set; }
+
+    /// <summary>Distance from the top of the work area.</summary>
+    public double OverlayTop { get; set; } = 8;
+
+    public bool PlaySoundForCritical { get; set; } = true;
+
+    public static string DefaultPath => Path.Combine(AppPaths.UserRoot, "ui.json");
+
+    public static UiSettings Load(string? path = null)
+    {
+        try
+        {
+            path ??= DefaultPath;
+            return File.Exists(path) ? JsonSerializer.Deserialize<UiSettings>(File.ReadAllText(path), Json) ?? new UiSettings() : new UiSettings();
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return new UiSettings();
+        }
+    }
+
+    public void Save(string? path = null)
+    {
+        try
+        {
+            path ??= DefaultPath;
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, JsonSerializer.Serialize(this, Json));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Losing a window position is not worth an error.
+        }
+    }
+}

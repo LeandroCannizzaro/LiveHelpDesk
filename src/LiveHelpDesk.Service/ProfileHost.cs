@@ -145,7 +145,8 @@ public sealed class ProfileHost : IProfile
                 _lastPollAt,
                 _lastError ?? _login.LastError,
                 _api.TicketsInState(_pipeline.Mapping.ActiveState).Count,
-                counts.GetValueOrDefault(OutboxStatus.Pending));
+                counts.GetValueOrDefault(OutboxStatus.Pending),
+                _pipeline.Settings.HomeUrl);
         }
 
     }
@@ -216,12 +217,12 @@ public sealed class ProfileHost : IProfile
         return Task.FromResult<IReadOnlyList<ChannelInfo>>(info);
     }
 
-    public async Task<TestResult> TestChannelAsync(string channelId)
+    public async Task<ChannelTestResult> TestChannelAsync(string channelId)
     {
         var channel = _pipeline.Channels.Get(channelId);
         if (channel is null)
         {
-            return new TestResult(false, "Il canale non è attivo o non è configurato.");
+            return new ChannelTestResult(false, "Il canale non è attivo o non è configurato.");
         }
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_stopping.Token);
@@ -229,11 +230,11 @@ public sealed class ProfileHost : IProfile
         try
         {
             var result = await channel.TestAsync(timeout.Token);
-            return new TestResult(result.Success, result.Error);
+            return new ChannelTestResult(result.Success, result.Error);
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !_stopping.IsCancellationRequested)
         {
-            return new TestResult(false, ex is OperationCanceledException ? "Nessuna risposta entro 30 secondi." : ex.Message);
+            return new ChannelTestResult(false, ex is OperationCanceledException ? "Nessuna risposta entro 30 secondi." : ex.Message);
         }
     }
 
@@ -245,7 +246,8 @@ public sealed class ProfileHost : IProfile
                 _api.RecentEvents(Math.Clamp(count, 1, 500))
                     .Select(e => new EventInfo(
                         e.DedupKey, e.Type.ToString(), e.Subtype, e.TicketNumber, e.Title ?? e.Ticket?.Title, e.OccurredAt,
-                        _api.IsEventAcknowledged(e.DedupKey)))
+                        _api.IsEventAcknowledged(e.DedupKey),
+                        e.TicketId is { } id ? _pipeline.Settings.Dynamics.IncidentUri(id) : null))
                     .ToList());
         }
     }

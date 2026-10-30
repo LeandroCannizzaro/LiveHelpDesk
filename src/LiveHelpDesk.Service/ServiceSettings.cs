@@ -15,6 +15,9 @@ public sealed class ServiceSettings
 
     public string TenantId { get; set; } = "e40359a3-6fe2-46f4-b190-a1f4f644834d";
 
+    /// <summary>The help desk dashboard shown first in the app's browser.</summary>
+    public Guid DashboardId { get; set; } = Guid.Parse("2975aa11-0acc-ee11-9079-002248993a93");
+
     /// <summary>Explicit proxy (e.g. http://proxy.corp:8080); empty uses the system one with the machine's credentials.</summary>
     public string? Proxy { get; set; }
 
@@ -29,6 +32,9 @@ public sealed class ServiceSettings
     public int ReconcileMinutes { get; set; } = 15;
 
     public DynamicsOptions Dynamics => new(new Uri(Org), AppId, TenantId);
+
+    public Uri HomeUrl =>
+        new(new Uri(Org), $"/main.aspx?appid={AppId:D}&pagetype=dashboard&id={DashboardId:D}&type=system&_canOverride=true");
 
     public TimeSpan PollInterval => TimeSpan.FromSeconds(Math.Max(5, PollSeconds));
 

@@ -1,23 +1,34 @@
 using Avalonia.Controls;
-using Avalonia.Platform;
 using Avalonia.Input;
+using Avalonia.Platform;
 using Avalonia.Threading;
+using LiveHelpDesk.App.ViewModels;
 using LiveHelpDesk.Core;
 
 namespace LiveHelpDesk.App;
 
+public enum Pane
+{
+    Browser,
+    Events,
+    Status,
+}
+
 /// <summary>
-/// Phase 1 spike: hosts the Dynamics site in a WebView with a persistent profile, so the Entra sign-in
-/// (cookies, SSO) survives restarts. Navigation events are appended to a log (host and path only, never
-/// query strings) so the behaviour can be checked without looking at the window.
+/// The window the user opens from the tray: Dynamics in a WebView, the recent events, and the service's state.
+/// Closing it only hides it, so the browser session (and the Dynamics sign-in) stays alive; the app really
+/// ends from the tray menu.
 /// </summary>
 public partial class MainWindow : Window
 {
-    // Default dashboard; will come from configuration (DynamicsOptions) in phase 6.
-    private static readonly Uri Home = new(
+    // Used until the service tells us its own dashboard address.
+    private static readonly Uri DefaultHome = new(
         "https://qgs.crm4.dynamics.com/main.aspx?appid=d2ed1394-6c4e-ed11-bba3-00224899337b&pagetype=dashboard&id=2975aa11-0acc-ee11-9079-002248993a93&type=system&_canOverride=true");
 
     private static readonly string LogPath = Path.Combine(AppPaths.UserLogs, "webview-spike.log");
+
+    private Uri _home = DefaultHome;
+    private bool _userNavigated;
 
     public MainWindow()
     {
@@ -31,11 +42,95 @@ public partial class MainWindow : Window
         BackButton.Click += (_, _) => Web.GoBack();
         ForwardButton.Click += (_, _) => Web.GoForward();
         RefreshButton.Click += (_, _) => Web.Refresh();
-        HomeButton.Click += (_, _) => Web.Navigate(Home);
+        HomeButton.Click += (_, _) => Navigate(_home);
         AddressBox.KeyDown += OnAddressKeyDown;
 
-        Opened += (_, _) => Web.Navigate(Home);
-        ScheduleAutoExit();
+        NavBrowser.Click += (_, _) => ShowPane(Pane.Browser);
+        NavEvents.Click += (_, _) => ShowPane(Pane.Events);
+        NavStatus.Click += (_, _) => ShowPane(Pane.Status);
+
+        Opened += (_, _) => Web.Navigate(_home);
+        Closing += (_, e) =>
+        {
+            if (!ReallyClose)
+            {
+                e.Cancel = true;
+                Hide();
+            }
+        };
+    }
+
+    /// <summary>Set by the tray's "Esci": only then does closing the window end the app.</summary>
+    public bool ReallyClose { get; set; }
+
+    public Pane CurrentPane { get; private set; } = Pane.Browser;
+
+    public void Attach(EventsViewModel events, StatusViewModel status)
+    {
+        EventsPane.DataContext = events;
+        StatusPane.DataContext = status;
+    }
+
+    /// <summary>The dashboard the service wants as the starting page. Follows only if the user has not moved on.</summary>
+    public void SetHome(Uri home)
+    {
+        if (home == _home)
+        {
+            return;
+        }
+
+        var wasOnHome = !_userNavigated;
+        _home = home;
+        if (wasOnHome)
+        {
+            Navigate(home);
+        }
+    }
+
+    public void ShowPane(Pane pane)
+    {
+        CurrentPane = pane;
+        BrowserPane.IsVisible = pane == Pane.Browser;
+        EventsPane.IsVisible = pane == Pane.Events;
+        StatusPane.IsVisible = pane == Pane.Status;
+        NavBrowser.IsChecked = pane == Pane.Browser;
+        NavEvents.IsChecked = pane == Pane.Events;
+        NavStatus.IsChecked = pane == Pane.Status;
+    }
+
+    /// <summary>Brings the window to the front, from the tray, a toast or a second launch.</summary>
+    public void Bring()
+    {
+        if (!IsVisible)
+        {
+            Show();
+        }
+
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        Activate();
+    }
+
+    public void OpenTicket(Uri url)
+    {
+        ShowPane(Pane.Browser);
+        Navigate(url);
+        Bring();
+    }
+
+    public void SetLinkText(string text, int waiting)
+    {
+        LinkText.Text = text;
+        NavEvents.Content = waiting > 0 ? $"Eventi ({waiting})" : "Eventi";
+    }
+
+    private void Navigate(Uri url)
+    {
+        _userNavigated = url != _home;
+        Web.Navigate(url);
     }
 
     private void OnEnvironmentRequested(object? sender, WebViewEnvironmentRequestedEventArgs args)
@@ -77,18 +172,7 @@ public partial class MainWindow : Window
     {
         if (e.Key == Key.Enter && Uri.TryCreate(AddressBox.Text, UriKind.Absolute, out var uri))
         {
-            Web.Navigate(uri);
-        }
-    }
-
-    // --exit-after <seconds>: lets an unattended run (CI, smoke test) close the window by itself.
-    private void ScheduleAutoExit()
-    {
-        var args = Environment.GetCommandLineArgs();
-        var i = Array.IndexOf(args, "--exit-after");
-        if (i >= 0 && i + 1 < args.Length && int.TryParse(args[i + 1], out var seconds))
-        {
-            DispatcherTimer.RunOnce(Close, TimeSpan.FromSeconds(seconds));
+            Navigate(uri);
         }
     }
 

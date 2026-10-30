@@ -40,6 +40,7 @@ public sealed class ChangedEventArgs(ChangeKind kind) : EventArgs
 }
 
 /// <param name="UserName">The signed-in Dynamics user, once known.</param>
+/// <param name="HomeUrl">The help desk dashboard in Dynamics: where the app's browser starts.</param>
 public sealed record ServiceStatus(
     int ProtocolVersion,
     string ServiceVersion,
@@ -49,7 +50,8 @@ public sealed record ServiceStatus(
     DateTimeOffset? LastPollAt,
     string? LastError,
     int ActiveTickets,
-    int PendingNotifications);
+    int PendingNotifications,
+    Uri? HomeUrl = null);
 
 /// <summary>What the user must do to sign in: open the address and type the code.</summary>
 public sealed record LoginChallenge(string UserCode, string VerificationUrl, DateTimeOffset ExpiresAt, string Message);
@@ -61,7 +63,8 @@ public sealed record EventInfo(
     string? TicketNumber,
     string? Title,
     DateTimeOffset OccurredAt,
-    bool Acknowledged);
+    bool Acknowledged,
+    Uri? Url = null);
 
 public sealed record NotificationInfo(
     long Id,
@@ -84,7 +87,7 @@ public sealed record ChannelInfo(
     int SentLastHour,
     int Pending);
 
-public sealed record TestResult(bool Ok, string? Error);
+public sealed record ChannelTestResult(bool Ok, string? Error);
 
 public sealed record RuleHitCount(string RuleId, string RuleName, int Matches);
 
@@ -128,7 +131,7 @@ public interface ILiveHelpDeskApi
     Task<IReadOnlyList<ChannelInfo>> GetChannelStatusAsync();
 
     /// <summary>Sends a harmless test message through one channel (email, teams, sms, whatsapp).</summary>
-    Task<TestResult> TestChannelAsync(string channelId);
+    Task<ChannelTestResult> TestChannelAsync(string channelId);
 
     /// <summary>Something changed: ask again. Sent to every connected app of that profile.</summary>
     event EventHandler<ChangedEventArgs>? Changed;

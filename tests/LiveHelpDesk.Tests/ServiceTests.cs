@@ -62,7 +62,7 @@ internal sealed class FakeProfile(string sid) : IProfile
 
     public Task<IReadOnlyList<ChannelInfo>> GetChannelStatusAsync() => _api.GetChannelStatusAsync();
 
-    public Task<TestResult> TestChannelAsync(string channelId) => _api.TestChannelAsync(channelId);
+    public Task<ChannelTestResult> TestChannelAsync(string channelId) => _api.TestChannelAsync(channelId);
 }
 
 public class ProfileManagerTests

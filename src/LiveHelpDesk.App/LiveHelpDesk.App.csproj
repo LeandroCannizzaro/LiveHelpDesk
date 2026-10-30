@@ -17,11 +17,21 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
     <!-- MIT since 11.4; renders with Microsoft Edge WebView2 on Windows. -->
     <PackageReference Include="Avalonia.Controls.WebView" Version="12.1.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Toasts with buttons for an app that is not packaged as MSIX. -->
+    <PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
+    <!-- Pinned above the transitive 4.7.0, which has a critical known vulnerability (GHSA-rxg9-xrhp-64gj). -->
+    <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LiveHelpDesk.Abstractions\LiveHelpDesk.Abstractions.csproj" />
     <ProjectReference Include="..\LiveHelpDesk.Core\LiveHelpDesk.Core.csproj" />
-    <ProjectReference Include="..\LiveHelpDesk.Dynamics\LiveHelpDesk.Dynamics.csproj" />
+    <ProjectReference Include="..\LiveHelpDesk.Ipc\LiveHelpDesk.Ipc.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="LiveHelpDesk.Tests" />
   </ItemGroup>
 
 </Project>
