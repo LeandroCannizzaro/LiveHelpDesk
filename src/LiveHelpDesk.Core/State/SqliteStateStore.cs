@@ -2,12 +2,13 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LiveHelpDesk.Abstractions;
+using LiveHelpDesk.Core.Outbox;
 using Microsoft.Data.Sqlite;
 
 namespace LiveHelpDesk.Core.State;
 
 /// <summary>SQLite-backed <see cref="ITicketStateStore"/>. Not thread-safe: the pipeline owns it from one thread.</summary>
-public sealed class SqliteStateStore : ITicketStateStore, IDisposable
+public sealed class SqliteStateStore : ITicketStateStore, IOutbox, IDisposable
 {
     /// <summary>Forward-only migrations; the schema version is <c>PRAGMA user_version</c>.</summary>
     private static readonly string[] Migrations =
@@ -39,6 +40,24 @@ public sealed class SqliteStateStore : ITicketStateStore, IDisposable
             key   TEXT PRIMARY KEY,
             value TEXT NOT NULL
         );
+        """,
+        """
+        CREATE TABLE outbox (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_key         TEXT NOT NULL,
+            rule_id           TEXT NOT NULL,
+            channel           TEXT NOT NULL,
+            json              TEXT NOT NULL,
+            not_before        TEXT NOT NULL,
+            requires_unacked  INTEGER NOT NULL,
+            status            TEXT NOT NULL,
+            attempts          INTEGER NOT NULL DEFAULT 0,
+            last_error        TEXT NULL,
+            created_at        TEXT NOT NULL,
+            updated_at        TEXT NOT NULL,
+            UNIQUE (event_key, rule_id, channel)
+        );
+        CREATE INDEX ix_outbox_due ON outbox(status, not_before);
         """,
     ];
 
@@ -199,6 +218,89 @@ public sealed class SqliteStateStore : ITicketStateStore, IDisposable
             "INSERT INTO kv(key, value) VALUES ($key, $value) ON CONFLICT(key) DO UPDATE SET value = excluded.value;",
             ("$key", key),
             ("$value", value));
+
+    public void RemoveTicket(Guid id) => Execute("DELETE FROM tickets WHERE id = $id;", ("$id", id.ToString("D")));
+
+    public void AcknowledgeEvent(string dedupKey, DateTimeOffset at) =>
+        Execute(
+            "UPDATE events SET acknowledged_at = COALESCE(acknowledged_at, $at) WHERE dedup_key = $key;",
+            ("$key", dedupKey),
+            ("$at", Format(at)));
+
+    public bool IsEventAcknowledged(string dedupKey) =>
+        Scalar("SELECT acknowledged_at FROM events WHERE dedup_key = $key;", ("$key", dedupKey)) is string;
+
+    public bool TryAdd(OutboxItem item) =>
+        Execute(
+            """
+            INSERT OR IGNORE INTO outbox(event_key, rule_id, channel, json, not_before, requires_unacked, status, attempts, created_at, updated_at)
+            VALUES ($event, $rule, $channel, $json, $notBefore, $unacked, $status, $attempts, $created, $created);
+            """,
+            ("$event", item.EventKey),
+            ("$rule", item.RuleId),
+            ("$channel", item.Channel),
+            ("$json", JsonSerializer.Serialize(item.Notification, Json)),
+            ("$notBefore", Format(item.NotBefore)),
+            ("$unacked", item.RequiresUnacknowledged ? 1 : 0),
+            ("$status", item.Status.ToString()),
+            ("$attempts", item.Attempts),
+            ("$created", Format(item.CreatedAt))) == 1;
+
+    public IReadOnlyList<OutboxItem> Due(DateTimeOffset now, int max)
+    {
+        using var cmd = Command(
+            """
+            SELECT id, event_key, rule_id, channel, json, not_before, requires_unacked, status, attempts, created_at
+            FROM outbox WHERE status = 'Pending' AND not_before <= $now ORDER BY id LIMIT $max;
+            """,
+            ("$now", Format(now)),
+            ("$max", max));
+        using var reader = cmd.ExecuteReader();
+        var items = new List<OutboxItem>();
+        while (reader.Read())
+        {
+            items.Add(new OutboxItem(
+                reader.GetInt64(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                JsonSerializer.Deserialize<Notification>(reader.GetString(4), Json)!,
+                ParseTime(reader.GetString(5)),
+                reader.GetInt32(6) != 0,
+                Enum.Parse<OutboxStatus>(reader.GetString(7)),
+                reader.GetInt32(8),
+                ParseTime(reader.GetString(9))));
+        }
+
+        return items;
+    }
+
+    public void MarkSent(long id, DateTimeOffset at) =>
+        Execute(
+            "UPDATE outbox SET status = 'Sent', attempts = attempts + 1, updated_at = $at WHERE id = $id;",
+            ("$id", id),
+            ("$at", Format(at)));
+
+    public void MarkFailed(long id, string error, DateTimeOffset nextAttempt, bool dead) =>
+        Execute(
+            "UPDATE outbox SET status = $status, attempts = attempts + 1, last_error = $error, not_before = $next, updated_at = $next WHERE id = $id;",
+            ("$id", id),
+            ("$status", dead ? nameof(OutboxStatus.Dead) : nameof(OutboxStatus.Pending)),
+            ("$error", error),
+            ("$next", Format(nextAttempt)));
+
+    public IReadOnlyDictionary<OutboxStatus, int> Counts()
+    {
+        using var cmd = Command("SELECT status, COUNT(*) FROM outbox GROUP BY status;");
+        using var reader = cmd.ExecuteReader();
+        var counts = new Dictionary<OutboxStatus, int>();
+        while (reader.Read())
+        {
+            counts[Enum.Parse<OutboxStatus>(reader.GetString(0))] = reader.GetInt32(1);
+        }
+
+        return counts;
+    }
 
     public void Dispose() => _db.Dispose();
 

@@ -84,6 +84,43 @@ public sealed class TicketDetector(ITicketStateStore store, TicketMapping mappin
         }
     }
 
+    /// <summary>Remembers tickets seen for the first time, silently. Used to resolve messages whose ticket was unknown.</summary>
+    public void Remember(IEnumerable<TicketSnapshot> tickets) =>
+        store.InTransaction(() =>
+        {
+            foreach (var ticket in tickets)
+            {
+                if (store.GetTicket(ticket.Id) is null)
+                {
+                    store.SaveTicket(ticket);
+                }
+            }
+        });
+
+    /// <summary>Forgets a ticket that is no longer readable (merged away, deleted, access lost) and says so once.</summary>
+    public TicketEvent? MarkDisappeared(Guid ticketId, DateTimeOffset now)
+    {
+        TicketEvent? raised = null;
+        store.InTransaction(() =>
+        {
+            var previous = store.GetTicket(ticketId);
+            if (previous is null)
+            {
+                return;
+            }
+
+            store.RemoveTicket(ticketId);
+            var evt = new TicketEvent(
+                $"{ticketId:D}:Disappeared", TicketEventType.StatusChanged, now, ticketId, previous.Number, previous.Title,
+                "Disappeared", Ticket: previous);
+            if (store.TryRegisterEvent(evt))
+            {
+                raised = evt;
+            }
+        });
+        return raised;
+    }
+
     private static TicketEvent MessageEvent(MessageSnapshot message, TicketSnapshot ticket) =>
         new(
             DedupKeys.Message(message.Id, message.Incoming),

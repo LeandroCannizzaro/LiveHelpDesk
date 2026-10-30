@@ -31,6 +31,28 @@ public sealed record TicketMapping
         [717600006] = 2,
     };
 
+    /// <summary>Human names of the status codes, used in notification text.</summary>
+    public IReadOnlyDictionary<int, string> StatusLabels { get; init; } = new Dictionary<int, string>
+    {
+        [1] = "L0 Qualifica",
+        [717600002] = "L1 Assegnazione",
+        [717600003] = "L1 In risoluzione",
+        [2] = "L2 In risoluzione",
+        [717600006] = "L2 Risolto",
+        [717600007] = "L1 Risolto",
+        [5] = "Chiuso",
+        [717600008] = "Risolto",
+        [6] = "Annullato",
+        [2000] = "Unito",
+    };
+
+    public IReadOnlyDictionary<int, string> PriorityLabels { get; init; } = new Dictionary<int, string>
+    {
+        [1] = "Alta",
+        [2] = "Normale",
+        [3] = "Bassa",
+    };
+
     public int CommunicationReplyReceived { get; init; } = 717600002;
 
     public int CommunicationReplySent { get; init; } = 717600001;

@@ -18,6 +18,8 @@ public interface ITicketStateStore
 
     void SaveTicket(TicketSnapshot ticket);
 
+    void RemoveTicket(Guid id);
+
     /// <summary>Replaces all remembered tickets with <paramref name="tickets"/> and stamps the baseline time.</summary>
     void SaveBaseline(IEnumerable<TicketSnapshot> tickets, DateTimeOffset at);
 
@@ -30,6 +32,11 @@ public interface ITicketStateStore
 
     /// <summary>Stores the event unless its dedup key is already known; false means "already raised".</summary>
     bool TryRegisterEvent(TicketEvent evt);
+
+    /// <summary>Marks an event as seen by the user, so scheduled escalations can be dropped.</summary>
+    void AcknowledgeEvent(string dedupKey, DateTimeOffset at);
+
+    bool IsEventAcknowledged(string dedupKey);
 
     /// <summary>Most recent events first.</summary>
     IReadOnlyList<TicketEvent> RecentEvents(int count);

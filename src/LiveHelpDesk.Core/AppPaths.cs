@@ -5,9 +5,11 @@ public static class AppPaths
 {
     private const string Folder = "LiveHelpDesk";
 
-    /// <summary>Service data: configuration, per-user profiles, logs (ACL-restricted, shared by all users).</summary>
+    /// <summary>Service data: configuration, per-user profiles, logs. <c>LIVEHELPDESK_DATA</c> overrides it (development, tests).</summary>
     public static string MachineRoot { get; } =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Folder);
+        Environment.GetEnvironmentVariable("LIVEHELPDESK_DATA") is { Length: > 0 } overridden
+            ? overridden
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Folder);
 
     /// <summary>Per-user UI data: window state, WebView profile, UI log.</summary>
     public static string UserRoot { get; } =

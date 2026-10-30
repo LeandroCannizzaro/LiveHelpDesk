@@ -14,7 +14,7 @@ public sealed class SqliteStateStoreTests : IDisposable
 
     [Fact]
     public void ANewDatabase_IsMigratedToTheLatestSchema() =>
-        Assert.Equal(1, _store.SchemaVersion);
+        Assert.Equal(2, _store.SchemaVersion);
 
     [Fact]
     public void ATicket_RoundTripsWithItsExtraFields()
@@ -126,7 +126,7 @@ public sealed class SqliteStateStoreTests : IDisposable
             }
 
             using var second = new SqliteStateStore(path);
-            Assert.Equal(1, second.SchemaVersion);
+            Assert.Equal(2, second.SchemaVersion);
             Assert.NotNull(second.GetTicket(T.Id(1)));
             Assert.Equal(T.Baseline, second.BaselineAt);
         }
