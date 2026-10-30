@@ -1,0 +1,19 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <Company>Leandro Cannizzaro</Company>
+    <Product>LiveHelpDesk</Product>
+    <Authors>Leandro Cannizzaro</Authors>
+    <Copyright>Copyright (c) Leandro Cannizzaro</Copyright>
+    <RepositoryUrl>https://github.com/LeandroCannizzaro/LiveHelpDesk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <NeutralLanguage>it</NeutralLanguage>
+  </PropertyGroup>
+
+</Project>

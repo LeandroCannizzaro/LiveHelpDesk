@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="LiveHelpDesk.App.MainWindow"
+        Title="LiveHelpDesk"
+        Width="1280" Height="820">
+  <DockPanel>
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,*" Margin="8" ColumnSpacing="6">
+      <Button x:Name="BackButton" Grid.Column="0" Content="◀" ToolTip.Tip="Indietro" />
+      <Button x:Name="ForwardButton" Grid.Column="1" Content="▶" ToolTip.Tip="Avanti" />
+      <Button x:Name="RefreshButton" Grid.Column="2" Content="⟳" ToolTip.Tip="Ricarica" />
+      <Button x:Name="HomeButton" Grid.Column="3" Content="⌂" ToolTip.Tip="Dashboard assistenza" />
+      <TextBox x:Name="AddressBox" Grid.Column="4" PlaceholderText="Indirizzo" />
+    </Grid>
+    <TextBlock x:Name="StatusText" DockPanel.Dock="Bottom" Margin="8,4" Opacity="0.7" />
+    <NativeWebView x:Name="Web" />
+  </DockPanel>
+</Window>

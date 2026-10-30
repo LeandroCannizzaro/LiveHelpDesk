@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <AssemblyName>LiveHelpDesk</AssemblyName>
+    <RootNamespace>LiveHelpDesk.App</RootNamespace>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <!-- MIT since 11.4; renders with Microsoft Edge WebView2 on Windows. -->
+    <PackageReference Include="Avalonia.Controls.WebView" Version="12.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LiveHelpDesk.Core\LiveHelpDesk.Core.csproj" />
+    <ProjectReference Include="..\LiveHelpDesk.Dynamics\LiveHelpDesk.Dynamics.csproj" />
+  </ItemGroup>
+
+</Project>

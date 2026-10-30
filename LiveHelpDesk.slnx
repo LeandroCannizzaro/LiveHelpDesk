@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LiveHelpDesk.Abstractions/LiveHelpDesk.Abstractions.csproj" />
+    <Project Path="src/LiveHelpDesk.Core/LiveHelpDesk.Core.csproj" />
+    <Project Path="src/LiveHelpDesk.Dynamics/LiveHelpDesk.Dynamics.csproj" />
+    <Project Path="src/LiveHelpDesk.Channels/LiveHelpDesk.Channels.csproj" />
+    <Project Path="src/LiveHelpDesk.Service/LiveHelpDesk.Service.csproj" />
+    <Project Path="src/LiveHelpDesk.App/LiveHelpDesk.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LiveHelpDesk.Tests/LiveHelpDesk.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/DataverseProbe/DataverseProbe.csproj" />
+    <Project Path="tools/TokenDeltaSpike/TokenDeltaSpike.csproj" />
+  </Folder>
+</Solution>
