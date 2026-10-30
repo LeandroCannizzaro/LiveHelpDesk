@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using LiveHelpDesk.Abstractions;
 using LiveHelpDesk.Ipc;
 
 namespace LiveHelpDesk.Service;
@@ -8,8 +11,21 @@ namespace LiveHelpDesk.Service;
 /// </summary>
 public static class Cli
 {
-    public static async Task<int> RunAsync(string command, Func<string, TimeSpan, Task<IpcConnection?>>? connect = null)
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
+
+    public static async Task<int> RunAsync(
+        string command, Func<string, TimeSpan, Task<IpcConnection?>>? connect = null, string? argument = null)
+    {
+        if (command == "channels-template")
+        {
+            Console.WriteLine(JsonSerializer.Serialize(Template(), Json));
+            return 0;
+        }
+
         connect ??= (pipe, timeout) => IpcClient.TryConnectAsync(pipe, timeout, CancellationToken.None);
         await using var connection = await connect(IpcProtocol.PipeName, TimeSpan.FromSeconds(2));
         if (connection is null)
@@ -25,10 +41,13 @@ public static class Cli
             {
                 "login" => await LoginAsync(connection.Api),
                 "status" => await StatusAsync(connection.Api),
+                "channels" => await ChannelsAsync(connection.Api),
+                "channels-import" => await ImportAsync(connection.Api, argument),
+                "test" => await TestAsync(connection.Api, argument),
                 _ => await DryRunAsync(connection.Api),
             };
         }
-        catch (Exception ex) when (ex is StreamJsonRpc.RemoteInvocationException or StreamJsonRpc.ConnectionLostException)
+        catch (Exception ex) when (ex is StreamJsonRpc.RemoteInvocationException or StreamJsonRpc.ConnectionLostException or IOException)
         {
             Console.Error.WriteLine($"Errore: {ex.Message}");
             return 2;
@@ -110,6 +129,59 @@ public static class Cli
 
         return 0;
     }
+
+    private static async Task<int> ChannelsAsync(ILiveHelpDeskApi api)
+    {
+        Console.WriteLine($"{"Canale",-10} {"Stato",-12} {"Circuito",-9} {"Inviati/ora",-12} {"In coda",-8} Ultimo errore");
+        foreach (var channel in await api.GetChannelStatusAsync())
+        {
+            Console.WriteLine(
+                $"{channel.Id,-10} {(channel.Enabled ? "attivo" : "spento"),-12} {channel.State,-9} {channel.SentLastHour,-12} {channel.Pending,-8} {channel.LastError}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Impostazioni (i segreti sono nascosti):");
+        Console.WriteLine(JsonSerializer.Serialize(await api.GetChannelSettingsAsync(), Json));
+        return 0;
+    }
+
+    private static async Task<int> ImportAsync(ILiveHelpDeskApi api, string? file)
+    {
+        if (string.IsNullOrWhiteSpace(file) || !File.Exists(file))
+        {
+            Console.Error.WriteLine("Indicare il file: LiveHelpDesk.Service channels-import <file.json>   (modello: channels-template)");
+            return 1;
+        }
+
+        var settings = JsonSerializer.Deserialize<ChannelSettings>(await File.ReadAllTextAsync(file), Json);
+        await api.SaveChannelSettingsAsync(settings!);
+        Console.WriteLine("Impostazioni salvate; i segreti sono ora cifrati dal servizio.");
+        Console.WriteLine($"ATTENZIONE: il file \"{file}\" contiene ancora i segreti in chiaro. Cancellarlo ora.");
+        return 0;
+    }
+
+    private static async Task<int> TestAsync(ILiveHelpDeskApi api, string? channel)
+    {
+        if (string.IsNullOrWhiteSpace(channel))
+        {
+            Console.Error.WriteLine("Indicare il canale: LiveHelpDesk.Service test email|teams|sms|whatsapp");
+            return 1;
+        }
+
+        Console.WriteLine($"Invio di prova su {channel}...");
+        var result = await api.TestChannelAsync(channel);
+        Console.WriteLine(result.Ok ? "Messaggio di prova inviato." : $"Non riuscito: {result.Error}");
+        return result.Ok ? 0 : 6;
+    }
+
+    /// <summary>A starting point for <c>channels-import</c>: everything off, with the fields to fill in.</summary>
+    private static ChannelSettings Template() => new()
+    {
+        Email = new EmailSettings { Host = "smtp.example.com", From = "helpdesk@example.com", To = ["me@example.com"], User = "helpdesk@example.com", Password = "..." },
+        Teams = new WebhookSettings { Url = "https://...webhook.office.com/... (indirizzo del flusso Workflows)" },
+        Sms = new TwilioSettings { AccountSid = "AC...", AuthToken = "...", From = "+39...", To = ["+39..."] },
+        WhatsApp = new TwilioSettings { AccountSid = "AC...", AuthToken = "...", From = "+14155238886", To = ["+39..."], ContentSid = "HX... (modello approvato)" },
+    };
 
     private static string Describe(ProfileState state) => state switch
     {

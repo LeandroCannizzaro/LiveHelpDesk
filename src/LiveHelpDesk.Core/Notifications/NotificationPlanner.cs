@@ -5,8 +5,9 @@ using LiveHelpDesk.Core.Rules;
 namespace LiveHelpDesk.Core.Notifications;
 
 /// <summary>Turns "this rule matched this event" into outbox rows, one per channel.</summary>
+/// <param name="policy">Read at every plan, so edits to quiet hours take effect at once.</param>
 /// <param name="linkFor">Deep link to a ticket, when the source can build one.</param>
-public sealed class NotificationPlanner(TicketMapping mapping, ChannelPolicy policy, Func<Guid, Uri?> linkFor)
+public sealed class NotificationPlanner(TicketMapping mapping, Func<ChannelPolicy> policy, Func<Guid, Uri?> linkFor)
 {
     public IReadOnlyList<OutboxItem> Plan(RuleMatch match, DateTimeOffset now)
     {
@@ -43,7 +44,7 @@ public sealed class NotificationPlanner(TicketMapping mapping, ChannelPolicy pol
                 notification,
                 notBefore,
                 requiresUnacknowledged,
-                policy.Allows(channel, rule.Actions.Severity, notBefore.ToLocalTime()) ? OutboxStatus.Pending : OutboxStatus.Suppressed,
+                policy().Allows(channel, rule.Actions.Severity, notBefore.ToLocalTime()) ? OutboxStatus.Pending : OutboxStatus.Suppressed,
                 0,
                 now);
     }

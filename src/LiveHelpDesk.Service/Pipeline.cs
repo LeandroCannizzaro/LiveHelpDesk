@@ -36,6 +36,10 @@ public sealed class Pipeline : IDisposable
 
     public required TicketMapping Mapping { get; init; }
 
+    public required ChannelStore ChannelStore { get; init; }
+
+    public required ChannelRegistry Channels { get; init; }
+
     /// <summary>The signed-in user's Dataverse id, known after the first successful call.</summary>
     public Guid? Me => _holder.Me;
 
@@ -62,9 +66,13 @@ public sealed class Pipeline : IDisposable
             BaseAddress = options.ApiBase,
         };
 
+        var channelStore = new ChannelStore(Path.Combine(profileDirectory, "channels.json"), loggers.CreateLogger<ChannelStore>());
+        var channelHttp = new HttpClient(handler, disposeHandler: false) { Timeout = TimeSpan.FromSeconds(20) };
+        var channels = new ChannelRegistry(channelStore, channelHttp);
+
         var holder = new MeHolder();
         var source = new DynamicsTicketSource(new DataverseClient(http, tokens), DynamicsFieldMap.Qgs, () => holder.Me);
-        var planner = new NotificationPlanner(mapping, new ChannelPolicy(), id => options.IncidentUri(id));
+        var planner = new NotificationPlanner(mapping, () => new ChannelPolicy { Channels = channelStore.Current.Schedules }, id => options.IncidentUri(id));
         var engine = new PollingEngine(
             source, store, store, new TicketDetector(store, mapping), planner, mapping, settings.Polling,
             () => rules.Current, () => holder.Me, loggers.CreateLogger<PollingEngine>());
@@ -80,6 +88,8 @@ public sealed class Pipeline : IDisposable
             Health = new HealthMonitor(),
             Rules = rules,
             Mapping = mapping,
+            ChannelStore = channelStore,
+            Channels = channels,
         };
     }
 

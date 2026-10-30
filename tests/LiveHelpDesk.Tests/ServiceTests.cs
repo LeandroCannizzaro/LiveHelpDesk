@@ -1,5 +1,6 @@
 using System.Security.AccessControl;
 using System.Security.Principal;
+using LiveHelpDesk.Abstractions;
 using LiveHelpDesk.Dynamics;
 using LiveHelpDesk.Ipc;
 using LiveHelpDesk.Service;
@@ -54,6 +55,14 @@ internal sealed class FakeProfile(string sid) : IProfile
     public Task<IReadOnlyList<NotificationInfo>> ClaimNotificationsAsync(IReadOnlyList<string> channels) => _api.ClaimNotificationsAsync(channels);
 
     public Task<DryRunResult> DryRunRulesAsync() => _api.DryRunRulesAsync();
+
+    public Task<ChannelSettings> GetChannelSettingsAsync() => _api.GetChannelSettingsAsync();
+
+    public Task SaveChannelSettingsAsync(ChannelSettings settings) => _api.SaveChannelSettingsAsync(settings);
+
+    public Task<IReadOnlyList<ChannelInfo>> GetChannelStatusAsync() => _api.GetChannelStatusAsync();
+
+    public Task<TestResult> TestChannelAsync(string channelId) => _api.TestChannelAsync(channelId);
 }
 
 public class ProfileManagerTests

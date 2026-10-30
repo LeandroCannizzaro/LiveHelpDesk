@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\src\LiveHelpDesk.Core\LiveHelpDesk.Core.csproj" />
     <ProjectReference Include="..\..\src\LiveHelpDesk.Dynamics\LiveHelpDesk.Dynamics.csproj" />
     <ProjectReference Include="..\..\src\LiveHelpDesk.Ipc\LiveHelpDesk.Ipc.csproj" />
+    <ProjectReference Include="..\..\src\LiveHelpDesk.Channels\LiveHelpDesk.Channels.csproj" />
     <ProjectReference Include="..\..\src\LiveHelpDesk.Service\LiveHelpDesk.Service.csproj" />
   </ItemGroup>
 

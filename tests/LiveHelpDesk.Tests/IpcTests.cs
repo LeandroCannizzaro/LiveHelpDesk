@@ -41,6 +41,40 @@ internal sealed class FakeApi : ILiveHelpDeskApi
             [new NotificationInfo(7, "k1", "toast", "Nuovo ticket #261000001", "corpo", Severity.Critical, new Uri("https://crm.example/t/1"))]);
     }
 
+    public ChannelSettings Settings { get; set; } = new()
+    {
+        Email = { Enabled = true, Host = "smtp.example.com", From = "a@example.com", To = ["b@example.com"], Password = "********" },
+        Schedules =
+        {
+            ["sms"] = new ChannelSchedule
+            {
+                AlwaysAllowFrom = Severity.Critical,
+                Windows = [new ChannelWindow { Days = [DayOfWeek.Monday], From = new TimeOnly(20, 0), To = new TimeOnly(8, 0) }],
+            },
+        },
+    };
+
+    public ChannelSettings? Saved { get; private set; }
+
+    public List<string> Tested { get; } = [];
+
+    public Task<ChannelSettings> GetChannelSettingsAsync() => Task.FromResult(Settings);
+
+    public Task SaveChannelSettingsAsync(ChannelSettings settings)
+    {
+        Saved = settings;
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<ChannelInfo>> GetChannelStatusAsync() =>
+        Task.FromResult<IReadOnlyList<ChannelInfo>>([new ChannelInfo("email", true, "Closed", T.At(1), null, null, 3, 0), new ChannelInfo("sms", false, "Closed", null, null, null, 0, 0)]);
+
+    public Task<TestResult> TestChannelAsync(string channelId)
+    {
+        Tested.Add(channelId);
+        return Task.FromResult(channelId == "email" ? new TestResult(true, null) : new TestResult(false, "canale non attivo"));
+    }
+
     public Task<DryRunResult> DryRunRulesAsync() =>
         Task.FromResult(new DryRunResult(3, [new RuleHitCount("new-tickets", "Nuovi ticket", 2)], [new DryRunTicket("261000001", "Errore", "new-tickets")]));
 }
@@ -230,6 +264,75 @@ public class IpcTests
         Assert.Equal(0, status);
         Assert.Equal(0, dryRun);
         Assert.Equal(3, absent);
+    }
+
+    [Fact]
+    public async Task ChannelSettings_CrossThePipe_WithSchedulesTimesAndEnums()
+    {
+        await using var harness = new PipeHarness();
+        await using var connection = await harness.ConnectAsync();
+
+        var settings = await connection.Api.GetChannelSettingsAsync();
+        await connection.Api.SaveChannelSettingsAsync(settings);
+
+        Assert.True(settings.Email.Enabled);
+        Assert.Equal("********", settings.Email.Password);
+        var window = Assert.Single(settings.Schedules["sms"].Windows);
+        Assert.Equal(new TimeOnly(20, 0), window.From);
+        Assert.Equal([DayOfWeek.Monday], window.Days);
+        Assert.Equal(Severity.Critical, settings.Schedules["sms"].AlwaysAllowFrom);
+        Assert.Equal(new TimeOnly(8, 0), harness.Api.Saved!.Schedules["sms"].Windows[0].To);
+    }
+
+    [Fact]
+    public async Task ChannelStatusAndTests_TravelThePipe()
+    {
+        await using var harness = new PipeHarness();
+        await using var connection = await harness.ConnectAsync();
+
+        var status = await connection.Api.GetChannelStatusAsync();
+        var ok = await connection.Api.TestChannelAsync("email");
+        var bad = await connection.Api.TestChannelAsync("sms");
+
+        Assert.Equal(["email", "sms"], status.Select(c => c.Id).ToArray());
+        Assert.Equal(3, status[0].SentLastHour);
+        Assert.True(ok.Ok);
+        Assert.False(bad.Ok);
+        Assert.Equal("canale non attivo", bad.Error);
+    }
+
+    [Fact]
+    public async Task TheChannelCommands_UseThePipe_AndReportTheOutcomeInTheExitCode()
+    {
+        await using var harness = new PipeHarness();
+        Task<IpcConnection?> Connect(string _, TimeSpan timeout) => IpcClient.TryConnectAsync(harness.Name, timeout, CancellationToken.None);
+
+        Assert.Equal(0, await Cli.RunAsync("channels", Connect));
+        Assert.Equal(0, await Cli.RunAsync("test", Connect, "email"));
+        Assert.Equal(6, await Cli.RunAsync("test", Connect, "sms"));
+        Assert.Equal(1, await Cli.RunAsync("test", Connect, null));
+        Assert.Equal(0, await Cli.RunAsync("channels-template", (_, _) => Task.FromResult<IpcConnection?>(null)));
+    }
+
+    [Fact]
+    public async Task ImportingSettings_SendsThemToTheService_AndAMissingFileIsRefused()
+    {
+        await using var harness = new PipeHarness();
+        Task<IpcConnection?> Connect(string _, TimeSpan timeout) => IpcClient.TryConnectAsync(harness.Name, timeout, CancellationToken.None);
+        var file = Path.Combine(Path.GetTempPath(), $"lhd-import-{Guid.NewGuid():N}.json");
+        await File.WriteAllTextAsync(file, """{ "email": { "enabled": true, "host": "smtp.example.com", "from": "a@example.com", "to": ["b@example.com"], "security": "SslOnConnect" } }""");
+        try
+        {
+            Assert.Equal(0, await Cli.RunAsync("channels-import", Connect, file));
+            Assert.Equal(1, await Cli.RunAsync("channels-import", Connect, file + ".missing"));
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+
+        Assert.Equal(EmailSecurity.SslOnConnect, harness.Api.Saved!.Email.Security);
+        Assert.Equal("smtp.example.com", harness.Api.Saved.Email.Host);
     }
 
     [Fact]

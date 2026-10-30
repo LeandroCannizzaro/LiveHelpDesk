@@ -11,10 +11,13 @@ internal sealed class FakeHandler(Func<HttpRequestMessage, int, HttpResponseMess
 {
     public List<(Uri Uri, string? Authorization, string? Prefer)> Requests { get; } = [];
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    public List<string> Bodies { get; } = [];
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        Bodies.Add(request.Content is null ? "" : await request.Content.ReadAsStringAsync(cancellationToken));
         Requests.Add((request.RequestUri!, request.Headers.Authorization?.ToString(), request.Headers.TryGetValues("Prefer", out var v) ? string.Join(",", v) : null));
-        return Task.FromResult(respond(request, Requests.Count));
+        return respond(request, Requests.Count);
     }
 
     public static HttpResponseMessage Json(string body, HttpStatusCode status = HttpStatusCode.OK) =>

@@ -72,6 +72,20 @@ public sealed record NotificationInfo(
     Severity Severity,
     Uri? Url);
 
+/// <summary>How one outside channel is doing.</summary>
+/// <param name="State">"Closed" (working), "Open" (failing, paused for a while) or "HalfOpen" (trying again).</param>
+public sealed record ChannelInfo(
+    string Id,
+    bool Enabled,
+    string State,
+    DateTimeOffset? LastSuccess,
+    DateTimeOffset? LastFailure,
+    string? LastError,
+    int SentLastHour,
+    int Pending);
+
+public sealed record TestResult(bool Ok, string? Error);
+
 public sealed record RuleHitCount(string RuleId, string RuleName, int Matches);
 
 public sealed record DryRunTicket(string TicketNumber, string? Title, string RuleId);
@@ -104,6 +118,17 @@ public interface ILiveHelpDeskApi
 
     /// <summary>Tries the rules on the active tickets (read only), as if each had just been created.</summary>
     Task<DryRunResult> DryRunRulesAsync();
+
+    /// <summary>The outside channels' settings. Secrets (passwords, tokens, webhook addresses) come back masked.</summary>
+    Task<ChannelSettings> GetChannelSettingsAsync();
+
+    /// <summary>Replaces the settings. A secret sent back as the mask is kept as it was. Throws if something is invalid.</summary>
+    Task SaveChannelSettingsAsync(ChannelSettings settings);
+
+    Task<IReadOnlyList<ChannelInfo>> GetChannelStatusAsync();
+
+    /// <summary>Sends a harmless test message through one channel (email, teams, sms, whatsapp).</summary>
+    Task<TestResult> TestChannelAsync(string channelId);
 
     /// <summary>Something changed: ask again. Sent to every connected app of that profile.</summary>
     event EventHandler<ChangedEventArgs>? Changed;

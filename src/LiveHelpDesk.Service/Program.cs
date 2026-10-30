@@ -12,8 +12,9 @@ using Serilog;
 //   login      signs in to Dynamics (device code, with your passkey); the service does the sign-in, not this program
 //   status     what the monitor knows, what it has queued, the latest events
 //   dry-run    tries the rules on today's tickets, as if each had just been created (read only)
+//   channels | channels-template | channels-import <file> | test <channel>    the outside channels (e-mail, Teams, SMS, WhatsApp)
 //   install | uninstall | start | stop    manage the Windows service (administrator needed)
-var command = ParseCommand(args);
+var (command, argument) = ParseCommand(args);
 var dataIndex = Array.IndexOf(args, "--data");
 if (dataIndex >= 0 && dataIndex + 1 < args.Length)
 {
@@ -25,8 +26,8 @@ Console.OutputEncoding = Encoding.UTF8;
 
 switch (command)
 {
-    case "login" or "status" or "dry-run":
-        return await Cli.RunAsync(command);
+    case "login" or "status" or "dry-run" or "channels" or "channels-import" or "channels-template" or "test":
+        return await Cli.RunAsync(command, argument: argument);
 
     case "install":
     {
@@ -47,7 +48,7 @@ switch (command)
         break;
 
     default:
-        Console.WriteLine("Comandi: run | login | status | dry-run | install | uninstall | start | stop   (opzione: --data <cartella>)");
+        Console.WriteLine("Comandi: run | login | status | dry-run | channels | channels-template | channels-import <file> | test <canale> | install | uninstall | start | stop   (opzione: --data <cartella>)");
         return 1;
 }
 
@@ -78,8 +79,9 @@ builder.Services.AddHostedService<PipeHostedService>();
 await builder.Build().RunAsync();
 return 0;
 
-static string ParseCommand(string[] args)
+static (string Command, string? Argument) ParseCommand(string[] args)
 {
+    string? command = null;
     for (var i = 0; i < args.Length; i++)
     {
         if (args[i] == "--data")
@@ -88,9 +90,16 @@ static string ParseCommand(string[] args)
         }
         else if (!args[i].StartsWith("--"))
         {
-            return args[i];
+            if (command is null)
+            {
+                command = args[i];
+            }
+            else
+            {
+                return (command, args[i]);
+            }
         }
     }
 
-    return "run";
+    return (command ?? "run", null);
 }

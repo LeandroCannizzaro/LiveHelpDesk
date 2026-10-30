@@ -40,7 +40,8 @@ public static class DefaultRules
                     Field = "subtype",
                     Op = "in",
                     Value = new System.Text.Json.Nodes.JsonArray(
-                        "AuthExpired", "AccessDenied", "DynamicsUnreachable", "PollingError", "GapDetected", "Recovered"),
+                        "AuthExpired", "AccessDenied", "DynamicsUnreachable", "PollingError", "GapDetected", "Recovered",
+                        "ChannelFailing", "ChannelRecovered"),
                 },
                 Actions = new RuleActions { Channels = ["toast", "overlay"], Severity = Severity.Critical },
             },

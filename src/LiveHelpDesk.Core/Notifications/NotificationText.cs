@@ -88,6 +88,8 @@ public static class NotificationText
                 "PollingError" => "LiveHelpDesk: errore nel monitoraggio",
                 "GapDetected" => "LiveHelpDesk: possibili eventi persi",
                 "Recovered" => "LiveHelpDesk: monitoraggio ripristinato",
+                "ChannelFailing" => "LiveHelpDesk: un canale di notifica non funziona",
+                "ChannelRecovered" => "LiveHelpDesk: canale di notifica ripristinato",
                 "BaselineCompleted" => "LiveHelpDesk: monitoraggio avviato",
                 _ => "LiveHelpDesk: stato del monitoraggio",
             },

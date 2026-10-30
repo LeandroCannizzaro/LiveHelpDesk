@@ -63,7 +63,7 @@ public sealed class PollingEngineTests : IDisposable
     public PollingEngineTests()
     {
         var mapping = TicketMapping.Qgs;
-        var planner = new NotificationPlanner(mapping, new ChannelPolicy(), id => new Uri($"https://crm.example/{id:D}"));
+        var planner = new NotificationPlanner(mapping, () => new ChannelPolicy(), id => new Uri($"https://crm.example/{id:D}"));
         _engine = new PollingEngine(
             _source, _store, _store, new TicketDetector(_store, mapping), planner, mapping, new PollingOptions(),
             () => _rules, () => T.Id(900), NullLogger.Instance);

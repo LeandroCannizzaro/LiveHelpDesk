@@ -15,7 +15,7 @@ Solo Windows (10/11). C# / .NET 10, Avalonia 12.
 | `src/LiveHelpDesk.Abstractions` | contratti: eventi, canali, notifiche |
 | `src/LiveHelpDesk.Core` | percorsi, chiavi di dedup (poi: stato, regole, IPC) |
 | `src/LiveHelpDesk.Dynamics` | accesso a Dataverse (opzioni, poi auth e client) |
-| `src/LiveHelpDesk.Channels` | canali di uscita (e-mail, Teams, WhatsApp, SMS) |
+| `src/LiveHelpDesk.Channels` | canali di uscita: e-mail (MailKit), Teams (webhook), SMS/WhatsApp (Twilio) |
 | `src/LiveHelpDesk.Ipc` | contratti, server e client della pipe servizio↔app |
 | `src/LiveHelpDesk.Service` | servizio Windows (Worker) |
 | `src/LiveHelpDesk.App` | app Avalonia con WebView |
@@ -39,6 +39,15 @@ dotnet run --project src/LiveHelpDesk.Service -- dry-run  # prova le regole sui 
 dotnet run --project src/LiveHelpDesk.Service -- status   # stato, coda, ultimi eventi
 ```
 
+Canali esterni (e-mail SMTP, Teams via webhook Workflows, SMS e WhatsApp via Twilio):
+
+```powershell
+LiveHelpDesk.Service channels-template > canali.json   # modello da compilare (poi cancellare il file: contiene segreti)
+LiveHelpDesk.Service channels-import canali.json        # il servizio cifra i segreti
+LiveHelpDesk.Service test email                         # messaggio di prova (anche: teams, sms, whatsapp)
+LiveHelpDesk.Service channels                           # stato di ogni canale
+```
+
 Installato come servizio (una volta, da amministratore): `LiveHelpDesk.Service install`.
 Opzione `--data <cartella>` per tenere i dati altrove (prove).
 
@@ -52,4 +61,4 @@ Gli eventi di navigazione (solo host e percorso) vanno in `%LocalAppData%\LiveHe
 
 ## Stato
 
-Fasi 1-3 (scheletro, nucleo, servizio) in corso; l'app mostra per ora solo Dynamics nella WebView. Repository privato.
+Fasi 1-4 (scheletro, nucleo, servizio, canali esterni) in corso; l'app mostra per ora solo Dynamics nella WebView. Repository privato.

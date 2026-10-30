@@ -91,7 +91,7 @@ public class NotificationPlannerTests
         {
             Channels = { ["sms"] = new ChannelSchedule { Windows = [new ChannelWindow { From = new TimeOnly(2, 0), To = new TimeOnly(2, 1) }] } },
         };
-        var planner = new NotificationPlanner(TicketMapping.Qgs, policy, _ => null);
+        var planner = new NotificationPlanner(TicketMapping.Qgs, () => policy, _ => null);
 
         var items = planner.Plan(Match(new RuleActions { Channels = ["toast", "sms"] }), new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero));
 
@@ -102,7 +102,7 @@ public class NotificationPlannerTests
     [Fact]
     public void DuplicateChannels_AreOnlyUsedOnce()
     {
-        var planner = new NotificationPlanner(TicketMapping.Qgs, new ChannelPolicy(), _ => null);
+        var planner = new NotificationPlanner(TicketMapping.Qgs, () => new ChannelPolicy(), _ => null);
 
         var items = planner.Plan(Match(new RuleActions { Channels = ["toast", "TOAST"] }), T.At(0));
 

@@ -246,15 +246,21 @@ public sealed class SqliteStateStore : ITicketStateStore, IOutbox, IDisposable
             ("$attempts", item.Attempts),
             ("$created", Format(item.CreatedAt))) == 1;
 
-    public IReadOnlyList<OutboxItem> Due(DateTimeOffset now, int max)
+    public IReadOnlyList<OutboxItem> Due(DateTimeOffset now, int max) => DueExcluding([], now, max);
+
+    public IReadOnlyList<OutboxItem> DueExcluding(IReadOnlyCollection<string> excludedChannels, DateTimeOffset now, int max)
     {
+        var excluded = excludedChannels.ToList();
+        var notIn = excluded.Count == 0
+            ? ""
+            : " AND channel NOT IN (" + string.Join(",", excluded.Select((_, i) => $"$c{i}")) + ")";
+        var args = new List<(string, object?)> { ("$now", Format(now)), ("$max", max) };
+        args.AddRange(excluded.Select((c, i) => ($"$c{i}", (object?)c)));
+
         using var cmd = Command(
-            """
-            SELECT id, event_key, rule_id, channel, json, not_before, requires_unacked, status, attempts, created_at
-            FROM outbox WHERE status = 'Pending' AND not_before <= $now ORDER BY id LIMIT $max;
-            """,
-            ("$now", Format(now)),
-            ("$max", max));
+            "SELECT id, event_key, rule_id, channel, json, not_before, requires_unacked, status, attempts, created_at " +
+            "FROM outbox WHERE status = 'Pending' AND not_before <= $now" + notIn + " ORDER BY id LIMIT $max;",
+            [.. args]);
         using var reader = cmd.ExecuteReader();
         var items = new List<OutboxItem>();
         while (reader.Read())
@@ -281,6 +287,13 @@ public sealed class SqliteStateStore : ITicketStateStore, IOutbox, IDisposable
             ("$id", id),
             ("$at", Format(at)));
 
+    public void MarkCancelled(long id, string reason, DateTimeOffset at) =>
+        Execute(
+            "UPDATE outbox SET status = 'Cancelled', last_error = $reason, updated_at = $at WHERE id = $id;",
+            ("$id", id),
+            ("$reason", reason),
+            ("$at", Format(at)));
+
     public void MarkFailed(long id, string error, DateTimeOffset nextAttempt, bool dead) =>
         Execute(
             "UPDATE outbox SET status = $status, attempts = attempts + 1, last_error = $error, not_before = $next, updated_at = $next WHERE id = $id;",
@@ -297,6 +310,19 @@ public sealed class SqliteStateStore : ITicketStateStore, IOutbox, IDisposable
         while (reader.Read())
         {
             counts[Enum.Parse<OutboxStatus>(reader.GetString(0))] = reader.GetInt32(1);
+        }
+
+        return counts;
+    }
+
+    public IReadOnlyDictionary<string, int> PendingByChannel()
+    {
+        using var cmd = Command("SELECT channel, COUNT(*) FROM outbox WHERE status = 'Pending' GROUP BY channel;");
+        using var reader = cmd.ExecuteReader();
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        while (reader.Read())
+        {
+            counts[reader.GetString(0)] = reader.GetInt32(1);
         }
 
         return counts;
