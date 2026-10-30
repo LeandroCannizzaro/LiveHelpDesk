@@ -10,8 +10,17 @@ public static class DedupKeys
 {
     public static string Created(Guid ticketId) => $"{ticketId:D}:Created";
 
-    public static string Message(Guid messageId) => $"{messageId:D}:MessageReceived";
+    public static string Message(Guid messageId, bool incoming) =>
+        $"{messageId:D}:{(incoming ? "MessageReceived" : "ReplySent")}";
 
     public static string StatusChanged(Guid ticketId, int from, int to, DateTimeOffset modifiedOn) =>
-        $"{ticketId:D}:StatusChanged:{from}->{to}:{modifiedOn.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture)}";
+        Change(ticketId, "StatusChanged", from.ToString(CultureInfo.InvariantCulture), to.ToString(CultureInfo.InvariantCulture), modifiedOn);
+
+    /// <summary>Generic transition key: the same ticket moving between the same two values at the same time.</summary>
+    public static string Change(Guid ticketId, string kind, string from, string to, DateTimeOffset at) =>
+        $"{ticketId:D}:{kind}:{from}->{to}:{at.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture)}";
+
+    /// <summary>One "unattended" episode: it starts when the customer last wrote and ends with a reply.</summary>
+    public static string Unattended(Guid ticketId, DateTimeOffset attentionSince) =>
+        $"{ticketId:D}:Unattended:{attentionSince.UtcTicks}";
 }
