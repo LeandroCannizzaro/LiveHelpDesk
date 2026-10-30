@@ -1,77 +1,124 @@
-using LiveHelpDesk.Core;
-using LiveHelpDesk.Core.Outbox;
-using LiveHelpDesk.Core.Rules;
-using LiveHelpDesk.Core.Sources;
-using Microsoft.Extensions.Logging;
+using LiveHelpDesk.Ipc;
 
 namespace LiveHelpDesk.Service;
 
-/// <summary>Command line helpers for the interim period before the app can drive the service.</summary>
+/// <summary>
+/// Command line front end. It talks to the running service exactly as the desktop app does, so what works
+/// here is what the app will get.
+/// </summary>
 public static class Cli
 {
-    public static async Task<int> LoginAsync(Pipeline pipeline)
+    public static async Task<int> RunAsync(string command, Func<string, TimeSpan, Task<IpcConnection?>>? connect = null)
     {
-        Console.WriteLine($"Accesso a {pipeline.Settings.Org} (tenant {pipeline.Settings.TenantId})");
-        var user = await pipeline.Tokens.LoginWithDeviceCodeAsync(
-            message =>
-            {
-                Console.WriteLine();
-                Console.WriteLine(message);
-                return Task.CompletedTask;
-            },
-            CancellationToken.None);
+        connect ??= (pipe, timeout) => IpcClient.TryConnectAsync(pipe, timeout, CancellationToken.None);
+        await using var connection = await connect(IpcProtocol.PipeName, TimeSpan.FromSeconds(2));
+        if (connection is null)
+        {
+            Console.Error.WriteLine("Il servizio LiveHelpDesk non risponde.");
+            Console.Error.WriteLine("Avviarlo (servizio installato: \"LiveHelpDesk.Service start\") oppure, per provare, in un'altra finestra: \"LiveHelpDesk.Service run\".");
+            return 3;
+        }
 
-        await pipeline.EnsureMeAsync(CancellationToken.None);
-        Console.WriteLine($"Accesso riuscito come {user} (utente Dynamics {pipeline.Me}).");
+        try
+        {
+            return command switch
+            {
+                "login" => await LoginAsync(connection.Api),
+                "status" => await StatusAsync(connection.Api),
+                _ => await DryRunAsync(connection.Api),
+            };
+        }
+        catch (Exception ex) when (ex is StreamJsonRpc.RemoteInvocationException or StreamJsonRpc.ConnectionLostException)
+        {
+            Console.Error.WriteLine($"Errore: {ex.Message}");
+            return 2;
+        }
+    }
+
+    private static async Task<int> LoginAsync(ILiveHelpDeskApi api)
+    {
+        var status = await api.GetStatusAsync();
+        if (status.State is ProfileState.Running or ProfileState.Starting or ProfileState.Degraded)
+        {
+            Console.WriteLine($"Già collegato come {status.UserName}. Per cambiare account serve rimuovere l'accesso dal profilo.");
+            return 0;
+        }
+
+        var challenge = await api.StartLoginAsync();
+        Console.WriteLine();
+        Console.WriteLine(challenge.Message);
+        Console.WriteLine();
+        Console.WriteLine("In attesa dell'accesso (il codice scade alle " + challenge.ExpiresAt.ToLocalTime().ToString("t") + ")...");
+
+        while (DateTimeOffset.UtcNow < challenge.ExpiresAt)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            status = await api.GetStatusAsync();
+            if (status.State != ProfileState.LoggingIn)
+            {
+                break;
+            }
+        }
+
+        if (status.State == ProfileState.LoggingIn || status.State == ProfileState.NeedsLogin)
+        {
+            Console.Error.WriteLine($"Accesso non completato. {status.LastError}");
+            return 4;
+        }
+
+        Console.WriteLine($"Accesso riuscito come {status.UserName}.");
         return 0;
     }
 
-    public static Task<int> StatusAsync(Pipeline pipeline)
+    private static async Task<int> StatusAsync(ILiveHelpDeskApi api)
     {
-        var store = pipeline.Store;
-        Console.WriteLine($"Profilo:        {pipeline.ProfileDirectory}");
-        Console.WriteLine($"Baseline:       {store.BaselineAt?.ToLocalTime().ToString("g") ?? "non ancora eseguita"}");
-        Console.WriteLine($"Ticket attivi:  {store.TicketsInState(pipeline.Mapping.ActiveState).Count}");
-        Console.WriteLine($"Watermark:      ticket {store.GetValue("wm.incident") ?? "-"} · messaggi {store.GetValue("wm.message") ?? "-"}");
-        Console.WriteLine($"Regole attive:  {pipeline.Rules.Current.Count(r => r.Enabled)} di {pipeline.Rules.Current.Count}");
-
-        var counts = pipeline.Store.Counts();
-        Console.WriteLine("Coda notifiche: " + string.Join(", ", Enum.GetValues<OutboxStatus>().Select(s => $"{s}={counts.GetValueOrDefault(s)}")));
+        var status = await api.GetStatusAsync();
+        Console.WriteLine($"Servizio:       versione {status.ServiceVersion}, protocollo {status.ProtocolVersion}");
+        Console.WriteLine($"Stato:          {Describe(status.State)}{(status.UserName is null ? "" : $" ({status.UserName})")}");
+        Console.WriteLine($"Baseline:       {status.BaselineAt?.ToLocalTime().ToString("g") ?? "non ancora eseguita"}");
+        Console.WriteLine($"Ultimo giro:    {status.LastPollAt?.ToLocalTime().ToString("g") ?? "-"}");
+        Console.WriteLine($"Ticket attivi:  {status.ActiveTickets}");
+        Console.WriteLine($"In coda:        {status.PendingNotifications} notifiche");
+        if (status.LastError is not null)
+        {
+            Console.WriteLine($"Ultimo errore:  {status.LastError}");
+        }
 
         Console.WriteLine();
         Console.WriteLine("Ultimi eventi:");
-        foreach (var evt in store.RecentEvents(15))
+        foreach (var evt in await api.GetRecentEventsAsync(15))
         {
             Console.WriteLine($"  {evt.OccurredAt.ToLocalTime():g}  {evt.Type,-22} {evt.Subtype,-14} {evt.TicketNumber}  {Trim(evt.Title)}");
         }
 
-        return Task.FromResult(0);
+        return 0;
     }
 
-    /// <summary>Tries the rules on today's tickets as if each had just been created. Reads Dynamics, changes nothing.</summary>
-    public static async Task<int> DryRunAsync(Pipeline pipeline)
+    private static async Task<int> DryRunAsync(ILiveHelpDeskApi api)
     {
-        await pipeline.EnsureMeAsync(CancellationToken.None);
-        var tickets = await pipeline.Source.GetActiveTicketsAsync(CancellationToken.None);
-        var context = new EvaluationContext(DateTimeOffset.UtcNow, pipeline.Mapping, pipeline.Me);
-        var report = RuleEngine.DryRun(pipeline.Rules.Current, RuleEngine.AsNewTicketEvents(tickets), context);
-
-        Console.WriteLine($"{report.EventsEvaluated} ticket attivi valutati come \"nuovo ticket\".");
-        foreach (var (rule, count) in report.MatchesByRule)
+        var result = await api.DryRunRulesAsync();
+        Console.WriteLine($"{result.TicketsEvaluated} ticket attivi valutati come \"nuovo ticket\".");
+        foreach (var rule in result.Rules)
         {
-            Console.WriteLine($"  regola {rule}: {count} corrispondenze");
+            Console.WriteLine($"  {rule.RuleId,-20} {rule.Matches,4} corrispondenze  ({rule.RuleName})");
         }
 
-        foreach (var match in report.Matches.Take(10))
+        foreach (var example in result.Examples.Take(10))
         {
-            Console.WriteLine($"    #{match.Event.TicketNumber}  {Trim(match.Event.Title)}  → {match.Rule.Id}");
+            Console.WriteLine($"    #{example.TicketNumber}  {Trim(example.Title)}  → {example.RuleId}");
         }
 
         return 0;
     }
 
-    public static ILoggerFactory ConsoleLogger() =>
-        LoggerFactory.Create(b => b.AddSimpleConsole(o => o.SingleLine = true).SetMinimumLevel(LogLevel.Information));
+    private static string Describe(ProfileState state) => state switch
+    {
+        ProfileState.NeedsLogin => "serve il login",
+        ProfileState.LoggingIn => "login in corso",
+        ProfileState.Starting => "avvio (baseline)",
+        ProfileState.Running => "in funzione",
+        _ => "in difficoltà (ultimi controlli falliti)",
+    };
 
     private static string Trim(string? text) => text is { Length: > 50 } ? text[..50] + "…" : text ?? "";
 }

@@ -21,6 +21,7 @@
     <ProjectReference Include="..\LiveHelpDesk.Core\LiveHelpDesk.Core.csproj" />
     <ProjectReference Include="..\LiveHelpDesk.Dynamics\LiveHelpDesk.Dynamics.csproj" />
     <ProjectReference Include="..\LiveHelpDesk.Channels\LiveHelpDesk.Channels.csproj" />
+    <ProjectReference Include="..\LiveHelpDesk.Ipc\LiveHelpDesk.Ipc.csproj" />
   </ItemGroup>
 
 </Project>

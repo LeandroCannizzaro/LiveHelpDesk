@@ -15,6 +15,9 @@ public sealed class ServiceSettings
 
     public string TenantId { get; set; } = "e40359a3-6fe2-46f4-b190-a1f4f644834d";
 
+    /// <summary>Explicit proxy (e.g. http://proxy.corp:8080); empty uses the system one with the machine's credentials.</summary>
+    public string? Proxy { get; set; }
+
     public int PollSeconds { get; set; } = 30;
 
     public int OverlapMinutes { get; set; } = 2;

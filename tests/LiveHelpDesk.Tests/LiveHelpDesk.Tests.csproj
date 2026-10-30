@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
@@ -16,6 +17,8 @@
     <ProjectReference Include="..\..\src\LiveHelpDesk.Abstractions\LiveHelpDesk.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\LiveHelpDesk.Core\LiveHelpDesk.Core.csproj" />
     <ProjectReference Include="..\..\src\LiveHelpDesk.Dynamics\LiveHelpDesk.Dynamics.csproj" />
+    <ProjectReference Include="..\..\src\LiveHelpDesk.Ipc\LiveHelpDesk.Ipc.csproj" />
+    <ProjectReference Include="..\..\src\LiveHelpDesk.Service\LiveHelpDesk.Service.csproj" />
   </ItemGroup>
 
 </Project>

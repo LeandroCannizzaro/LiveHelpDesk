@@ -65,11 +65,16 @@ public sealed class MsalTokenProvider : ITokenProvider
         }
     }
 
+    public async Task<string?> AccountNameAsync() => (await _app.GetAccountsAsync()).FirstOrDefault()?.Username;
+
     /// <summary>Device code sign-in: the user opens a page and types a short code (works with passkeys / Windows Hello).</summary>
-    public async Task<string> LoginWithDeviceCodeAsync(Func<string, Task> showInstructions, CancellationToken cancellationToken)
+    public async Task<string> LoginWithDeviceCodeAsync(Func<DeviceCodeInfo, Task> show, CancellationToken cancellationToken)
     {
-        var result = await _app.AcquireTokenWithDeviceCode(_scopes, code => showInstructions(code.Message))
+        var result = await _app
+            .AcquireTokenWithDeviceCode(_scopes, code => show(new DeviceCodeInfo(code.UserCode, code.VerificationUrl, code.ExpiresOn, code.Message)))
             .ExecuteAsync(cancellationToken);
         return result.Account.Username;
     }
 }
+
+public sealed record DeviceCodeInfo(string UserCode, string VerificationUrl, DateTimeOffset ExpiresOn, string Message);

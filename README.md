@@ -16,6 +16,7 @@ Solo Windows (10/11). C# / .NET 10, Avalonia 12.
 | `src/LiveHelpDesk.Core` | percorsi, chiavi di dedup (poi: stato, regole, IPC) |
 | `src/LiveHelpDesk.Dynamics` | accesso a Dataverse (opzioni, poi auth e client) |
 | `src/LiveHelpDesk.Channels` | canali di uscita (e-mail, Teams, WhatsApp, SMS) |
+| `src/LiveHelpDesk.Ipc` | contratti, server e client della pipe servizio↔app |
 | `src/LiveHelpDesk.Service` | servizio Windows (Worker) |
 | `src/LiveHelpDesk.App` | app Avalonia con WebView |
 | `tests/LiveHelpDesk.Tests` | test unitari |
@@ -29,12 +30,26 @@ dotnet test tests/LiveHelpDesk.Tests
 dotnet run --project src/LiveHelpDesk.App
 ```
 
+Il servizio si prova da una finestra normale (non serve essere amministratori):
+
+```powershell
+dotnet run --project src/LiveHelpDesk.Service -- run      # il monitor (restare aperta)
+dotnet run --project src/LiveHelpDesk.Service -- login    # un'altra finestra: codice, poi Windows Hello
+dotnet run --project src/LiveHelpDesk.Service -- dry-run  # prova le regole sui ticket di oggi (sola lettura)
+dotnet run --project src/LiveHelpDesk.Service -- status   # stato, coda, ultimi eventi
+```
+
+Installato come servizio (una volta, da amministratore): `LiveHelpDesk.Service install`.
+Opzione `--data <cartella>` per tenere i dati altrove (prove).
+
 Requisiti: .NET 10 SDK e il WebView2 Runtime (già presente in Windows 11 e con Office/Edge).
 
-L'app salva il profilo della WebView in `%LocalAppData%\LiveHelpDesk\webview`, così l'accesso a Dynamics resta
-valido tra un avvio e l'altro. Opzione di prova: `--exit-after <secondi>` chiude la finestra da sola.
+L'app tiene il profilo della WebView in `%LocalAppData%\LiveHelpDesk\webview`. Con l'accesso tramite passkey
+(Windows Hello) Entra non emette cookie persistenti: la WebView chiede di nuovo l'accesso a ogni riavvio dell'app,
+per questo l'app resterà residente nell'area di notifica. Il monitoraggio non ne dipende (usa il token del servizio).
+Opzione di prova: `--exit-after <secondi>` chiude la finestra da sola.
 Gli eventi di navigazione (solo host e percorso) vanno in `%LocalAppData%\LiveHelpDesk\logs\webview-spike.log`.
 
 ## Stato
 
-Fase 1 (scheletro e spike WebView) in corso. Repository privato.
+Fasi 1-3 (scheletro, nucleo, servizio) in corso; l'app mostra per ora solo Dynamics nella WebView. Repository privato.

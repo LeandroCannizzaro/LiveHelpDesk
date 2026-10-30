@@ -4,6 +4,7 @@
     <Project Path="src/LiveHelpDesk.Core/LiveHelpDesk.Core.csproj" />
     <Project Path="src/LiveHelpDesk.Dynamics/LiveHelpDesk.Dynamics.csproj" />
     <Project Path="src/LiveHelpDesk.Channels/LiveHelpDesk.Channels.csproj" />
+    <Project Path="src/LiveHelpDesk.Ipc/LiveHelpDesk.Ipc.csproj" />
     <Project Path="src/LiveHelpDesk.Service/LiveHelpDesk.Service.csproj" />
     <Project Path="src/LiveHelpDesk.App/LiveHelpDesk.App.csproj" />
   </Folder>

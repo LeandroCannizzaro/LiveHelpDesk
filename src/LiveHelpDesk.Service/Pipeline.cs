@@ -51,7 +51,13 @@ public sealed class Pipeline : IDisposable
         var rules = new RulesProvider(Path.Combine(profileDirectory, "rules.json"), loggers.CreateLogger<RulesProvider>());
 
         // Behind a corporate proxy the service has no user settings: use the system proxy with default credentials.
-        var http = new HttpClient(new SocketsHttpHandler { UseProxy = true, DefaultProxyCredentials = CredentialCache.DefaultCredentials })
+        var handler = new SocketsHttpHandler { UseProxy = true, DefaultProxyCredentials = CredentialCache.DefaultCredentials };
+        if (!string.IsNullOrWhiteSpace(settings.Proxy))
+        {
+            handler.Proxy = new WebProxy(settings.Proxy) { Credentials = CredentialCache.DefaultCredentials };
+        }
+
+        var http = new HttpClient(handler)
         {
             BaseAddress = options.ApiBase,
         };
