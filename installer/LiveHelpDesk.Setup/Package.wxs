@@ -1,0 +1,63 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <!--
+    One linear, unsigned, per-machine package: no questions, everything goes to Program Files\LiveHelpDesk.
+    The Windows service is NOT registered here: the app does it itself (UAC) when the user asks, from service\LiveHelpDesk.Service.exe.
+    Program Files is also what lets the service's virtual account read its own executable.
+    Data (ProgramData, LocalAppData) is never touched, uninstall included.
+  -->
+  <Package Name="LiveHelpDesk"
+           Manufacturer="Leandro Cannizzaro"
+           Version="$(ProductVersion)"
+           UpgradeCode="64B87162-0606-4132-A02C-5198E274A321"
+           Language="1040"
+           Scope="perMachine"
+           InstallerVersion="500">
+
+    <SummaryInformation Description="LiveHelpDesk: controlla i ticket di assistenza su Dynamics 365 e invia le notifiche." />
+
+    <MajorUpgrade DowngradeErrorMessage="È già installata una versione più recente di LiveHelpDesk." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- Asks the running app to close (a message, never a kill) so its files can be replaced. -->
+    <util:CloseApplication Id="CloseApp" Target="LiveHelpDesk.exe" CloseMessage="yes" RebootPrompt="no" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="LiveHelpDesk" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="LiveHelpDesk" Level="1" AllowAbsent="no">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="AppExe" />
+      <ComponentRef Id="ServiceControl" />
+    </Feature>
+
+    <!-- The app and the service folder (service\), exactly as published. LiveHelpDesk.exe is separate: it carries the shortcut. -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(AppSource)\**">
+        <Exclude Files="$(AppSource)\LiveHelpDesk.exe" />
+      </Files>
+    </ComponentGroup>
+
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="AppExe">
+        <File Id="AppExe" Source="$(AppSource)\LiveHelpDesk.exe">
+          <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="LiveHelpDesk" WorkingDirectory="INSTALLFOLDER" Advertise="no" />
+        </File>
+      </Component>
+
+      <!-- If the app registered the Windows service, stop it before its files are replaced or removed, and remove it on uninstall. -->
+      <Component Id="ServiceControl">
+        <RegistryValue Root="HKLM" Key="Software\LiveHelpDesk" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+        <ServiceControl Id="StopService" Name="LiveHelpDesk" Stop="both" Remove="uninstall" Wait="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- After an upgrade, bring the service back if there is one (on a first install there is none: the failure is harmless). -->
+    <CustomAction Id="StartServiceIfPresent" Directory="INSTALLFOLDER" ExeCommand="&quot;[System64Folder]sc.exe&quot; start LiveHelpDesk" Execute="deferred" Impersonate="no" Return="ignore" />
+    <InstallExecuteSequence>
+      <Custom Action="StartServiceIfPresent" Before="InstallFinalize" Condition="NOT REMOVE" />
+    </InstallExecuteSequence>
+
+  </Package>
+</Wix>

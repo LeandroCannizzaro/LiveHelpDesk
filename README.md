@@ -101,6 +101,22 @@ per questo l'app resterà residente nell'area di notifica. Il monitoraggio non n
 Opzione di prova: `--exit-after <secondi>` chiude la finestra da sola.
 Gli eventi di navigazione (solo host e percorso) vanno in `%LocalAppData%\LiveHelpDesk\logs\webview-spike.log`.
 
+## Installazione da una share di rete
+
+Non è firmato: se i file vengono copiati da una share interna (senza "Mark of the Web") SmartScreen non interviene.
+
+Dalla share, per l'utente corrente (senza amministratore):
+
+```
+install.cmd                                  # %LocalAppData%\Programs\LiveHelpDesk
+install.cmd -Autostart                       # + avvio con Windows
+install.cmd -AllUsers                        # %ProgramFiles%\LiveHelpDesk (amministratore)
+install.cmd -AllUsers -InstallService        # + servizio Windows (amministratore)
+uninstall.cmd [-AllUsers] [-RemoveData]      # conserva i dati salvo -RemoveData
+```
+
+Lo script avvisa se manca WebView2 Runtime, chiude app e servizio prima di aggiornare e non tocca mai i dati né `config.json`.
+
 ## Stato
 
-Fasi 1-5 (scheletro, nucleo, servizio, canali esterni, app) in corso; mancano l'editor delle regole e dei canali nell'app e l'installer. Repository privato.
+Fasi 1-5 (scheletro, nucleo, servizio, canali esterni, app) in corso; mancano l'editor delle regole e dei canali nell'app e l'installer MSI (per ora gli script in `installer\`). Repository privato.

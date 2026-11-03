@@ -1,0 +1,17 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <PropertyGroup>
+    <OutputName>LiveHelpDesk</OutputName>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <Cultures>it-IT</Cultures>
+    <!-- Both come from installer\build-msi.ps1: the published app folder and a numeric MSI version. -->
+    <AppSource Condition="'$(AppSource)' == ''">$(MSBuildThisFileDirectory)..\..\artifacts\package\app</AppSource>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">0.1.0</ProductVersion>
+    <DefineConstants>$(DefineConstants);AppSource=$(AppSource);ProductVersion=$(ProductVersion)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+</Project>
