@@ -36,7 +36,7 @@
 
   <Target Name="CopyServiceNextToApp" AfterTargets="Build">
     <ItemGroup>
-      <ServiceOutput Include="..\LiveHelpDesk.Service\bin\$(Configuration)\net10.0-windows\**\*" Exclude="**\*.pdb" />
+      <ServiceOutput Include="..\LiveHelpDesk.Service\bin\$(Configuration)\net10.0\**\*" Exclude="**\*.pdb" />
     </ItemGroup>
     <Copy SourceFiles="@(ServiceOutput)" DestinationFiles="@(ServiceOutput->'$(OutDir)service\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
