@@ -6,6 +6,7 @@ using LiveHelpDesk.Core.Outbox;
 using LiveHelpDesk.Core.Rules;
 using LiveHelpDesk.Core.Sources;
 using LiveHelpDesk.Core.State;
+using LiveHelpDesk.Dynamics;
 using LiveHelpDesk.Ipc;
 using Microsoft.Extensions.Logging;
 
@@ -29,10 +30,12 @@ public sealed class ProfileHost : IProfile
     private readonly SemaphoreSlim _wake = new(0, 1);
     private readonly CancellationTokenSource _stopping = new();
     private readonly LoginCoordinator _login;
+    private readonly LoginCoordinator _mailLogin;
     private readonly SqliteStateStore _dispatchStore; // the delivery loop's own connection
     private readonly OutboxDispatcher _dispatcher;
     private readonly SemaphoreSlim _dispatchWake = new(0, 1);
     private readonly ConcurrentQueue<TicketEvent> _channelHealth = new();
+    private readonly ConcurrentDictionary<Guid, LookupItem> _names = new();
 
     private string? _userName;
     private int _failures;
@@ -48,10 +51,14 @@ public sealed class ProfileHost : IProfile
         _api = new SqliteStateStore(Path.Combine(pipeline.ProfileDirectory, "state.db"));
         _dispatchStore = new SqliteStateStore(Path.Combine(pipeline.ProfileDirectory, "state.db"));
         _dispatcher = new OutboxDispatcher(
-            _dispatchStore, _dispatchStore, id => pipeline.Channels.Get(id), new DispatcherOptions(), logger,
+            _dispatchStore, _dispatchStore, id => pipeline.Channels.GetForDelivery(id), new DispatcherOptions(), logger,
             channel => pipeline.ChannelStore.Current.MaxPerHour.GetValueOrDefault(channel, 20));
         _login = new LoginCoordinator(
             (show, ct) => pipeline.Tokens.LoginWithDeviceCodeAsync(show, ct), OnSignedInAsync, logger, _stopping.Token);
+        _mailLogin = new LoginCoordinator(
+            (show, ct) => pipeline.Outlook.LoginWithDeviceCodeAsync(
+                info => show(new DeviceCodeInfo(info.UserCode, info.VerificationUrl, info.ExpiresOn, info.Message)), ct),
+            OnMailSignedInAsync, logger, _stopping.Token);
     }
 
     public event EventHandler<ChangedEventArgs>? Changed;
@@ -158,18 +165,116 @@ public sealed class ProfileHost : IProfile
         return challenge;
     }
 
-    public async Task<DryRunResult> DryRunRulesAsync()
+    public async Task<LoginChallenge> StartMailLoginAsync()
+    {
+        var challenge = await _mailLogin.StartAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        Raise(ChangeKind.Status);
+        return challenge;
+    }
+
+    public async Task<MailAccountInfo> GetMailAccountAsync()
+    {
+        string? account = null;
+        try
+        {
+            account = await _pipeline.Outlook.AccountNameAsync(_stopping.Token);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning("Could not read the Outlook account: {Message}", ex.Message);
+        }
+
+        return new MailAccountInfo(account, _mailLogin.InProgress, _mailLogin.LastError);
+    }
+
+    public async Task SignOutMailAsync()
+    {
+        await _pipeline.Outlook.SignOutAsync();
+        _logger.LogInformation("Signed out of Outlook");
+        Raise(ChangeKind.Status);
+    }
+
+    private Task OnMailSignedInAsync(string user)
+    {
+        Raise(ChangeKind.Status);
+        WakeDelivery(); // messages held back for the missing sign-in may be sendable now
+        return Task.CompletedTask;
+    }
+
+    public Task<DryRunResult> DryRunRulesAsync() => DryRunAsync(_pipeline.Rules.Current);
+
+    public Task<DryRunResult> DryRunDraftAsync(string rulesJson)
+    {
+        var parsed = RulesConfig.Parse(rulesJson);
+        if (!parsed.IsValid)
+        {
+            throw new ArgumentException(string.Join(" ", parsed.Errors));
+        }
+
+        return DryRunAsync(parsed.File!.Rules);
+    }
+
+    public Task<string> GetRulesJsonAsync() => Task.FromResult(_pipeline.Rules.ReadJson());
+
+    public Task<RulesSaveResult> SaveRulesJsonAsync(string json)
+    {
+        var result = _pipeline.Rules.Replace(json);
+        if (result.IsValid)
+        {
+            _logger.LogInformation("Rules replaced from the app ({Count} rules)", result.File!.Rules.Count);
+            Raise(ChangeKind.Status);
+        }
+
+        return Task.FromResult(new RulesSaveResult(result.IsValid, result.Errors));
+    }
+
+    public async Task<IReadOnlyList<LookupItem>> GetLookupsAsync()
+    {
+        IReadOnlyList<TicketSnapshot> active;
+        lock (_apiGate)
+        {
+            active = _api.TicketsInState(_pipeline.Mapping.ActiveState);
+        }
+
+        var wanted = active
+            .SelectMany(t => new[] { t.OwnerId, t.QueueId, t.Level2UserId })
+            .OfType<Guid>()
+            .Distinct()
+            .ToList();
+
+        var missing = wanted.Where(id => !_names.ContainsKey(id)).ToList();
+        if (missing.Count > 0)
+        {
+            try
+            {
+                foreach (var (id, name, kind) in await _pipeline.Source.ResolveNamesAsync(missing, _stopping.Token))
+                {
+                    _names[id] = new LookupItem(id.ToString("D"), name, kind);
+                }
+            }
+            catch (TicketSourceException ex)
+            {
+                _logger.LogWarning("Could not look up names: {Message}", ex.Message);
+            }
+        }
+
+        return [.. wanted.Where(_names.ContainsKey).Select(id => _names[id]).OrderBy(i => i.Name, StringComparer.CurrentCultureIgnoreCase)];
+    }
+
+    private async Task<DryRunResult> DryRunAsync(IReadOnlyList<Rule> rules)
     {
         await _pipeline.EnsureMeAsync(_stopping.Token);
         var tickets = await _pipeline.Source.GetActiveTicketsAsync(_stopping.Token);
-        var rules = _pipeline.Rules.Current;
         var context = new EvaluationContext(DateTimeOffset.UtcNow, _pipeline.Mapping, _pipeline.Me);
         var report = RuleEngine.DryRun(rules, RuleEngine.AsNewTicketEvents(tickets), context);
 
         return new DryRunResult(
             report.EventsEvaluated,
             [.. rules.Select(r => new RuleHitCount(r.Id, r.Name, report.MatchesByRule.GetValueOrDefault(r.Id)))],
-            [.. report.Matches.Take(20).Select(m => new DryRunTicket(m.Event.TicketNumber ?? "-", m.Event.Title, m.Rule.Id))]);
+            [.. report.Matches
+                .GroupBy(m => m.Rule.Id)
+                .SelectMany(g => g.Take(5))
+                .Select(m => new DryRunTicket(m.Event.TicketNumber ?? "-", m.Event.Title, m.Rule.Id))]);
     }
 
     public Task<ChannelSettings> GetChannelSettingsAsync() =>
@@ -203,13 +308,14 @@ public sealed class ProfileHost : IProfile
         }.Select(channel =>
         {
             live.TryGetValue(channel.Item1, out var status);
+            var held = channel.Item1 == "email" && channel.Item2 && _pipeline.Channels.IsHeldForSignIn();
             return new ChannelInfo(
                 channel.Item1,
                 channel.Item2,
                 (status?.Breaker ?? BreakerState.Closed).ToString(),
                 status?.LastSuccess,
                 status?.LastFailure,
-                status?.LastError,
+                held ? "serve l'accesso a Outlook: i messaggi aspettano in coda" : status?.LastError,
                 status?.SentLastHour ?? 0,
                 pending.GetValueOrDefault(channel.Item1));
         }).ToList();

@@ -1,0 +1,179 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LiveHelpDesk.App.ViewModels"
+             xmlns:views="using:LiveHelpDesk.App.Views"
+             x:Class="LiveHelpDesk.App.Views.ChannelsView"
+             x:DataType="vm:ChannelsViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.card">
+      <Setter Property="Padding" Value="16" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Background" Value="#14808080" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Opacity" Value="0.85" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*" Margin="16">
+    <StackPanel Grid.Row="0" Spacing="8">
+      <TextBlock Text="Canali di notifica" FontSize="20" FontWeight="SemiBold" />
+      <TextBlock Classes="hint"
+                 Text="Dove arrivano gli avvisi quando non sei davanti allo schermo. Le finestrelle sul desktop non servono qui: funzionano da sole. Password e token vengono cifrati dal servizio e non sono mai mostrati." />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Salva" Command="{Binding SaveCommand}" IsEnabled="{Binding IsLoaded}" Classes="accent" />
+        <Button Content="Annulla le modifiche" Command="{Binding DiscardCommand}" IsEnabled="{Binding IsDirty}" />
+        <TextBlock Text="Ci sono modifiche non salvate." Foreground="#D97706" VerticalAlignment="Center" IsVisible="{Binding IsDirty}" />
+      </StackPanel>
+      <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Opacity="0.85"
+                 IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+
+    <ScrollViewer Grid.Row="1" Margin="0,10,0,0" IsVisible="{Binding IsLoaded}">
+      <StackPanel Spacing="14" MaxWidth="820" HorizontalAlignment="Left" Margin="0,0,12,24">
+
+        <!-- E-mail -->
+        <Border Classes="card" DataContext="{Binding Email}" x:DataType="vm:EmailEditor">
+          <StackPanel Spacing="8">
+            <CheckBox Content="{Binding Title}" IsChecked="{Binding Enabled}" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="6" IsEnabled="{Binding Enabled}">
+              <TextBlock Classes="label" Grid.Row="0" Text="Come inviare" />
+              <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{x:Static vm:EmailEditor.Providers}" SelectedItem="{Binding Provider}" HorizontalAlignment="Stretch" />
+              <TextBlock Classes="label" Grid.Row="1" Text="Destinatari" />
+              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding To}" AcceptsReturn="True" MinHeight="56"
+                       PlaceholderText="uno per riga (con Outlook, vuoto = scrivi a te stesso)" />
+            </Grid>
+
+            <!-- Outlook / Microsoft 365 -->
+            <StackPanel Spacing="8" IsVisible="{Binding IsOutlook}" IsEnabled="{Binding Enabled}">
+              <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6" DataContext="{Binding Session}" x:DataType="vm:OutlookSession">
+                <TextBlock Classes="label" Grid.Row="0" Text="Account Outlook" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="{Binding Account}" FontWeight="SemiBold" VerticalAlignment="Center" IsVisible="{Binding IsSignedIn}" />
+                  <TextBlock Text="non collegato" Opacity="0.7" VerticalAlignment="Center" IsVisible="{Binding !IsSignedIn}" />
+                  <Button Content="Accedi a Outlook" Command="{Binding SignInCommand}" IsVisible="{Binding ShowSignIn}" />
+                  <Button Content="Esci" Command="{Binding SignOutCommand}" IsVisible="{Binding IsSignedIn}" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6" IsVisible="{Binding LoginPending}">
+                  <TextBlock Text="{Binding LoginCode}" FontSize="26" FontWeight="Bold" FontFamily="Consolas" />
+                  <TextBlock Text="{Binding LoginHelp}" TextWrapping="Wrap" Opacity="0.85" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Copia il codice" Command="{Binding CopyCodeCommand}" />
+                    <Button Content="Apri la pagina" Command="{Binding OpenPageCommand}" />
+                  </StackPanel>
+                </StackPanel>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Message}" TextWrapping="Wrap" Opacity="0.85"
+                           IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </Grid>
+              <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6">
+                <TextBlock Classes="label" Grid.Row="0" Text="Tenant" />
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TenantId}" PlaceholderText="(vuoto = lo stesso dell'accesso a Dynamics)" />
+                <TextBlock Classes="label" Grid.Row="1" Text="ID applicazione" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ClientId}" PlaceholderText="(vuoto = Microsoft Graph Command Line Tools)" />
+                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding SaveToSentItems}" Content="Tieni una copia in «Posta inviata»" />
+                <TextBlock Classes="hint" Grid.Row="3" Grid.Column="1"
+                           Text="Le e-mail partono dal tuo account (permesso Mail.Send). Nessuna password viene salvata. Se l'amministratore non consente l'applicazione, serve un'app registrata nel tenant: indicane qui l'ID." />
+              </Grid>
+            </StackPanel>
+
+            <!-- SMTP -->
+            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6" IsEnabled="{Binding Enabled}" IsVisible="{Binding IsSmtp}">
+              <TextBlock Classes="label" Grid.Row="0" Text="Server SMTP" />
+              <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,80" ColumnSpacing="6">
+                <TextBox Text="{Binding Host}" PlaceholderText="smtp.azienda.it" />
+                <TextBox Grid.Column="1" Text="{Binding Port}" />
+              </Grid>
+              <TextBlock Classes="label" Grid.Row="1" Text="Sicurezza" />
+              <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{x:Static vm:EmailEditor.Securities}" SelectedItem="{Binding Security}" HorizontalAlignment="Stretch" />
+              <TextBlock Classes="label" Grid.Row="2" Text="Utente" />
+              <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding User}" PlaceholderText="(vuoto se il server non richiede l'accesso)" />
+              <TextBlock Classes="label" Grid.Row="3" Text="Password" />
+              <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Password}" PasswordChar="●" />
+              <TextBlock Classes="label" Grid.Row="4" Text="Mittente" />
+              <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding From}" PlaceholderText="helpdesk@azienda.it" />
+              <TextBlock Classes="hint" Grid.Row="5" Grid.Column="1" Text="Con Microsoft 365 l'invio SMTP con password non è più consentito: scegli «Outlook / Microsoft 365» sopra." />
+            </Grid>
+            <views:QuietHoursView DataContext="{Binding Quiet}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Content="Invia un messaggio di prova" Command="{Binding TestCommand}" IsEnabled="{Binding Enabled}" />
+              <TextBlock Text="{Binding TestText}" VerticalAlignment="Center" TextWrapping="Wrap" Opacity="0.85" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Teams -->
+        <Border Classes="card" DataContext="{Binding Teams}" x:DataType="vm:WebhookEditor">
+          <StackPanel Spacing="8">
+            <CheckBox Content="{Binding Title}" IsChecked="{Binding Enabled}" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6" IsEnabled="{Binding Enabled}">
+              <TextBlock Classes="label" Grid.Row="0" Text="Indirizzo (webhook)" />
+              <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Url}" PasswordChar="●" />
+              <TextBlock Classes="label" Grid.Row="1" Text="Formato" />
+              <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{x:Static vm:WebhookEditor.Formats}" SelectedItem="{Binding Format}" HorizontalAlignment="Stretch" />
+              <TextBlock Classes="hint" Grid.Row="2" Grid.Column="1"
+                         Text="In Teams: canale → Workflows → «Pubblica in un canale quando si riceve una richiesta webhook». L'indirizzo che ti dà è una chiave: chi lo ha può scrivere nel canale." />
+            </Grid>
+            <views:QuietHoursView DataContext="{Binding Quiet}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Content="Invia un messaggio di prova" Command="{Binding TestCommand}" IsEnabled="{Binding Enabled}" />
+              <TextBlock Text="{Binding TestText}" VerticalAlignment="Center" TextWrapping="Wrap" Opacity="0.85" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- SMS -->
+        <Border Classes="card" DataContext="{Binding Sms}" x:DataType="vm:TwilioEditor">
+          <StackPanel Spacing="8">
+            <CheckBox Content="{Binding Title}" IsChecked="{Binding Enabled}" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6" IsEnabled="{Binding Enabled}">
+              <TextBlock Classes="label" Grid.Row="0" Text="Account SID (Twilio)" />
+              <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding AccountSid}" PlaceholderText="AC…" />
+              <TextBlock Classes="label" Grid.Row="1" Text="Auth Token" />
+              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AuthToken}" PasswordChar="●" />
+              <TextBlock Classes="label" Grid.Row="2" Text="Numero mittente" />
+              <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding From}" PlaceholderText="+39…" />
+              <TextBlock Classes="label" Grid.Row="3" Text="Destinatari" />
+              <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding To}" AcceptsReturn="True" MinHeight="56" PlaceholderText="un numero per riga, formato +39…" />
+            </Grid>
+            <views:QuietHoursView DataContext="{Binding Quiet}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Content="Invia un messaggio di prova" Command="{Binding TestCommand}" IsEnabled="{Binding Enabled}" />
+              <TextBlock Text="{Binding TestText}" VerticalAlignment="Center" TextWrapping="Wrap" Opacity="0.85" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- WhatsApp -->
+        <Border Classes="card" DataContext="{Binding WhatsApp}" x:DataType="vm:TwilioEditor">
+          <StackPanel Spacing="8">
+            <CheckBox Content="{Binding Title}" IsChecked="{Binding Enabled}" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6" IsEnabled="{Binding Enabled}">
+              <TextBlock Classes="label" Grid.Row="0" Text="Account SID (Twilio)" />
+              <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding AccountSid}" PlaceholderText="AC…" />
+              <TextBlock Classes="label" Grid.Row="1" Text="Auth Token" />
+              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AuthToken}" PasswordChar="●" />
+              <TextBlock Classes="label" Grid.Row="2" Text="Numero mittente" />
+              <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding From}" PlaceholderText="+14155238886" />
+              <TextBlock Classes="label" Grid.Row="3" Text="Destinatari" />
+              <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding To}" AcceptsReturn="True" MinHeight="56" PlaceholderText="un numero per riga, formato +39…" />
+              <TextBlock Classes="label" Grid.Row="4" Text="Modello approvato" />
+              <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ContentSid}" PlaceholderText="HX… (Content SID)" />
+              <TextBlock Classes="hint" Grid.Row="5" Grid.Column="1"
+                         Text="WhatsApp permette a un'azienda di iniziare una conversazione solo con un modello di messaggio approvato da Meta." />
+            </Grid>
+            <views:QuietHoursView DataContext="{Binding Quiet}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Content="Invia un messaggio di prova" Command="{Binding TestCommand}" IsEnabled="{Binding Enabled}" />
+              <TextBlock Text="{Binding TestText}" VerticalAlignment="Center" TextWrapping="Wrap" Opacity="0.85" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

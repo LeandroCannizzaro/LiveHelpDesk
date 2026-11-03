@@ -24,7 +24,12 @@ public sealed class AppHost
     private UiSettings _settings = new();
     private MainWindow _window = null!;
     private StatusViewModel _status = null!;
+    private HostingViewModel _hosting = null!;
+    private MonitorProcessHost _monitor = null!;
     private EventsViewModel _events = null!;
+    private RulesViewModel _rules = null!;
+    private ChannelsViewModel _channels = null!;
+    private SettingsViewModel _appSettings = null!;
     private NotificationPump _pump = null!;
     private OverlayController _overlay = null!;
     private TrayController _tray = null!;
@@ -54,8 +59,16 @@ public sealed class AppHost
 
         _window = new MainWindow();
         _status = new StatusViewModel(() => _link.Api, CopyAsync, OpenInBrowser);
+        _hosting = CreateHosting();
+        _status.Hosting = _hosting;
         _events = new EventsViewModel(() => _link.Api, OpenRowAsync, AcknowledgeAsync);
-        _window.Attach(_events, _status);
+        _rules = new RulesViewModel(() => _link.Api);
+        _channels = new ChannelsViewModel(() => _link.Api, CopyAsync, OpenInBrowser);
+        _appSettings = new SettingsViewModel(
+            _settings, new AutoStart(), Environment.ProcessPath ?? "LiveHelpDesk.exe", _window.ScreenNames(),
+            ShowOverlayExample, () => _overlay?.Reposition());
+        _window.Attach(_events, _status, _rules, _channels, _appSettings);
+        _window.PaneChanged += pane => _ = OnPaneChangedAsync(pane);
 
         _pump = new NotificationPump(_link, _attention, new ToastService(), () => DateTimeOffset.UtcNow);
         var overlayModel = new OverlayViewModel(OpenHeadlineAsync, AcknowledgeAllAsync, duration =>
@@ -104,9 +117,47 @@ public sealed class AppHost
         }
     }
 
+    /// <summary>Shows a pane's current data when the user opens it, but never over edits that are not saved.</summary>
+    private async Task OnPaneChangedAsync(Pane pane)
+    {
+        if (_link.State != LinkState.Connected)
+        {
+            return;
+        }
+
+        switch (pane)
+        {
+            case Pane.Rules when !_rules.IsDirty:
+                await _rules.LoadAsync();
+                break;
+            case Pane.Channels when !_channels.IsDirty:
+                await _channels.LoadAsync();
+                break;
+            case Pane.Events:
+                await _events.RefreshAsync();
+                break;
+            case Pane.Status:
+                await _status.RefreshAsync(_link.State);
+                break;
+        }
+    }
+
+    /// <summary>Settings → "Mostra un esempio": the overlay with a sample ticket, so the screen and position can be judged.</summary>
+    private void ShowOverlayExample()
+    {
+        _attention.Add(
+            new AttentionItem(
+                $"example:{DateTimeOffset.UtcNow.Ticks}", "Esempio: nuovo ticket #261000000", "Così apparirà la finestrella",
+                Severity.Attention, null, DateTimeOffset.UtcNow),
+            DateTimeOffset.UtcNow);
+        _attention.EndSnooze();
+    }
+
     private async Task OnLinkStateAsync(LinkState state)
     {
         await _status.RefreshAsync(state);
+        _hosting.Refresh(state);
+        await _hosting.AutoStartAsync(state);
         if (state == LinkState.Connected)
         {
             await CatchUpAsync();
@@ -280,11 +331,32 @@ public sealed class AppHost
         }
     }
 
+    private HostingViewModel CreateHosting()
+    {
+        var executable = () => ServiceExecutable.Find(AppContext.BaseDirectory);
+        var services = new WindowsServiceManager(executable, new UacRunner());
+        _monitor = new MonitorProcessHost(
+            () => MonitorProcess.Start(executable() ?? throw new FileNotFoundException($"Non trovo {ServiceExecutable.FileName}.")),
+            () => StopSignal.Raise(StopSignal.DefaultName));
+        return new HostingViewModel(
+            services, _monitor, _settings.StartMonitorProcess,
+            value =>
+            {
+                _settings.StartMonitorProcess = value;
+                _settings.Save();
+            },
+            action => Dispatcher.UIThread.Post(action));
+    }
+
     private static void OpenInBrowser(Uri url) =>
         Process.Start(new ProcessStartInfo(url.ToString()) { UseShellExecute = true });
 
-    private void Exit()
+    private void Exit() => _ = ExitAsync();
+
+    private async Task ExitAsync()
     {
+        // A monitor this app started goes away with it; the Windows service is not touched.
+        await _monitor.StopAsync();
         _window.ReallyClose = true;
         _overlay.Stop();
         _tray.Dispose();

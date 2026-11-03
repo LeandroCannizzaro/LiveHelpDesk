@@ -120,7 +120,7 @@ public sealed class OverlayController
 
     private void Place(OverlayWindow window)
     {
-        var screen = window.Screens.Primary ?? window.Screens.All.FirstOrDefault();
+        var screen = ChooseScreen(window);
         if (screen is null)
         {
             return;
@@ -132,6 +132,25 @@ public sealed class OverlayController
         window.Position = new PixelPoint((int)x, (int)(area.Y + _settings.OverlayTop * scale));
     }
 
+    /// <summary>The screen the user picked, or the main one when that screen is gone (a laptop undocked).</summary>
+    private Avalonia.Platform.Screen? ChooseScreen(OverlayWindow window)
+    {
+        var all = window.Screens.All;
+        var index = _settings.OverlayScreen - 1;
+        return index >= 0 && index < all.Count ? all[index] : window.Screens.Primary ?? all.FirstOrDefault();
+    }
+
+    /// <summary>Settings changed (screen, position, on/off): apply them now.</summary>
+    public void Reposition()
+    {
+        if (_window is { IsVisible: true })
+        {
+            Place(_window);
+        }
+
+        Refresh();
+    }
+
     private void RememberPosition()
     {
         if (_window is null)
@@ -139,7 +158,7 @@ public sealed class OverlayController
             return;
         }
 
-        var screen = _window.Screens.Primary ?? _window.Screens.All.FirstOrDefault();
+        var screen = ChooseScreen(_window);
         if (screen is null)
         {
             return;

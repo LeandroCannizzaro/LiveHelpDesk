@@ -17,32 +17,69 @@ public static partial class ChannelSettingsValidator
         if (settings.Email.Enabled)
         {
             var email = settings.Email;
-            if (string.IsNullOrWhiteSpace(email.Host))
+            if (email.Provider == EmailProvider.Outlook)
             {
-                errors.Add("E-mail: manca il server SMTP.");
-            }
+                // The sender is the signed-in account; no server, user or password. No recipient means the account itself.
+                if (email.To.Any(a => !IsAddress(a)))
+                {
+                    errors.Add("E-mail: tutti gli indirizzi dei destinatari devono essere validi.");
+                }
 
-            if (email.Port is < 1 or > 65535)
-            {
-                errors.Add("E-mail: porta non valida.");
-            }
+                if (!IsDirectoryId(email.Outlook.TenantId))
+                {
+                    errors.Add("E-mail: l'ID tenant di Outlook deve essere un GUID o un dominio (es. azienda.onmicrosoft.com).");
+                }
 
-            if (!IsAddress(email.From))
-            {
-                errors.Add("E-mail: indirizzo del mittente non valido.");
+                if (!string.IsNullOrWhiteSpace(email.Outlook.ClientId) && !Guid.TryParse(email.Outlook.ClientId.Trim(), out _))
+                {
+                    errors.Add("E-mail: l'ID applicazione (client) di Outlook deve essere un GUID.");
+                }
             }
-
-            if (email.To.Count == 0 || email.To.Any(a => !IsAddress(a)))
+            else
             {
-                errors.Add("E-mail: serve almeno un destinatario e tutti gli indirizzi devono essere validi.");
-            }
-
-            if (!string.IsNullOrEmpty(email.User) && string.IsNullOrEmpty(email.Password))
-            {
-                errors.Add("E-mail: è indicato l'utente ma manca la password.");
+                ValidateSmtp(email, errors);
             }
         }
 
+        ValidateRest(settings, errors);
+        return errors;
+    }
+
+    private static bool IsDirectoryId(string? text) =>
+        string.IsNullOrWhiteSpace(text)
+        || Guid.TryParse(text.Trim(), out _)
+        || (text.Trim().Contains('.') && !text.Trim().Any(c => char.IsWhiteSpace(c) || c is '/' or '\\' or '@'));
+
+    private static void ValidateSmtp(EmailSettings email, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(email.Host))
+        {
+            errors.Add("E-mail: manca il server SMTP.");
+        }
+
+        if (email.Port is < 1 or > 65535)
+        {
+            errors.Add("E-mail: porta non valida.");
+        }
+
+        if (!IsAddress(email.From))
+        {
+            errors.Add("E-mail: indirizzo del mittente non valido.");
+        }
+
+        if (email.To.Count == 0 || email.To.Any(a => !IsAddress(a)))
+        {
+            errors.Add("E-mail: serve almeno un destinatario e tutti gli indirizzi devono essere validi.");
+        }
+
+        if (!string.IsNullOrEmpty(email.User) && string.IsNullOrEmpty(email.Password))
+        {
+            errors.Add("E-mail: è indicato l'utente ma manca la password.");
+        }
+    }
+
+    private static void ValidateRest(ChannelSettings settings, List<string> errors)
+    {
         if (settings.Teams.Enabled
             && (!Uri.TryCreate(settings.Teams.Url, UriKind.Absolute, out var url) || url.Scheme != Uri.UriSchemeHttps))
         {
@@ -59,8 +96,6 @@ public static partial class ChannelSettingsValidator
                 errors.Add($"Limite orario del canale {channel}: deve essere almeno 1.");
             }
         }
-
-        return errors;
     }
 
     private static void Twilio(string name, TwilioSettings settings, bool requireTemplate, List<string> errors)

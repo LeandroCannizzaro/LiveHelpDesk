@@ -21,6 +21,9 @@ public sealed class ServiceSettings
     /// <summary>Explicit proxy (e.g. http://proxy.corp:8080); empty uses the system one with the machine's credentials.</summary>
     public string? Proxy { get; set; }
 
+    /// <summary>Ids of the queues to monitor, filtered on the server. Empty monitors every queue.</summary>
+    public List<Guid> QueueIds { get; set; } = [];
+
     public int PollSeconds { get; set; } = 30;
 
     public int OverlapMinutes { get; set; } = 2;

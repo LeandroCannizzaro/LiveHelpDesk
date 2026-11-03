@@ -12,6 +12,9 @@ public enum Pane
     Browser,
     Events,
     Status,
+    Rules,
+    Channels,
+    Settings,
 }
 
 /// <summary>
@@ -48,6 +51,9 @@ public partial class MainWindow : Window
         NavBrowser.Click += (_, _) => ShowPane(Pane.Browser);
         NavEvents.Click += (_, _) => ShowPane(Pane.Events);
         NavStatus.Click += (_, _) => ShowPane(Pane.Status);
+        NavRules.Click += (_, _) => ShowPane(Pane.Rules);
+        NavChannels.Click += (_, _) => ShowPane(Pane.Channels);
+        NavSettings.Click += (_, _) => ShowPane(Pane.Settings);
 
         Opened += (_, _) => Web.Navigate(_home);
         Closing += (_, e) =>
@@ -65,11 +71,22 @@ public partial class MainWindow : Window
 
     public Pane CurrentPane { get; private set; } = Pane.Browser;
 
-    public void Attach(EventsViewModel events, StatusViewModel status)
+    /// <summary>Raised when a pane is shown, so it can refresh what it displays.</summary>
+    public event Action<Pane>? PaneChanged;
+
+    public void Attach(
+        EventsViewModel events, StatusViewModel status, RulesViewModel rules, ChannelsViewModel channels, SettingsViewModel settings)
     {
         EventsPane.DataContext = events;
         StatusPane.DataContext = status;
+        RulesPane.DataContext = rules;
+        ChannelsPane.DataContext = channels;
+        SettingsPane.DataContext = settings;
     }
+
+    /// <summary>The screens Windows lists, for the overlay's screen choice.</summary>
+    public IReadOnlyList<string> ScreenNames() =>
+        [.. Screens.All.Select((screen, i) => $"Schermo {i + 1}{(screen.IsPrimary ? " (principale)" : "")} · {screen.Bounds.Width}×{screen.Bounds.Height}")];
 
     /// <summary>The dashboard the service wants as the starting page. Follows only if the user has not moved on.</summary>
     public void SetHome(Uri home)
@@ -93,9 +110,16 @@ public partial class MainWindow : Window
         BrowserPane.IsVisible = pane == Pane.Browser;
         EventsPane.IsVisible = pane == Pane.Events;
         StatusPane.IsVisible = pane == Pane.Status;
+        RulesPane.IsVisible = pane == Pane.Rules;
+        ChannelsPane.IsVisible = pane == Pane.Channels;
+        SettingsPane.IsVisible = pane == Pane.Settings;
         NavBrowser.IsChecked = pane == Pane.Browser;
         NavEvents.IsChecked = pane == Pane.Events;
         NavStatus.IsChecked = pane == Pane.Status;
+        NavRules.IsChecked = pane == Pane.Rules;
+        NavChannels.IsChecked = pane == Pane.Channels;
+        NavSettings.IsChecked = pane == Pane.Settings;
+        PaneChanged?.Invoke(pane);
     }
 
     /// <summary>Brings the window to the front, from the tray, a toast or a second launch.</summary>

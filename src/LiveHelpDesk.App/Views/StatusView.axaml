@@ -27,6 +27,27 @@
       <TextBlock Text="{Binding Error}" Foreground="#DC2626" TextWrapping="Wrap"
                  IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
+      <Border Padding="16" CornerRadius="10" Background="#14808080" DataContext="{Binding Hosting}"
+              x:DataType="vm:HostingViewModel" IsVisible="{Binding $parent[UserControl].((vm:StatusViewModel)DataContext).Hosting, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Come gira il monitoraggio" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding ServiceLine}" Opacity="0.85" />
+          <TextBlock Text="{Binding ProcessLine}" Opacity="0.85" />
+          <WrapPanel>
+            <Button Content="{Binding StartLabel}" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}" Margin="0,0,8,8" />
+            <Button Content="{Binding StopLabel}" Command="{Binding StopCommand}" IsEnabled="{Binding CanStop}" Margin="0,0,8,8" />
+            <Button Content="Installa il servizio" Command="{Binding InstallCommand}" IsEnabled="{Binding CanInstall}" Margin="0,0,8,8" />
+            <Button Content="Disinstalla il servizio" Command="{Binding UninstallCommand}" IsEnabled="{Binding CanUninstall}" Margin="0,0,8,8" />
+          </WrapPanel>
+          <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
+                     IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <CheckBox IsChecked="{Binding AutoStart}"
+                    Content="Se il servizio non c'è, avvia il processo all'apertura dell'app" />
+          <TextBlock Opacity="0.6" TextWrapping="Wrap"
+                     Text="Il processo non richiede permessi di amministratore ma si ferma quando lo si ferma qui o si spegne il PC. Il servizio si installa una volta (Windows chiede la conferma) e parte con il PC. Con il servizio installato, Avvia e Ferma comandano il servizio." />
+        </StackPanel>
+      </Border>
+
       <Border Padding="16" CornerRadius="10" Background="#14808080" IsVisible="{Binding ShowLogin}">
         <StackPanel Spacing="10">
           <TextBlock Text="Accesso a Dynamics" FontWeight="SemiBold" />

@@ -13,7 +13,7 @@
     </Style>
   </Window.Styles>
 
-  <Grid ColumnDefinitions="160,*">
+  <Grid ColumnDefinitions="170,*">
     <Border Grid.Column="0" Background="#14808080">
       <DockPanel Margin="8">
         <TextBlock x:Name="LinkText" DockPanel.Dock="Bottom" Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="8" />
@@ -22,6 +22,10 @@
           <ToggleButton x:Name="NavBrowser" Classes="nav" Content="Dynamics" IsChecked="True" />
           <ToggleButton x:Name="NavEvents" Classes="nav" Content="Eventi" />
           <ToggleButton x:Name="NavStatus" Classes="nav" Content="Servizio" />
+          <TextBlock Text="CONFIGURAZIONE" FontSize="11" Opacity="0.6" Margin="12,16,0,2" />
+          <ToggleButton x:Name="NavRules" Classes="nav" Content="Regole" />
+          <ToggleButton x:Name="NavChannels" Classes="nav" Content="Canali" />
+          <ToggleButton x:Name="NavSettings" Classes="nav" Content="Impostazioni" />
         </StackPanel>
       </DockPanel>
     </Border>
@@ -41,6 +45,9 @@
 
       <views:EventsView x:Name="EventsPane" IsVisible="False" />
       <views:StatusView x:Name="StatusPane" IsVisible="False" />
+      <views:RulesView x:Name="RulesPane" IsVisible="False" />
+      <views:ChannelsView x:Name="ChannelsPane" IsVisible="False" />
+      <views:SettingsView x:Name="SettingsPane" IsVisible="False" />
     </Grid>
   </Grid>
 </Window>

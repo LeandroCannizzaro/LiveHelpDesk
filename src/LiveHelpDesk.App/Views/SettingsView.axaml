@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LiveHelpDesk.App.ViewModels"
+             x:Class="LiveHelpDesk.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="16" Spacing="12" MaxWidth="700" HorizontalAlignment="Left">
+      <TextBlock Text="Impostazioni" FontSize="20" FontWeight="SemiBold" />
+
+      <TextBlock Text="Finestrella lampeggiante" FontWeight="SemiBold" Margin="0,8,0,0" />
+      <CheckBox Content="Mostra la finestrella in alto quando c'è qualcosa da gestire" IsChecked="{Binding OverlayEnabled}" />
+      <CheckBox Content="Suona un avviso per gli eventi critici" IsChecked="{Binding PlaySound}" />
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <TextBlock Text="Schermo" VerticalAlignment="Center" />
+        <ComboBox ItemsSource="{Binding Screens}" SelectedItem="{Binding Screen}" MinWidth="280" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Mostra un esempio" Command="{Binding ShowOverlayDemoCommand}" />
+        <Button Content="Rimetti al centro" Command="{Binding ResetPositionCommand}" />
+      </StackPanel>
+      <TextBlock Opacity="0.65" TextWrapping="Wrap"
+                 Text="Si può trascinare con il mouse. Non appare mentre fai una presentazione o usi un programma a schermo intero." />
+
+      <TextBlock Text="Avvio" FontWeight="SemiBold" Margin="0,12,0,0" />
+      <CheckBox Content="Avvia LiveHelpDesk quando accedo a Windows (resta nell'area di notifica)" IsChecked="{Binding StartWithWindows}" />
+
+      <TextBlock Text="{Binding Note}" Opacity="0.85" TextWrapping="Wrap"
+                 IsVisible="{Binding Note, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

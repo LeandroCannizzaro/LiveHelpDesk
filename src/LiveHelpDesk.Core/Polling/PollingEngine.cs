@@ -79,7 +79,7 @@ public sealed class PollingEngine(
         {
             // The ticket behind a new message was not known yet: fetch it, remember it silently, retry once.
             var ids = detection.UnresolvedMessages.Select(m => m.TicketId).Distinct().ToList();
-            detector.Remember(await source.GetTicketsAsync(ids, cancellationToken));
+            detector.Remember(await source.GetTicketsInScopeAsync(ids, cancellationToken));
             events.AddRange(detector.Detect([], detection.UnresolvedMessages).Events);
         }
 
@@ -157,7 +157,8 @@ public sealed class PollingEngine(
 
         if (missing.Count > 0 || unseen.Count > 0)
         {
-            var fetched = await source.GetTicketsAsync([.. missing, .. unseen], cancellationToken);
+            // Scoped on purpose: a ticket moved out of the monitored scope is reported as no longer visible.
+            var fetched = await source.GetTicketsInScopeAsync([.. missing, .. unseen], cancellationToken);
             events.AddRange(detector.Detect(fetched, []).Events);
 
             var found = fetched.Select(t => t.Id).ToHashSet();

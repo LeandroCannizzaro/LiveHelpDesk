@@ -48,8 +48,47 @@ LiveHelpDesk.Service test email                         # messaggio di prova (an
 LiveHelpDesk.Service channels                           # stato di ogni canale
 ```
 
+**E-mail con Outlook aziendale (Microsoft 365).** L'invio SMTP con password (*Basic auth*) è dismesso in Exchange Online,
+quindi per Microsoft 365 il canale e-mail ha il metodo *Outlook / Microsoft 365*: invia con Microsoft Graph
+(`POST /me/sendMail`, permesso delegato `Mail.Send`) **come l'utente che accede**, senza salvare password. Nell'app,
+*Canali → E-mail → Come inviare: Outlook*, poi **Accedi a Outlook** (codice da digitare su microsoft.com/devicelogin,
+compatibile con Windows Hello) e *Salva*. Da riga di comando: `LiveHelpDesk.Service login-mail` / `logout-mail`.
+Senza destinatari scrive all'account collegato; *Posta inviata* è facoltativa (di default no).
+Il login è separato da quello di Dynamics (`msal-mail-cache.bin` cifrato con DPAPI) e ricordato dal servizio; se è
+scaduto o assente le e-mail restano in coda (stato *serve l'accesso a Outlook*) e partono dopo il nuovo accesso.
+
+Prerequisiti nel tenant Entra (da fare una volta, di solito dall'amministratore):
+
+- Un'applicazione registrata come **client pubblico**: *Authentication → Allow public client flows = Sì*, redirect
+  `http://localhost`, permesso delegato Microsoft Graph **`Mail.Send`**. Il suo *ID applicazione* e il tenant si
+  scrivono nel form (campi *ID applicazione* e *Tenant*). Se vuoti si usa l'app pubblica *Microsoft Graph Command Line
+  Tools* e il tenant dell'accesso a Dynamics: funziona solo se l'amministratore la consente.
+- Il consenso a `Mail.Send` (dell'utente, se il tenant lo permette, altrimenti dell'amministratore).
+- Le policy di accesso condizionale non devono bloccare il *device code flow* per questa app.
+
+Con `msal-mail-cache.bin` e il resto, vale il limite sotto: il login Outlook è legato all'account che esegue il monitor.
+
 Installato come servizio (una volta, da amministratore): `LiveHelpDesk.Service install`.
 Opzione `--data <cartella>` per tenere i dati altrove (prove).
+
+**Come gira il monitor.** L'app è solo un client: serve un monitor in funzione, in uno di due modi (mai insieme: la pipe è una).
+
+| | processo `run` | servizio Windows |
+|---|---|---|
+| permessi | nessuno | amministratore, una volta (UAC) |
+| parte | quando l'app lo avvia (opzione, attiva di default se il servizio non c'è) | con il PC |
+| *Avvia* / *Ferma* | creano / terminano il processo | `sc start` / `sc stop` |
+| *Installa* / *Disinstalla* | non c'entrano | creano / rimuovono il servizio |
+
+Nel pannello *Servizio* dell'app: **Avvia/Ferma** agiscono sul processo `run` finché il servizio non è installato, poi
+passano al servizio; **Installa/Disinstalla** riguardano solo il servizio e, se l'app non è già amministratore, Windows
+chiede la conferma (l'app non si eleva mai da sola: rilancia `LiveHelpDesk.Service install|uninstall|start|stop`).
+Se il processo `run` si ferma da solo viene riavviato qualche volta, poi segnalato come non riuscito. Alla chiusura
+dell'app il processo che ha avviato viene fermato, il servizio no. `LiveHelpDesk.Service.exe` deve stare accanto all'app.
+Il processo si ferma in modo pulito tramite l'evento `Local\LiveHelpDesk.Service.Stop` (solo se non è il vero servizio).
+
+Limite noto: il processo `run` gira con l'utente dell'app, il servizio come `NT SERVICE\LiveHelpDesk`. Accesso a
+Dynamics, canali e profili sono legati all'account che esegue il monitor, quindi cambiando modo vanno rifatti.
 
 Requisiti: .NET 10 SDK e il WebView2 Runtime (già presente in Windows 11 e con Office/Edge).
 

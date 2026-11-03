@@ -22,13 +22,24 @@
     <PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
     <!-- Pinned above the transitive 4.7.0, which has a critical known vulnerability (GHSA-rxg9-xrhp-64gj). -->
     <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
+    <!-- Reads the Windows service's state (installed, running) without administrator rights. -->
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LiveHelpDesk.Abstractions\LiveHelpDesk.Abstractions.csproj" />
     <ProjectReference Include="..\LiveHelpDesk.Core\LiveHelpDesk.Core.csproj" />
     <ProjectReference Include="..\LiveHelpDesk.Ipc\LiveHelpDesk.Ipc.csproj" />
+    <!-- Built first, then copied into service\ next to the app (below): the app starts it as the `run` monitor and must never find a stale copy. -->
+    <ProjectReference Include="..\LiveHelpDesk.Service\LiveHelpDesk.Service.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
+
+  <Target Name="CopyServiceNextToApp" AfterTargets="Build">
+    <ItemGroup>
+      <ServiceOutput Include="..\LiveHelpDesk.Service\bin\$(Configuration)\net10.0-windows\**\*" Exclude="**\*.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ServiceOutput)" DestinationFiles="@(ServiceOutput->'$(OutDir)service\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 
   <ItemGroup>
     <InternalsVisibleTo Include="LiveHelpDesk.Tests" />

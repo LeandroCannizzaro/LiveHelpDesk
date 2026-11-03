@@ -42,6 +42,25 @@ public sealed class RulesProvider
         }
     }
 
+    /// <summary>The file as it is on disk.</summary>
+    public string ReadJson() => File.ReadAllText(_path);
+
+    /// <summary>Makes <paramref name="json"/> the rules in force, but only if it is valid; the old rules stay otherwise.</summary>
+    public RulesLoadResult Replace(string json)
+    {
+        var result = RulesConfig.Parse(json);
+        if (!result.IsValid)
+        {
+            return result;
+        }
+
+        var temp = _path + ".tmp";
+        File.WriteAllText(temp, RulesConfig.Serialize(result.File!));
+        File.Move(temp, _path, overwrite: true);
+        Reload();
+        return result;
+    }
+
     private void Reload()
     {
         _loadedFrom = File.GetLastWriteTimeUtc(_path);

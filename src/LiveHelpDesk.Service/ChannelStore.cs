@@ -194,7 +194,7 @@ public sealed class ChannelStore
 }
 
 /// <summary>The live set of channels, rebuilt whenever the settings change.</summary>
-public sealed class ChannelRegistry(ChannelStore store, HttpClient http, IEmailSender? emailSender = null)
+public sealed class ChannelRegistry(ChannelStore store, HttpClient http, IEmailSender? emailSender = null, IMailTokenSource? outlookTokens = null)
 {
     private readonly object _gate = new();
     private long _builtFor = -1;
@@ -209,11 +209,22 @@ public sealed class ChannelRegistry(ChannelStore store, HttpClient http, IEmailS
             var settings = store.Current; // may bump the version
             if (_builtFor != store.Version)
             {
-                _channels = ChannelFactory.Create(settings, http, emailSender);
+                _channels = ChannelFactory.Create(settings, http, emailSender, outlookTokens: outlookTokens);
                 _builtFor = store.Version;
             }
 
             return _channels.GetValueOrDefault(id);
         }
     }
+
+    /// <summary>
+    /// Like <see cref="Get"/>, but e-mail through Outlook counts as absent while nobody is signed in: the queue keeps
+    /// the messages until the user signs in, instead of burning their attempts and opening the circuit breaker.
+    /// </summary>
+    public INotificationChannel? GetForDelivery(string id) =>
+        string.Equals(id, ChannelIds.Email, StringComparison.OrdinalIgnoreCase) && IsHeldForSignIn() ? null : Get(id);
+
+    /// <summary>The e-mail channel is on, sends through Outlook, and nobody is signed in.</summary>
+    public bool IsHeldForSignIn() =>
+        store.Current.Email is { Enabled: true, Provider: EmailProvider.Outlook } && outlookTokens?.KnownSignedOut != false;
 }

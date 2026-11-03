@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LiveHelpDesk.App.ViewModels"
+             x:Class="LiveHelpDesk.App.Views.QuietHoursView"
+             x:DataType="vm:QuietHoursEditor">
+  <StackPanel Spacing="6">
+    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !IsCustom}">
+      <CheckBox Content="Non disturbare dalle" IsChecked="{Binding Enabled}" />
+      <TextBox Text="{Binding From}" Width="70" IsEnabled="{Binding Enabled}" />
+      <TextBlock Text="alle" VerticalAlignment="Center" />
+      <TextBox Text="{Binding To}" Width="70" IsEnabled="{Binding Enabled}" />
+      <CheckBox Content="tranne gli eventi critici" IsChecked="{Binding CriticalPasses}" IsEnabled="{Binding Enabled}" />
+    </StackPanel>
+    <TextBlock Text="Gli orari di questo canale sono stati scritti a mano nel file e restano come sono."
+               Opacity="0.7" TextWrapping="Wrap" IsVisible="{Binding IsCustom}" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <TextBlock Text="Al massimo" VerticalAlignment="Center" />
+      <TextBox Text="{Binding Limit}" Width="70" />
+      <TextBlock Text="messaggi all'ora (oltre, una raffica diventa un solo riassunto)" VerticalAlignment="Center" Opacity="0.7" />
+    </StackPanel>
+  </StackPanel>
+</UserControl>

@@ -1,5 +1,6 @@
 using System.Security.Principal;
 using LiveHelpDesk.Abstractions;
+using LiveHelpDesk.Core.Rules;
 using LiveHelpDesk.Ipc;
 using LiveHelpDesk.Service;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -76,6 +77,75 @@ internal sealed class FakeApi : ILiveHelpDeskApi
         Tested.Add(channelId);
         return Task.FromResult(channelId == "email" ? new ChannelTestResult(true, null) : new ChannelTestResult(false, "canale non attivo"));
     }
+
+    public string? MailAccount { get; set; }
+
+    public bool MailLoginPending { get; set; }
+
+    public int MailLogins { get; private set; }
+
+    public int MailSignOuts { get; private set; }
+
+    public Task<LoginChallenge> StartMailLoginAsync()
+    {
+        MailLogins++;
+        MailLoginPending = true;
+        return Task.FromResult(new LoginChallenge("MAIL42", "https://microsoft.com/devicelogin", DateTimeOffset.UtcNow.AddMinutes(15), "Apri la pagina e inserisci MAIL42"));
+    }
+
+    public Task<MailAccountInfo> GetMailAccountAsync()
+    {
+        // The sign-in completes the first time it is asked about, as if the user had just typed the code.
+        if (MailLoginPending)
+        {
+            MailLoginPending = false;
+            MailAccount = "mario@qgs.eu";
+        }
+
+        return Task.FromResult(new MailAccountInfo(MailAccount, MailLoginPending, null));
+    }
+
+    public Task SignOutMailAsync()
+    {
+        MailSignOuts++;
+        MailAccount = null;
+        return Task.CompletedTask;
+    }
+
+    public string RulesJson { get; set; } = RulesConfig.Serialize(DefaultRules.Create());
+
+    public string? SavedRules { get; private set; }
+
+    public string? DraftChecked { get; private set; }
+
+    public Task<string> GetRulesJsonAsync() => Task.FromResult(RulesJson);
+
+    public Task<RulesSaveResult> SaveRulesJsonAsync(string json)
+    {
+        var result = RulesConfig.Parse(json);
+        if (result.IsValid)
+        {
+            SavedRules = RulesJson = RulesConfig.Serialize(result.File!);
+        }
+
+        return Task.FromResult(new RulesSaveResult(result.IsValid, result.Errors));
+    }
+
+    public Task<DryRunResult> DryRunDraftAsync(string rulesJson)
+    {
+        DraftChecked = rulesJson;
+        var rules = RulesConfig.Parse(rulesJson).File!.Rules;
+        return Task.FromResult(new DryRunResult(
+            446,
+            [.. rules.Select((r, i) => new RuleHitCount(r.Id, r.Name, i == 0 ? 2 : 0))],
+            [new DryRunTicket("261019389", "data fattura", rules[0].Id), new DryRunTicket("261019267", "Richiesta Supporto BFA", rules[0].Id)]));
+    }
+
+    public static readonly Guid QueueId = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000002");
+
+    public Task<IReadOnlyList<LookupItem>> GetLookupsAsync() =>
+        Task.FromResult<IReadOnlyList<LookupItem>>(
+            [new LookupItem(QueueId.ToString("D"), "Assistenza L1", "queue"), new LookupItem("aaaaaaaa-0000-0000-0000-000000000001", "Mario Rossi", "user")]);
 
     public Task<DryRunResult> DryRunRulesAsync() =>
         Task.FromResult(new DryRunResult(3, [new RuleHitCount("new-tickets", "Nuovi ticket", 2)], [new DryRunTicket("261000001", "Errore", "new-tickets")]));

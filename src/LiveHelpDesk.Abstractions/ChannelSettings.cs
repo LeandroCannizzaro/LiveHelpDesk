@@ -11,6 +11,16 @@ public enum EmailSecurity
     SslOnConnect,
 }
 
+/// <summary>How the e-mail channel sends.</summary>
+public enum EmailProvider
+{
+    /// <summary>Through an SMTP server with user and password (the original way).</summary>
+    Smtp,
+
+    /// <summary>Through Microsoft Graph, signed in with the user's own Microsoft 365 account (no password stored).</summary>
+    Outlook,
+}
+
 public enum WebhookFormat
 {
     /// <summary>An Adaptive Card message, as expected by a Teams "Workflows" webhook.</summary>
@@ -20,9 +30,27 @@ public enum WebhookFormat
     Json,
 }
 
+/// <summary>Sending as the signed-in Microsoft 365 user. Nothing here is secret: the sign-in lives in an encrypted token cache.</summary>
+public sealed class OutlookSettings
+{
+    /// <summary>Entra tenant (GUID or domain). Empty: the tenant of the Dynamics sign-in.</summary>
+    public string TenantId { get; set; } = "";
+
+    /// <summary>Public client application with the delegated Mail.Send permission. Empty: the Microsoft Graph Command Line Tools client.</summary>
+    public string ClientId { get; set; } = "";
+
+    /// <summary>Keep a copy of each message in the account's Sent Items.</summary>
+    public bool SaveToSentItems { get; set; }
+}
+
 public sealed class EmailSettings
 {
     public bool Enabled { get; set; }
+
+    public EmailProvider Provider { get; set; } = EmailProvider.Smtp;
+
+    /// <summary>Used when <see cref="Provider"/> is Outlook.</summary>
+    public OutlookSettings Outlook { get; set; } = new();
 
     public string Host { get; set; } = "";
 

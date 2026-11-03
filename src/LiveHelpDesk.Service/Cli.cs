@@ -40,6 +40,8 @@ public static class Cli
             return command switch
             {
                 "login" => await LoginAsync(connection.Api),
+                "login-mail" => await LoginMailAsync(connection.Api),
+                "logout-mail" => await LogoutMailAsync(connection.Api),
                 "status" => await StatusAsync(connection.Api),
                 "channels" => await ChannelsAsync(connection.Api),
                 "channels-import" => await ImportAsync(connection.Api, argument),
@@ -86,6 +88,48 @@ public static class Cli
         }
 
         Console.WriteLine($"Accesso riuscito come {status.UserName}.");
+        return 0;
+    }
+
+    private static async Task<int> LoginMailAsync(ILiveHelpDeskApi api)
+    {
+        var current = await api.GetMailAccountAsync();
+        if (current.Account is not null)
+        {
+            Console.WriteLine($"Outlook è già collegato come {current.Account}. Per cambiare account: logout-mail.");
+            return 0;
+        }
+
+        var challenge = await api.StartMailLoginAsync();
+        Console.WriteLine();
+        Console.WriteLine(challenge.Message);
+        Console.WriteLine();
+        Console.WriteLine("In attesa dell'accesso a Outlook (il codice scade alle " + challenge.ExpiresAt.ToLocalTime().ToString("t") + ")...");
+
+        while (DateTimeOffset.UtcNow < challenge.ExpiresAt)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            current = await api.GetMailAccountAsync();
+            if (!current.LoginPending)
+            {
+                break;
+            }
+        }
+
+        if (current.Account is null)
+        {
+            Console.Error.WriteLine($"Accesso a Outlook non completato. {current.LastError}");
+            return 4;
+        }
+
+        Console.WriteLine($"Accesso riuscito: le e-mail partiranno da {current.Account}.");
+        return 0;
+    }
+
+    private static async Task<int> LogoutMailAsync(ILiveHelpDeskApi api)
+    {
+        await api.SignOutMailAsync();
+        Console.WriteLine("Accesso a Outlook rimosso.");
         return 0;
     }
 

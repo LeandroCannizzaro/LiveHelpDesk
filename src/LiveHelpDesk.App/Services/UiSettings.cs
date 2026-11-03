@@ -18,6 +18,12 @@ public sealed class UiSettings
 
     public bool PlaySoundForCritical { get; set; } = true;
 
+    /// <summary>Which screen shows the overlay: 0 = the main one, N = the Nth screen Windows lists.</summary>
+    public int OverlayScreen { get; set; }
+
+    /// <summary>When no service answers, the app starts the monitor itself (<c>LiveHelpDesk.Service run</c>).</summary>
+    public bool StartMonitorProcess { get; set; } = true;
+
     public static string DefaultPath => Path.Combine(AppPaths.UserRoot, "ui.json");
 
     public static UiSettings Load(string? path = null)

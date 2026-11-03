@@ -3,6 +3,7 @@ using LiveHelpDesk.Core;
 using LiveHelpDesk.Service;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
@@ -10,6 +11,7 @@ using Serilog;
 //   run        (default) the monitor: polls Dynamics for every user who signed in, serves the desktop apps.
 //              This is what the Windows service runs; started by hand it is the same thing, for trying it out.
 //   login      signs in to Dynamics (device code, with your passkey); the service does the sign-in, not this program
+//   login-mail | logout-mail    signs in to / out of Outlook, the account the e-mail channel sends as (when its provider is Outlook)
 //   status     what the monitor knows, what it has queued, the latest events
 //   dry-run    tries the rules on today's tickets, as if each had just been created (read only)
 //   channels | channels-template | channels-import <file> | test <channel>    the outside channels (e-mail, Teams, SMS, WhatsApp)
@@ -26,7 +28,7 @@ Console.OutputEncoding = Encoding.UTF8;
 
 switch (command)
 {
-    case "login" or "status" or "dry-run" or "channels" or "channels-import" or "channels-template" or "test":
+    case "login" or "login-mail" or "logout-mail" or "status" or "dry-run" or "channels" or "channels-import" or "channels-template" or "test":
         return await Cli.RunAsync(command, argument: argument);
 
     case "install":
@@ -48,7 +50,7 @@ switch (command)
         break;
 
     default:
-        Console.WriteLine("Comandi: run | login | status | dry-run | channels | channels-template | channels-import <file> | test <canale> | install | uninstall | start | stop   (opzione: --data <cartella>)");
+        Console.WriteLine("Comandi: run | login | login-mail | logout-mail | status | dry-run | channels | channels-template | channels-import <file> | test <canale> | install | uninstall | start | stop   (opzione: --data <cartella>)");
         return 1;
 }
 
@@ -75,6 +77,11 @@ builder.Services.AddSingleton(services =>
 });
 builder.Services.AddHostedService<ProfilesWorker>();
 builder.Services.AddHostedService<PipeHostedService>();
+if (!WindowsServiceHelpers.IsWindowsService())
+{
+    // Started by hand or by the app: the app can ask it to stop. The real service is only stopped through the SCM.
+    builder.Services.AddHostedService<StopSignalService>();
+}
 
 await builder.Build().RunAsync();
 return 0;

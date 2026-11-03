@@ -23,6 +23,11 @@ internal sealed class FakeSource : ITicketSource
 
     public Exception? Fail { get; set; }
 
+    /// <summary>When set, only tickets matching it are visible, except through GetTicketsAsync.</summary>
+    public Func<TicketSnapshot, bool>? Scope { get; set; }
+
+    private bool InScope(TicketSnapshot ticket) => Scope?.Invoke(ticket) ?? true;
+
     private void Check()
     {
         if (Fail is not null)
@@ -38,16 +43,19 @@ internal sealed class FakeSource : ITicketSource
     }
 
     public Task<IReadOnlyList<TicketSnapshot>> GetActiveTicketsAsync(CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<TicketSnapshot>>(Tickets.Where(t => t.State == 0).ToList());
+        Task.FromResult<IReadOnlyList<TicketSnapshot>>(Tickets.Where(t => t.State == 0 && InScope(t)).ToList());
 
     public Task<IReadOnlyList<Guid>> GetActiveTicketIdsAsync(CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<Guid>>(Tickets.Where(t => t.State == 0).Select(t => t.Id).ToList());
+        Task.FromResult<IReadOnlyList<Guid>>(Tickets.Where(t => t.State == 0 && InScope(t)).Select(t => t.Id).ToList());
 
     public Task<IReadOnlyList<TicketSnapshot>> GetTicketsModifiedSinceAsync(DateTimeOffset since, CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<TicketSnapshot>>(Tickets.Where(t => t.ModifiedOn >= since).ToList());
+        Task.FromResult<IReadOnlyList<TicketSnapshot>>(Tickets.Where(t => t.ModifiedOn >= since && InScope(t)).ToList());
 
     public Task<IReadOnlyList<TicketSnapshot>> GetTicketsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<TicketSnapshot>>(Tickets.Where(t => ids.Contains(t.Id)).ToList());
+
+    public Task<IReadOnlyList<TicketSnapshot>> GetTicketsInScopeAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<TicketSnapshot>>(Tickets.Where(t => ids.Contains(t.Id) && InScope(t)).ToList());
 
     public Task<IReadOnlyList<MessageSnapshot>> GetMessagesCreatedSinceAsync(DateTimeOffset since, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<MessageSnapshot>>(Messages.Where(m => m.CreatedOn >= since).ToList());
@@ -168,6 +176,37 @@ public sealed class PollingEngineTests : IDisposable
 
         Assert.Contains(result.Events, e => e.Type == TicketEventType.MessageReceived && e.TicketNumber == "261000009");
         Assert.Equal(2, result.Queued);
+    }
+
+    [Fact]
+    public async Task AMessageForATicketOutsideTheScope_IsIgnored_AndItsTicketIsNotRemembered()
+    {
+        var mine = T.Id(100);
+        _source.Scope = t => t.QueueId == mine;
+        await StartWith();
+        _source.Tickets.Add(T.Ticket(9, queue: T.Id(200), modified: T.Baseline.AddDays(-5)));
+        _source.Messages.Add(T.Message(1, 9, atMinutes: 4));
+
+        var result = await PollAt(5);
+
+        Assert.Empty(result.Events);
+        Assert.Null(_store.GetTicket(T.Id(9)));
+    }
+
+    [Fact]
+    public async Task ATicketMovedOutOfTheScope_IsReportedAsNoLongerVisible_ByTheReconciliation()
+    {
+        var mine = T.Id(100);
+        _source.Scope = t => t.QueueId == mine;
+        await StartWith(T.Ticket(1, queue: mine));
+        _source.Tickets.Clear();
+        _source.Tickets.Add(T.Ticket(1, queue: T.Id(200), modified: T.At(3)));
+
+        var due = await PollAt(20);
+
+        var gone = Assert.Single(due.Events);
+        Assert.Equal("Disappeared", gone.Subtype);
+        Assert.Null(_store.GetTicket(T.Id(1)));
     }
 
     [Fact]

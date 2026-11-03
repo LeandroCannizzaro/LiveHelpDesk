@@ -171,6 +171,36 @@ public class AppUiTests
     }
 
     [AvaloniaFact]
+    public async Task TheServiceView_OffersToStartTheProcessOrInstallTheService_WhenNothingRuns()
+    {
+        var vm = new StatusViewModel(() => null, _ => Task.CompletedTask, _ => { });
+        var hosting = new HostingViewModel(
+            new NoService(), new MonitorProcessHost(() => throw new InvalidOperationException(), () => false), true, _ => { });
+        vm.Hosting = hosting;
+        hosting.Refresh(LinkState.ServiceMissing);
+        await vm.RefreshAsync(LinkState.ServiceMissing);
+        var window = new Window { Width = 800, Height = 620, Content = new StatusView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var buttons = window.GetVisualDescendants().OfType<Button>().Select(b => b.Content?.ToString()).ToArray();
+        Assert.Contains("Avvia il processo", buttons);
+        Assert.Contains("Installa il servizio", buttons);
+        Assert.Contains("Disinstalla il servizio", buttons);
+        Assert.Contains("Servizio Windows: non installato", Texts(window));
+        Save(window.CaptureRenderedFrame()!, "status-hosting");
+    }
+
+    private sealed class NoService : IWindowsServiceManager
+    {
+        public bool IsElevated => false;
+
+        public WindowsServiceState Query() => WindowsServiceState.NotInstalled;
+
+        public Task<ServiceActionResult> RunAsync(ServiceAction action, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new ServiceActionResult(true, "ok"));
+    }
+    [AvaloniaFact]
     public async Task TheServiceView_ShowsTheChannels()
     {
         var api = new FakeApi();

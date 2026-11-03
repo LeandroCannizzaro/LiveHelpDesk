@@ -19,7 +19,10 @@ public sealed class EmailChannel(EmailSettings settings, IEmailSender sender) : 
 
     public async Task<SendResult> SendAsync(Notification notification, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(settings.From) || settings.To.Count == 0 || string.IsNullOrWhiteSpace(settings.Host))
+        // With Outlook the sender is the signed-in account and no recipient means that same account.
+        var incomplete = settings.Provider != EmailProvider.Outlook
+            && (string.IsNullOrWhiteSpace(settings.From) || settings.To.Count == 0 || string.IsNullOrWhiteSpace(settings.Host));
+        if (incomplete)
         {
             return SendResult.Fail("Configurazione e-mail incompleta (server, mittente e destinatari).");
         }
@@ -33,6 +36,10 @@ public sealed class EmailChannel(EmailSettings settings, IEmailSender sender) : 
         {
             await sender.SendAsync(new EmailMessage(settings.From, settings.To, subject, body), cancellationToken);
             return SendResult.Ok;
+        }
+        catch (MailAuthException ex)
+        {
+            return SendResult.Fail(ex.Message);
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {

@@ -80,8 +80,10 @@ public sealed partial class StatusViewModel(
 
     private Uri? _loginUrl;
 
-    public bool IsOk => Kind == "ok";
+    /// <summary>Start, stop, install and remove the monitor; set by the host.</summary>
+    public HostingViewModel? Hosting { get; set; }
 
+    public bool IsOk => Kind == "ok";
     public bool IsWarn => Kind == "warn";
 
     public bool IsBad => Kind == "bad";
@@ -98,7 +100,7 @@ public sealed partial class StatusViewModel(
             (Headline, Kind) = link == LinkState.ServiceMissing
                 ? ("Il servizio LiveHelpDesk non è in esecuzione", "bad")
                 : ("Connessione al servizio…", "idle");
-            Details = link == LinkState.ServiceMissing ? "L'app riprova da sola. Se il servizio non è installato, chiedere a chi amministra il PC." : "";
+            Details = link == LinkState.ServiceMissing ? "L'app riprova da sola. Si può avviare qui sotto, come processo dell'app o come servizio di Windows." : "";
             ShowLogin = false;
             Channels.Clear();
             return;

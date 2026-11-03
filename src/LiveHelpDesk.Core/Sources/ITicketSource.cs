@@ -44,6 +44,13 @@ public interface ITicketSource
     /// <summary>The tickets that exist and are readable among <paramref name="ids"/>.</summary>
     Task<IReadOnlyList<TicketSnapshot>> GetTicketsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Like <see cref="GetTicketsAsync"/>, but only the tickets inside the monitored scope (e.g. the configured queues).
+    /// A ticket that left the scope is simply not returned.
+    /// </summary>
+    Task<IReadOnlyList<TicketSnapshot>> GetTicketsInScopeAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        GetTicketsAsync(ids, cancellationToken);
+
     /// <summary>E-mails, notes and the other enabled sources created at or after <paramref name="since"/>.</summary>
     Task<IReadOnlyList<MessageSnapshot>> GetMessagesCreatedSinceAsync(DateTimeOffset since, CancellationToken cancellationToken);
 }

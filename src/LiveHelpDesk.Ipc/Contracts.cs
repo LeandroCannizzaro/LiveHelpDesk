@@ -89,6 +89,19 @@ public sealed record ChannelInfo(
 
 public sealed record ChannelTestResult(bool Ok, string? Error);
 
+/// <summary>The Microsoft 365 account the e-mail channel sends as.</summary>
+/// <param name="Account">The account's address; null when nobody is signed in.</param>
+/// <param name="LoginPending">A device-code sign-in is waiting for the user.</param>
+/// <param name="LastError">Why the last sign-in attempt did not complete.</param>
+public sealed record MailAccountInfo(string? Account, bool LoginPending, string? LastError);
+
+/// <param name="Errors">What is wrong, in plain words, when <paramref name="Saved"/> is false.</param>
+public sealed record RulesSaveResult(bool Saved, IReadOnlyList<string> Errors);
+
+/// <summary>A name behind an id the rules can filter on (a queue, a team, a user).</summary>
+/// <param name="Kind">"queue", "team" or "user".</param>
+public sealed record LookupItem(string Id, string Name, string Kind);
+
 public sealed record RuleHitCount(string RuleId, string RuleName, int Matches);
 
 public sealed record DryRunTicket(string TicketNumber, string? Title, string RuleId);
@@ -132,6 +145,26 @@ public interface ILiveHelpDeskApi
 
     /// <summary>Sends a harmless test message through one channel (email, teams, sms, whatsapp).</summary>
     Task<ChannelTestResult> TestChannelAsync(string channelId);
+
+    /// <summary>Starts the device-code sign-in to Outlook for the e-mail channel; returns as soon as the code is known.</summary>
+    Task<LoginChallenge> StartMailLoginAsync();
+
+    Task<MailAccountInfo> GetMailAccountAsync();
+
+    /// <summary>Forgets the Outlook sign-in (the Dynamics one is untouched).</summary>
+    Task SignOutMailAsync();
+
+    /// <summary>The user's rules as the JSON file the service keeps.</summary>
+    Task<string> GetRulesJsonAsync();
+
+    /// <summary>Checks the rules and, only if they are valid, makes them the ones in force at once.</summary>
+    Task<RulesSaveResult> SaveRulesJsonAsync(string json);
+
+    /// <summary>Like <see cref="DryRunRulesAsync"/> but for rules not saved yet (read only). Throws if they are not valid.</summary>
+    Task<DryRunResult> DryRunDraftAsync(string rulesJson);
+
+    /// <summary>Names for the queues, teams and users the active tickets point at, so rules can be written by name.</summary>
+    Task<IReadOnlyList<LookupItem>> GetLookupsAsync();
 
     /// <summary>Something changed: ask again. Sent to every connected app of that profile.</summary>
     event EventHandler<ChangedEventArgs>? Changed;

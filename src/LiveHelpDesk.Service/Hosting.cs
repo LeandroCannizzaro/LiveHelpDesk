@@ -43,6 +43,25 @@ public sealed class ProfilesWorker(ProfileManager profiles, ILogger<ProfilesWork
     }
 }
 
+/// <summary>
+/// Ends the monitor when the app that started it (<c>run</c>) raises the stop signal, so it shuts down cleanly
+/// instead of being killed. Not registered when running as the real Windows service.
+/// </summary>
+public sealed class StopSignalService(IHostApplicationLifetime lifetime) : BackgroundService
+{
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
+        Task.Run(
+            () =>
+            {
+                using var signal = StopSignal.Create();
+                if (WaitHandle.WaitAny([signal, stoppingToken.WaitHandle]) == 0)
+                {
+                    lifetime.StopApplication();
+                }
+            },
+            CancellationToken.None);
+}
+
 /// <summary>Serves the desktop apps. If the pipe cannot be created, another instance already runs: stop.</summary>
 public sealed class PipeHostedService(ProfileManager profiles, ILoggerFactory loggers) : BackgroundService
 {

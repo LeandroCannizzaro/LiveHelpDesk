@@ -72,7 +72,7 @@ public sealed class ServiceLink : IAsyncDisposable
                 continue;
             }
 
-            wait = _firstRetry;
+            var connectedAt = Environment.TickCount64;
             _connection = connection;
             connection.Api.Changed += OnChanged;
             Set(LinkState.Connected);
@@ -96,7 +96,14 @@ public sealed class ServiceLink : IAsyncDisposable
                 await connection.DisposeAsync();
             }
 
+            // A connection that dies at once (a broken or outdated service) must not turn into a tight reconnect loop.
+            var lasted = TimeSpan.FromMilliseconds(Environment.TickCount64 - connectedAt);
+            wait = lasted < TimeSpan.FromSeconds(5) ? TimeSpan.FromTicks(Math.Min(wait.Ticks * 2, _longestRetry.Ticks)) : _firstRetry;
             Set(LinkState.Connecting);
+            if (!await Delay(wait))
+            {
+                return;
+            }
         }
     }
 

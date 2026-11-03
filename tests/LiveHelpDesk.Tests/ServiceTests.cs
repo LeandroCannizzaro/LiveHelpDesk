@@ -56,6 +56,14 @@ internal sealed class FakeProfile(string sid) : IProfile
 
     public Task<DryRunResult> DryRunRulesAsync() => _api.DryRunRulesAsync();
 
+    public Task<string> GetRulesJsonAsync() => _api.GetRulesJsonAsync();
+
+    public Task<RulesSaveResult> SaveRulesJsonAsync(string json) => _api.SaveRulesJsonAsync(json);
+
+    public Task<DryRunResult> DryRunDraftAsync(string rulesJson) => _api.DryRunDraftAsync(rulesJson);
+
+    public Task<IReadOnlyList<LookupItem>> GetLookupsAsync() => _api.GetLookupsAsync();
+
     public Task<ChannelSettings> GetChannelSettingsAsync() => _api.GetChannelSettingsAsync();
 
     public Task SaveChannelSettingsAsync(ChannelSettings settings) => _api.SaveChannelSettingsAsync(settings);
@@ -63,6 +71,12 @@ internal sealed class FakeProfile(string sid) : IProfile
     public Task<IReadOnlyList<ChannelInfo>> GetChannelStatusAsync() => _api.GetChannelStatusAsync();
 
     public Task<ChannelTestResult> TestChannelAsync(string channelId) => _api.TestChannelAsync(channelId);
+
+    public Task<LoginChallenge> StartMailLoginAsync() => _api.StartMailLoginAsync();
+
+    public Task<MailAccountInfo> GetMailAccountAsync() => _api.GetMailAccountAsync();
+
+    public Task SignOutMailAsync() => _api.SignOutMailAsync();
 }
 
 public class ProfileManagerTests

@@ -1,4 +1,5 @@
 using System.Net;
+using LiveHelpDesk.Channels;
 using LiveHelpDesk.Core;
 using LiveHelpDesk.Core.Detection;
 using LiveHelpDesk.Core.Health;
@@ -40,6 +41,9 @@ public sealed class Pipeline : IDisposable
 
     public required ChannelRegistry Channels { get; init; }
 
+    /// <summary>The Outlook sign-in used by the e-mail channel (kept apart from the Dynamics one).</summary>
+    public required OutlookAuth Outlook { get; init; }
+
     /// <summary>The signed-in user's Dataverse id, known after the first successful call.</summary>
     public Guid? Me => _holder.Me;
 
@@ -68,10 +72,12 @@ public sealed class Pipeline : IDisposable
 
         var channelStore = new ChannelStore(Path.Combine(profileDirectory, "channels.json"), loggers.CreateLogger<ChannelStore>());
         var channelHttp = new HttpClient(handler, disposeHandler: false) { Timeout = TimeSpan.FromSeconds(20) };
-        var channels = new ChannelRegistry(channelStore, channelHttp);
+        var outlook = new OutlookAuth(profileDirectory, () => channelStore.Current.Email.Outlook, settings.TenantId);
+        var channels = new ChannelRegistry(channelStore, channelHttp, outlookTokens: outlook);
+        await outlook.AccountNameAsync(); // learn whether someone is signed in, so mail is held rather than failed
 
         var holder = new MeHolder();
-        var source = new DynamicsTicketSource(new DataverseClient(http, tokens), DynamicsFieldMap.Qgs, () => holder.Me);
+        var source = new DynamicsTicketSource(new DataverseClient(http, tokens), DynamicsFieldMap.Qgs, () => holder.Me, settings.QueueIds);
         var planner = new NotificationPlanner(mapping, () => new ChannelPolicy { Channels = channelStore.Current.Schedules }, id => options.IncidentUri(id));
         var engine = new PollingEngine(
             source, store, store, new TicketDetector(store, mapping), planner, mapping, settings.Polling,
@@ -90,6 +96,7 @@ public sealed class Pipeline : IDisposable
             Mapping = mapping,
             ChannelStore = channelStore,
             Channels = channels,
+            Outlook = outlook,
         };
     }
 

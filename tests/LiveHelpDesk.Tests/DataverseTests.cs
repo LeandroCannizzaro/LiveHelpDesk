@@ -313,6 +313,53 @@ public class DynamicsTicketSourceTests
         Assert.Contains("gs_statocomunicazioni", url);
     }
 
+    private static (DynamicsTicketSource Source, FakeHandler Handler) CreateScoped(params Guid[] queues)
+    {
+        var handler = new FakeHandler((_, _) => FakeHandler.Json("""{ "value": [] }"""));
+        var client = new DataverseClient(new HttpClient(handler) { BaseAddress = Api }, new FakeTokens());
+        return (new DynamicsTicketSource(client, DynamicsFieldMap.Qgs, () => null, queues), handler);
+    }
+
+    [Fact]
+    public async Task WithQueues_EveryScopedTicketQuery_IsRestrictedOnTheServer()
+    {
+        var (source, handler) = CreateScoped(T.Id(1), T.Id(2));
+        var scope = $"(_gs_codateam_value eq {T.Id(1):D} or _gs_codateam_value eq {T.Id(2):D})";
+
+        await source.GetActiveTicketsAsync(CancellationToken.None);
+        await source.GetActiveTicketIdsAsync(CancellationToken.None);
+        await source.GetTicketsModifiedSinceAsync(T.Baseline, CancellationToken.None);
+        await source.GetTicketsInScopeAsync([T.Id(7)], CancellationToken.None);
+
+        Assert.Equal(4, handler.Requests.Count);
+        for (var i = 0; i < 4; i++)
+        {
+            Assert.Contains($" and {scope}", Url(handler, i));
+        }
+    }
+
+    [Fact]
+    public async Task FetchingByIds_IsNotRestricted()
+    {
+        var (source, handler) = CreateScoped(T.Id(1));
+
+        await source.GetTicketsAsync([T.Id(7)], CancellationToken.None);
+
+        Assert.DoesNotContain("_gs_codateam_value eq", Url(handler, 0));
+    }
+
+    [Fact]
+    public async Task WithoutQueues_NoQueueConditionIsSent()
+    {
+        var (source, handler) = Create();
+
+        await source.GetActiveTicketsAsync(CancellationToken.None);
+        await source.GetTicketsInScopeAsync([T.Id(7)], CancellationToken.None);
+
+        Assert.DoesNotContain("_gs_codateam_value eq", Url(handler, 0));
+        Assert.DoesNotContain("_gs_codateam_value eq", Url(handler, 1));
+    }
+
     [Fact]
     public async Task ActiveTickets_AskForStateZero()
     {

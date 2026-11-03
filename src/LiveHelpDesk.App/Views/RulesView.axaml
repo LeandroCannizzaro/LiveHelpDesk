@@ -1,0 +1,208 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LiveHelpDesk.App.ViewModels"
+             xmlns:svc="using:LiveHelpDesk.App.Services"
+             x:Class="LiveHelpDesk.App.Views.RulesView"
+             x:DataType="vm:RulesViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,14,0,4" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*" Margin="16">
+    <!-- toolbar -->
+    <StackPanel Grid.Row="0" Spacing="8">
+      <TextBlock Text="Regole di notifica" FontSize="20" FontWeight="SemiBold" />
+      <WrapPanel>
+        <Button Content="Nuova regola" Command="{Binding AddRuleCommand}" Margin="0,0,6,6" />
+        <Button Content="Duplica" Command="{Binding DuplicateRuleCommand}" IsEnabled="{Binding HasSelection}" Margin="0,0,6,6" />
+        <Button Content="Elimina" Command="{Binding RemoveRuleCommand}" IsEnabled="{Binding HasSelection}" Margin="0,0,18,6" />
+        <Button Content="Prova su ticket di oggi" Command="{Binding PreviewCommand}" IsEnabled="{Binding !IsBusy}" Margin="0,0,6,6" />
+        <Button Content="Salva" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsBusy}" Classes="accent" Margin="0,0,6,6" />
+        <Button Content="Annulla le modifiche" Command="{Binding DiscardCommand}" IsEnabled="{Binding IsDirty}" Margin="0,0,18,6" />
+        <Button Content="Regole predefinite" Command="{Binding RestoreDefaultsCommand}" Margin="0,0,6,6" />
+        <ToggleButton Content="Modifica come testo (JSON)" IsChecked="{Binding ShowJson, Mode=OneWay}" Command="{Binding ToggleJsonCommand}" Margin="0,0,6,6" />
+      </WrapPanel>
+      <TextBlock Text="Ci sono modifiche non salvate." Foreground="#D97706" IsVisible="{Binding IsDirty}" />
+      <TextBlock Text="{Binding Status}" Opacity="0.85" TextWrapping="Wrap"
+                 IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+
+    <!-- errors and preview -->
+    <StackPanel Grid.Row="1" Spacing="6" Margin="0,8,0,0">
+      <ItemsControl ItemsSource="{Binding Errors}" IsVisible="{Binding HasErrors}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="x:String">
+            <TextBlock Text="{Binding}" Foreground="#DC2626" TextWrapping="Wrap" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Border Padding="12" CornerRadius="8" Background="#14808080" IsVisible="{Binding HasPreview}">
+        <ItemsControl ItemsSource="{Binding Preview}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:PreviewRow">
+              <StackPanel Margin="0,2">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="{Binding RuleName}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding Matches}" Opacity="0.75" />
+                </StackPanel>
+                <TextBlock Text="{Binding Examples}" Opacity="0.7" TextTrimming="CharacterEllipsis"
+                           IsVisible="{Binding Examples, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Border>
+    </StackPanel>
+
+    <!-- list + editor -->
+    <Grid Grid.Row="2" ColumnDefinitions="260,*" Margin="0,10,0,0" ColumnSpacing="14">
+      <ListBox Grid.Column="0" ItemsSource="{Binding Rules}" SelectedItem="{Binding Selected}" Background="Transparent">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:RuleViewModel">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <CheckBox IsChecked="{Binding Enabled}" ToolTip.Tip="Regola attiva" MinWidth="0" />
+              <TextBlock Text="{Binding Summary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <!-- JSON mode -->
+      <Grid Grid.Column="1" RowDefinitions="*,Auto" IsVisible="{Binding ShowJson}">
+        <TextBox Grid.Row="0" Text="{Binding JsonText}" AcceptsReturn="True" FontFamily="Consolas" TextWrapping="NoWrap" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+          <Button Content="Applica al modulo" Command="{Binding ApplyJsonCommand}" />
+          <TextBlock Classes="hint" VerticalAlignment="Center" Text="Il testo è il file delle regole: usarlo per condizioni più elaborate." />
+        </StackPanel>
+      </Grid>
+
+      <!-- form mode -->
+      <ScrollViewer Grid.Column="1" IsVisible="{Binding ShowForm}">
+        <ContentControl Content="{Binding Selected}" IsVisible="{Binding HasSelection}">
+          <ContentControl.ContentTemplate>
+            <DataTemplate x:DataType="vm:RuleViewModel">
+              <StackPanel Spacing="4" Margin="0,0,12,24">
+                <TextBlock Classes="section" Text="Nome" Margin="0,0,0,4" />
+                <TextBox Text="{Binding Name}" />
+
+                <TextBlock Classes="section" Text="Quando" />
+                <TextBlock Classes="hint" Text="La regola scatta per uno di questi fatti:" />
+                <ItemsControl ItemsSource="{Binding EventChoices}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SelectableItem">
+                      <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}" Margin="0,0,16,0" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Classes="section" Text="Ma solo se" />
+                <TextBlock Classes="hint" Text="Questa regola ha condizioni troppo elaborate per il modulo: modificarle dal testo (JSON). Il resto si può cambiare qui."
+                           IsVisible="{Binding IsAdvanced}" />
+                <StackPanel Spacing="4" IsVisible="{Binding !IsAdvanced}">
+                  <TextBlock Classes="hint" Text="Senza condizioni la regola vale per qualsiasi ticket." />
+
+                  <TextBlock Text="Devono valere tutte:" FontWeight="SemiBold" Margin="0,6,0,0" />
+                  <ItemsControl ItemsSource="{Binding AllRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ConditionRow">
+                        <Grid ColumnDefinitions="200,230,*,Auto" ColumnSpacing="6" Margin="0,2">
+                          <ComboBox Grid.Column="0" ItemsSource="{Binding Fields}" SelectedItem="{Binding Field}" HorizontalAlignment="Stretch" />
+                          <ComboBox Grid.Column="1" ItemsSource="{Binding Operators}" SelectedItem="{Binding Operator}" HorizontalAlignment="Stretch" />
+                          <ComboBox Grid.Column="2" ItemsSource="{Binding Choices}" SelectedItem="{Binding ValueChoice}" IsVisible="{Binding ShowChoices}" HorizontalAlignment="Stretch" />
+                          <TextBox Grid.Column="2" Text="{Binding Value}" IsVisible="{Binding ShowText}" />
+                          <Button Grid.Column="3" Content="✕" Command="{Binding RemoveCommand}" ToolTip.Tip="Togli la condizione" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Button Content="+ Aggiungi" Command="{Binding AddAllCommand}" HorizontalAlignment="Left" />
+
+                  <TextBlock Text="Basta che ne valga una:" FontWeight="SemiBold" Margin="0,10,0,0" />
+                  <ItemsControl ItemsSource="{Binding AnyRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ConditionRow">
+                        <Grid ColumnDefinitions="200,230,*,Auto" ColumnSpacing="6" Margin="0,2">
+                          <ComboBox Grid.Column="0" ItemsSource="{Binding Fields}" SelectedItem="{Binding Field}" HorizontalAlignment="Stretch" />
+                          <ComboBox Grid.Column="1" ItemsSource="{Binding Operators}" SelectedItem="{Binding Operator}" HorizontalAlignment="Stretch" />
+                          <ComboBox Grid.Column="2" ItemsSource="{Binding Choices}" SelectedItem="{Binding ValueChoice}" IsVisible="{Binding ShowChoices}" HorizontalAlignment="Stretch" />
+                          <TextBox Grid.Column="2" Text="{Binding Value}" IsVisible="{Binding ShowText}" />
+                          <Button Grid.Column="3" Content="✕" Command="{Binding RemoveCommand}" ToolTip.Tip="Togli la condizione" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Button Content="+ Aggiungi" Command="{Binding AddAnyCommand}" HorizontalAlignment="Left" />
+
+                  <TextBlock Text="Non deve valere nessuna:" FontWeight="SemiBold" Margin="0,10,0,0" />
+                  <ItemsControl ItemsSource="{Binding NotRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ConditionRow">
+                        <Grid ColumnDefinitions="200,230,*,Auto" ColumnSpacing="6" Margin="0,2">
+                          <ComboBox Grid.Column="0" ItemsSource="{Binding Fields}" SelectedItem="{Binding Field}" HorizontalAlignment="Stretch" />
+                          <ComboBox Grid.Column="1" ItemsSource="{Binding Operators}" SelectedItem="{Binding Operator}" HorizontalAlignment="Stretch" />
+                          <ComboBox Grid.Column="2" ItemsSource="{Binding Choices}" SelectedItem="{Binding ValueChoice}" IsVisible="{Binding ShowChoices}" HorizontalAlignment="Stretch" />
+                          <TextBox Grid.Column="2" Text="{Binding Value}" IsVisible="{Binding ShowText}" />
+                          <Button Grid.Column="3" Content="✕" Command="{Binding RemoveCommand}" ToolTip.Tip="Togli la condizione" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Button Content="+ Aggiungi" Command="{Binding AddNotCommand}" HorizontalAlignment="Left" />
+                </StackPanel>
+
+                <TextBlock Classes="section" Text="Allora avvisa tramite" />
+                <ItemsControl ItemsSource="{Binding ChannelChoices}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SelectableItem">
+                      <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}" Margin="0,0,16,0" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Grid ColumnDefinitions="Auto,200,Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="6" Margin="0,8,0,0">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="Urgenza" VerticalAlignment="Center" />
+                  <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding Severities}" SelectedItem="{Binding Severity}" HorizontalAlignment="Stretch" />
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="Dettaglio" VerticalAlignment="Center" />
+                  <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Details}" SelectedItem="{Binding Detail}" HorizontalAlignment="Stretch" />
+                </Grid>
+                <TextBlock Classes="hint" Text="Con il dettaglio minimo i canali che escono dall'azienda (SMS, WhatsApp) non portano il titolo del ticket né il testo dei messaggi." />
+
+                <CheckBox Content="Se nessuno risponde, avvisa anche tramite altri canali" IsChecked="{Binding EscalateEnabled}" Margin="0,8,0,0" />
+                <StackPanel Spacing="4" IsVisible="{Binding EscalateEnabled}" Margin="24,0,0,0">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="dopo" VerticalAlignment="Center" />
+                    <TextBox Text="{Binding EscalateMinutes}" Width="70" />
+                    <TextBlock Text="minuti, su:" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <ItemsControl ItemsSource="{Binding EscalateChannelChoices}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:SelectableItem">
+                        <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}" Margin="0,0,16,0" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </StackPanel>
+            </DataTemplate>
+          </ContentControl.ContentTemplate>
+        </ContentControl>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>
