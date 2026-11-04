@@ -29,10 +29,11 @@
     <Feature Id="Main" Title="LiveHelpDesk" Level="1" AllowAbsent="no">
       <ComponentGroupRef Id="AppFiles" />
       <ComponentRef Id="AppExe" />
+      <ComponentRef Id="StartMenuShortcut" />
       <ComponentRef Id="ServiceControl" />
     </Feature>
 
-    <!-- The app and the service folder (service\), exactly as published. LiveHelpDesk.exe is separate: it carries the shortcut. -->
+    <!-- The app and the service folder (service\), exactly as published. LiveHelpDesk.exe is separate: the shortcut points to it. -->
     <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
       <Files Include="$(AppSource)\**">
         <Exclude Files="$(AppSource)\LiveHelpDesk.exe" />
@@ -41,9 +42,7 @@
 
     <DirectoryRef Id="INSTALLFOLDER">
       <Component Id="AppExe">
-        <File Id="AppExe" Source="$(AppSource)\LiveHelpDesk.exe">
-          <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="LiveHelpDesk" WorkingDirectory="INSTALLFOLDER" Advertise="no" />
-        </File>
+        <File Id="AppExe" Source="$(AppSource)\LiveHelpDesk.exe" KeyPath="yes" />
       </Component>
 
       <!-- If the app registered the Windows service, stop it before its files are replaced or removed, and remove it on uninstall. -->
@@ -52,6 +51,15 @@
         <ServiceControl Id="StopService" Name="LiveHelpDesk" Stop="both" Remove="uninstall" Wait="yes" />
       </Component>
     </DirectoryRef>
+
+    <!-- Windows Installer validation treats the Start menu as a profile folder (ICE43/ICE57): a non-advertised shortcut
+         needs its own component with an HKCU key as KeyPath, not the exe in Program Files. -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut">
+        <Shortcut Id="StartMenuShortcut" Name="LiveHelpDesk" Target="[#AppExe]" WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\LiveHelpDesk" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
 
     <!-- After an upgrade, bring the service back if there is one (on a first install there is none: the failure is harmless). -->
     <CustomAction Id="StartServiceIfPresent" Directory="INSTALLFOLDER" ExeCommand="&quot;[System64Folder]sc.exe&quot; start LiveHelpDesk" Execute="deferred" Impersonate="no" Return="ignore" />

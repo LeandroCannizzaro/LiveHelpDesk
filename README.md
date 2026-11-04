@@ -113,7 +113,7 @@ Ogni rilascio contiene due artefatti, prodotti automaticamente dal workflow `Rel
 | **Installer MSI** | `LiveHelpDesk-x.y.z-x64.msi` | installazione classica con doppio clic (per tutti gli utenti) |
 | **Archivio portatile** | `LiveHelpDesk-x.y.z-win-x64.zip` | distribuzione da share di rete o senza installer (contiene gli script `install.cmd`/`uninstall.cmd`) |
 
-Il workflow `.github/workflows/release.yml` parte quando si crea un tag `vX.Y.Z` (per esempio `git tag v0.1.0 && git push origin v0.1.0`),
+(per esempio `git tag v0.1.1 && git push origin v0.1.1`)
 oppure a mano da *Actions → Release → Run workflow*. Costruisce l'MSI (`installer\build-msi.ps1`) e lo ZIP (`installer\build-zip.ps1`),
 li carica come artefatti e, sui tag, crea la Release allegandoli.
 

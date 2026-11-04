@@ -5,7 +5,7 @@
     <Cultures>it-IT</Cultures>
     <!-- Both come from installer\build-msi.ps1: the published app folder and a numeric MSI version. -->
     <AppSource Condition="'$(AppSource)' == ''">$(MSBuildThisFileDirectory)..\..\artifacts\package\app</AppSource>
-    <ProductVersion Condition="'$(ProductVersion)' == ''">0.1.0</ProductVersion>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">0.1.1</ProductVersion>
     <DefineConstants>$(DefineConstants);AppSource=$(AppSource);ProductVersion=$(ProductVersion)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
