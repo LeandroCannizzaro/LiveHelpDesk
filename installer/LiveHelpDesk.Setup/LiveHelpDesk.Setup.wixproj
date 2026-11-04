@@ -1,5 +1,4 @@
-<Project Sdk="WixToolset.Sdk/5.0.2">
-
+<Project Sdk="WixToolset.Sdk/5.0.2" ToolsVersion="4.0">
   <PropertyGroup>
     <OutputName>LiveHelpDesk</OutputName>
     <InstallerPlatform>x64</InstallerPlatform>
@@ -9,9 +8,7 @@
     <ProductVersion Condition="'$(ProductVersion)' == ''">0.1.0</ProductVersion>
     <DefineConstants>$(DefineConstants);AppSource=$(AppSource);ProductVersion=$(ProductVersion)</DefineConstants>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
   </ItemGroup>
-
 </Project>
