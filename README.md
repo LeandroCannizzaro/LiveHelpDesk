@@ -6,6 +6,8 @@ mostra il sito Dynamics in una WebView e un'icona/overlay che lampeggia quando s
 
 Solo Windows (10/11). C# / .NET 10, Avalonia 12.
 
+📖 **Manuale d'uso (non tecnico):** https://leandrocannizzaro.github.io/LiveHelpDesk/
+
 > Il piano di implementazione completo e le decisioni sono nella [issue #1](https://github.com/LeandroCannizzaro/LiveHelpDesk/issues/1).
 
 ## Struttura
@@ -101,6 +103,23 @@ per questo l'app resterà residente nell'area di notifica. Il monitoraggio non n
 Opzione di prova: `--exit-after <secondi>` chiude la finestra da sola.
 Gli eventi di navigazione (solo host e percorso) vanno in `%LocalAppData%\LiveHelpDesk\logs\webview-spike.log`.
 
+## Rilasci e installazione
+
+I pacchetti pronti all'uso si trovano nella pagina [Releases](https://github.com/LeandroCannizzaro/LiveHelpDesk/releases).
+Ogni rilascio contiene due artefatti, prodotti automaticamente dal workflow `Release`:
+
+| Artefatto | File | Quando usarlo |
+|---|---|---|
+| **Installer MSI** | `LiveHelpDesk-x.y.z-x64.msi` | installazione classica con doppio clic (per tutti gli utenti) |
+| **Archivio portatile** | `LiveHelpDesk-x.y.z-win-x64.zip` | distribuzione da share di rete o senza installer (contiene gli script `install.cmd`/`uninstall.cmd`) |
+
+Il workflow `.github/workflows/release.yml` parte quando si crea un tag `vX.Y.Z` (per esempio `git tag v0.1.0 && git push origin v0.1.0`),
+oppure a mano da *Actions → Release → Run workflow*. Costruisce l'MSI (`installer\build-msi.ps1`) e lo ZIP (`installer\build-zip.ps1`),
+li carica come artefatti e, sui tag, crea la Release allegandoli.
+
+Il manuale d'uso è un sito statico in `docs/`, pubblicato su GitHub Pages dal workflow `.github/workflows/pages.yml`
+(da abilitare una volta in *Settings → Pages → Source = GitHub Actions*).
+
 ## Installazione da una share di rete
 
 Non è firmato: se i file vengono copiati da una share interna (senza "Mark of the Web") SmartScreen non interviene.
@@ -119,4 +138,5 @@ Lo script avvisa se manca WebView2 Runtime, chiude app e servizio prima di aggio
 
 ## Stato
 
-Fasi 1-5 (scheletro, nucleo, servizio, canali esterni, app) in corso; mancano l'editor delle regole e dei canali nell'app e l'installer MSI (per ora gli script in `installer\`). Repository privato.
+Fasi 1-5 (scheletro, nucleo, servizio, canali esterni, app) in corso; mancano l'editor delle regole e dei canali nell'app.
+Installer MSI e archivio ZIP disponibili (`installer\build-msi.ps1`, `installer\build-zip.ps1`) e pubblicati dal workflow `Release`. Repository privato.

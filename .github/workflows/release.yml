@@ -1,0 +1,75 @@
+name: Release
+
+# Produce i due artefatti di pubblicazione (MSI e ZIP portatile) e, quando si crea un tag "vX.Y.Z",
+# li allega a una Release di GitHub. Si puo' anche avviare a mano (workflow_dispatch) per un pacchetto di prova.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versione x.y.z (vuoto = usa VersionPrefix di Directory.Build.props)'
+        required: false
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: true
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Pacchetto MSI + ZIP (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Determina la versione
+        id: version
+        shell: pwsh
+        run: |
+          $v = '${{ github.event.inputs.version }}'
+          if (-not $v -and '${{ github.ref_type }}' -eq 'tag') { $v = '${{ github.ref_name }}' -replace '^v', '' }
+          if (-not $v) {
+            $v = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.VersionPrefix | Where-Object { $_ } | Select-Object -First 1
+          }
+          if ($v -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') { throw "Versione non valida: '$v' (serve x.y.z)" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Versione: $v"
+
+      - name: Costruisci l'MSI (pubblica anche la cartella app)
+        shell: pwsh
+        run: ./installer/build-msi.ps1 -Version ${{ steps.version.outputs.version }} -Output artifacts
+
+      - name: Costruisci lo ZIP portatile
+        shell: pwsh
+        run: ./installer/build-zip.ps1 -Version ${{ steps.version.outputs.version }} -Package artifacts/package/app -Output artifacts
+
+      - name: Carica l'artefatto MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiveHelpDesk-${{ steps.version.outputs.version }}-msi
+          path: artifacts/LiveHelpDesk-${{ steps.version.outputs.version }}-x64.msi
+          if-no-files-found: error
+
+      - name: Carica l'artefatto ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiveHelpDesk-${{ steps.version.outputs.version }}-zip
+          path: artifacts/LiveHelpDesk-${{ steps.version.outputs.version }}-win-x64.zip
+          if-no-files-found: error
+
+      - name: Pubblica la Release (solo sui tag)
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: LiveHelpDesk ${{ steps.version.outputs.version }}
+          files: |
+            artifacts/LiveHelpDesk-${{ steps.version.outputs.version }}-x64.msi
+            artifacts/LiveHelpDesk-${{ steps.version.outputs.version }}-win-x64.zip
+          generate_release_notes: true
