@@ -1,5 +1,7 @@
 using System.Security.AccessControl;
+using System.Security.Cryptography;
 using System.Security.Principal;
+using System.Text;
 
 namespace LiveHelpDesk.Service;
 
@@ -50,24 +52,22 @@ public static class ProfileSecurity
         yield return new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
         yield return new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
         yield return WindowsIdentity.GetCurrent().User!;
-
-        if (ServiceAccountSid() is { } service)
-        {
-            yield return service;
-        }
+        yield return ServiceAccountSid;
     }
 
-    /// <summary>The SID of <see cref="ServiceInstaller.ServiceAccount"/>; it is derived from the service name, so it resolves even before the service is installed.</summary>
-    private static SecurityIdentifier? ServiceAccountSid()
+    /// <summary>
+    /// The SID of <see cref="ServiceInstaller.ServiceAccount"/>. Windows derives a virtual service account's SID from the
+    /// service name alone (S-1-5-80 followed by the SHA-1 of the upper-case name, the value <c>sc showsid</c> prints),
+    /// so it is computed rather than looked up: <c>NT SERVICE\LiveHelpDesk</c> does not resolve until the service exists,
+    /// and a folder created by the user-mode monitor must already be open to the service that may be installed later.
+    /// </summary>
+    public static SecurityIdentifier ServiceAccountSid { get; } = ComputeServiceSid(ServiceInstaller.ServiceName);
+
+    private static SecurityIdentifier ComputeServiceSid(string serviceName)
     {
-        try
-        {
-            return (SecurityIdentifier)new NTAccount(ServiceInstaller.ServiceAccount).Translate(typeof(SecurityIdentifier));
-        }
-        catch (Exception ex) when (ex is IdentityNotMappedException or SystemException)
-        {
-            return null;
-        }
+        var hash = SHA1.HashData(Encoding.Unicode.GetBytes(serviceName.ToUpperInvariant()));
+        var subAuthorities = Enumerable.Range(0, hash.Length / 4).Select(i => BitConverter.ToUInt32(hash, i * 4));
+        return new SecurityIdentifier("S-1-5-80-" + string.Join('-', subAuthorities));
     }
 
     /// <summary>The security identifiers that can reach <paramref name="directory"/>, for tests and diagnostics.</summary>

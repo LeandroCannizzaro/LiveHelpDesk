@@ -301,10 +301,17 @@ public sealed class ProfileSecurityTests : IDisposable
         Assert.Contains(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), who);
         Assert.Contains(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), who);
         Assert.Contains(WindowsIdentity.GetCurrent().User!, who);
-        Assert.Contains((SecurityIdentifier)new NTAccount("NT SERVICE\\LiveHelpDesk").Translate(typeof(SecurityIdentifier)), who);
+        Assert.Contains(ProfileSecurity.ServiceAccountSid, who);
         Assert.DoesNotContain(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), who);
         Assert.DoesNotContain(new SecurityIdentifier(WellKnownSidType.WorldSid, null), who);
         Assert.DoesNotContain(new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null), who);
+    }
+
+    [Fact]
+    public void ServiceAccountSid_IsTheOneWindowsAssignsToTheService()
+    {
+        // The value printed by "sc showsid LiveHelpDesk": it does not depend on the service being installed.
+        Assert.Equal("S-1-5-80-1377450276-1573154359-4125221713-562287861-3007906967", ProfileSecurity.ServiceAccountSid.Value);
     }
 
     [Fact]
