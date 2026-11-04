@@ -28,15 +28,27 @@ public sealed class ProfilesWorker(ProfileManager profiles, ILogger<ProfilesWork
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var root = Path.Combine(AppPaths.MachineRoot, "profiles");
-        if (!Directory.Exists(root))
+        List<string> returning;
+        try
         {
+            if (!Directory.Exists(root))
+            {
+                return;
+            }
+
+            returning = Directory.GetDirectories(root)
+                .Where(d => File.Exists(Path.Combine(d, "msal-cache.bin")))
+                .Select(d => Path.GetFileName(d)!)
+                .ToList();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Resuming earlier profiles is best effort and must never take the whole service down: a folder
+            // the service cannot read (for instance one the user-mode monitor locked to the signed-in user)
+            // would otherwise throw here and, unhandled in a BackgroundService, stop the host on startup.
+            logger.LogError(ex, "Could not list the existing profiles in {Root}; the service keeps running", root);
             return;
         }
-
-        var returning = Directory.GetDirectories(root)
-            .Where(d => File.Exists(Path.Combine(d, "msal-cache.bin")))
-            .Select(d => Path.GetFileName(d)!)
-            .ToList();
 
         logger.LogInformation("Resuming {Count} profile(s)", returning.Count);
         await profiles.StartExistingAsync(returning);

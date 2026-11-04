@@ -34,7 +34,13 @@ switch (command)
     case "install":
     {
         var installed = await ServiceInstaller.RunAsync(ServiceInstaller.InstallCommands(Environment.ProcessPath!), Console.WriteLine);
-        return installed != 0 ? installed : await ServiceInstaller.RunAsync([ServiceInstaller.StartCommand()], Console.WriteLine);
+        if (installed != 0)
+        {
+            return installed;
+        }
+
+        await ServiceInstaller.GrantDataAccessAsync(AppPaths.MachineRoot, Console.WriteLine);
+        return await ServiceInstaller.RunAsync([ServiceInstaller.StartCommand()], Console.WriteLine);
     }
 
     case "uninstall":

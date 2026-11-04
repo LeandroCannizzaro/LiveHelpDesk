@@ -34,6 +34,22 @@ public static class ServiceInstaller
 
     public static string[] StopCommand() => ["stop", ServiceName];
 
+    /// <summary>
+    /// Opens the data folder to the service account. Installing is done elevated, so this can mend folders that an
+    /// earlier user-mode monitor created and locked to the signed-in user: the service runs under a different
+    /// account and could otherwise not read them, so it would start and at once stop (it cannot resume any profile).
+    /// </summary>
+    public static async Task GrantDataAccessAsync(string dataRoot, Action<string> output)
+    {
+        if (!Directory.Exists(dataRoot))
+        {
+            return; // nothing created yet: the service will make and own its folders itself
+        }
+
+        var (code, text) = await RunProcessAsync("icacls.exe", [dataRoot, "/grant", $"{ServiceAccount}:(OI)(CI)M", "/T", "/C", "/Q"]);
+        output($"icacls {ServiceAccount}: {(code == 0 ? "ok" : text.Trim())}");
+    }
+
     public static bool IsElevated()
     {
         using var identity = WindowsIdentity.GetCurrent();
@@ -62,9 +78,11 @@ public static class ServiceInstaller
         return 0;
     }
 
-    private static async Task<(int Code, string Output)> RunScAsync(string[] arguments)
+    private static async Task<(int Code, string Output)> RunScAsync(string[] arguments) => await RunProcessAsync("sc.exe", arguments);
+
+    private static async Task<(int Code, string Output)> RunProcessAsync(string fileName, string[] arguments)
     {
-        var info = new ProcessStartInfo("sc.exe") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
+        var info = new ProcessStartInfo(fileName) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
         foreach (var argument in arguments)
         {
             info.ArgumentList.Add(argument);

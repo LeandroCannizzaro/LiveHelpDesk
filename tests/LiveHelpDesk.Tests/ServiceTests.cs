@@ -301,6 +301,7 @@ public sealed class ProfileSecurityTests : IDisposable
         Assert.Contains(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), who);
         Assert.Contains(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), who);
         Assert.Contains(WindowsIdentity.GetCurrent().User!, who);
+        Assert.Contains((SecurityIdentifier)new NTAccount("NT SERVICE\\LiveHelpDesk").Translate(typeof(SecurityIdentifier)), who);
         Assert.DoesNotContain(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), who);
         Assert.DoesNotContain(new SecurityIdentifier(WellKnownSidType.WorldSid, null), who);
         Assert.DoesNotContain(new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null), who);
