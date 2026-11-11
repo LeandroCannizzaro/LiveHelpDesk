@@ -196,6 +196,33 @@ public class TemplatedNotificationTests
     }
 
     [Fact]
+    public void TheCustomerAndTheDynamicsNames_CanBeUsed_AndCodesStayAvailable()
+    {
+        var ticket = T.Ticket(extra: new Dictionary<string, string?> { ["applicativo"] = "717600005", ["tipologia"] = "1" }) with
+        {
+            Labels = new Dictionary<string, string?>
+            {
+                [TicketLabels.Customer] = "Rossi S.r.l.",
+                [TicketLabels.Queue] = "Supporto L1",
+                ["applicativo"] = "Fatturazione",
+            },
+        };
+        var evt = new TicketEvent("k", TicketEventType.TicketCreated, T.At(0), ticket.Id, ticket.Number, ticket.Title, Ticket: ticket);
+
+        var values = TemplateFields.Values(evt, TicketMapping.Qgs, "r", Severity.Info, null);
+
+        Assert.Equal("Rossi S.r.l.", values["cliente"]);
+        Assert.Equal("Supporto L1", values["coda"]);
+        Assert.Null(values["proprietario"]);
+        Assert.Equal("Fatturazione", values["applicativo_nome"]);
+        Assert.Equal("717600005", values["applicativo"]);
+        Assert.Equal("1", values["tipologia_nome"]);
+        Assert.Equal("Attivo", values["stato_ticket"]);
+        Assert.All(TemplateFields.All, f => Assert.True(values.ContainsKey(f.Key), f.Key));
+        Assert.All(TemplateFields.All, f => Assert.False(string.IsNullOrEmpty(f.Group), f.Key));
+    }
+
+    [Fact]
     public void AnotherRulesText_IsNotUsed()
     {
         var template = new NotificationTemplate { Id = "a", RuleIds = ["altra"], Channels = ["toast"], Body = "x" };

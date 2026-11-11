@@ -27,6 +27,27 @@ public sealed record TicketSnapshot(
 {
     /// <summary>Other installation-specific fields that rules may filter on (key = mapping role).</summary>
     public IReadOnlyDictionary<string, string?> Extra { get; init; } = new Dictionary<string, string?>();
+
+    /// <summary>
+    /// The names Dynamics shows for lookups and choices (customer name, queue name, option labels...), for display only.
+    /// Keys are the roles in <see cref="TicketLabels"/> and the <see cref="Extra"/> roles.
+    /// </summary>
+    public IReadOnlyDictionary<string, string?> Labels { get; init; } = new Dictionary<string, string?>();
+}
+
+/// <summary>Keys of <see cref="TicketSnapshot.Labels"/> for the standard columns.</summary>
+public static class TicketLabels
+{
+    public const string Customer = "customer";
+    public const string Owner = "owner";
+    public const string Queue = "queue";
+    public const string Level2User = "level2user";
+    public const string CommunicationStatus = "commstatus";
+    public const string CreatedBy = "createdby";
+    public const string ModifiedBy = "modifiedby";
+    public const string State = "state";
+    public const string Status = "status";
+    public const string Priority = "priority";
 }
 
 public enum MessageKind

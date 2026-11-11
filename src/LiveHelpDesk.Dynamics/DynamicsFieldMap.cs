@@ -40,6 +40,7 @@ public sealed record DynamicsFieldMap
         {
             "incidentid", "ticketnumber", "title", "statecode", "statuscode", "prioritycode", "createdon", "modifiedon",
             "_ownerid_value", Lookup(Queue), Lookup(Level2User), Lookup(Customer), CommunicationStatus, Reminder, OnHold,
+            "_createdby_value", "_modifiedby_value",
         }.Concat(Extras.Values).Distinct();
 
     public static string Lookup(string name) => $"_{name}_value";

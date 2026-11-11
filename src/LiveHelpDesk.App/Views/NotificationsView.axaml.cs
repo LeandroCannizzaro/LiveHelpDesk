@@ -25,12 +25,18 @@ public partial class NotificationsView : UserControl
         BodyEditor.TextArea.GotFocus += (_, _) => _lastEditor = BodyEditor;
 
         var flyout = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
-        foreach (var field in TemplateFields.All)
+        foreach (var group in TemplateFields.All.GroupBy(f => f.Group))
         {
-            var item = new MenuItem { Header = $"{field.Label}   {{{{{field.Key}}}}}" };
-            ToolTip.SetTip(item, field.Description);
-            item.Click += (_, _) => TagEditing.Insert(_lastEditor, field.Key);
-            flyout.Items.Add(item);
+            var groupItem = new MenuItem { Header = group.Key };
+            foreach (var field in group)
+            {
+                var item = new MenuItem { Header = $"{field.Label}   {{{{{field.Key}}}}}" };
+                ToolTip.SetTip(item, field.Description);
+                item.Click += (_, _) => TagEditing.Insert(_lastEditor, field.Key);
+                groupItem.Items.Add(item);
+            }
+
+            flyout.Items.Add(groupItem);
         }
 
         InsertFieldButton.Flyout = flyout;

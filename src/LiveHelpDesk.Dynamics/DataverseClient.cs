@@ -150,7 +150,7 @@ public sealed class DataverseClient(
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.Headers.Add("OData-MaxVersion", "4.0");
         request.Headers.Add("OData-Version", "4.0");
-        request.Headers.Add("Prefer", "odata.maxpagesize=500, odata.include-annotations=\"Microsoft.Dynamics.CRM.lookuplogicalname\"");
+        request.Headers.Add("Prefer", "odata.maxpagesize=500, odata.include-annotations=\"Microsoft.Dynamics.CRM.lookuplogicalname,OData.Community.Display.V1.FormattedValue\"");
         return request;
     }
 

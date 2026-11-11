@@ -211,7 +211,10 @@ public class DataverseMapperTests
           "_ownerid_value": "aaaaaaaa-0000-0000-0000-000000000001", "_gs_codateam_value": "bbbbbbbb-0000-0000-0000-000000000002",
           "_gs_utentediliv2_value": null, "_gs_cliente_value": "cccccccc-0000-0000-0000-000000000003",
           "gs_statocomunicazioni": 717600002, "gs_sollecito": 717600000, "gs_insospeso": 717600001,
-          "gs_applicativo": 717600005, "cr754_tipologiaticket": null }
+          "gs_applicativo": 717600005, "cr754_tipologiaticket": null,
+          "_gs_cliente_value@OData.Community.Display.V1.FormattedValue": "Rossi Forniture S.r.l.",
+          "_ownerid_value@OData.Community.Display.V1.FormattedValue": "Luca Bianchi",
+          "gs_applicativo@OData.Community.Display.V1.FormattedValue": "Fatturazione" }
         """;
 
     [Fact]
@@ -231,6 +234,10 @@ public class DataverseMapperTests
         Assert.Equal(new DateTimeOffset(2026, 10, 30, 14, 13, 38, TimeSpan.Zero), ticket.CreatedOn);
         Assert.Equal("717600005", ticket.Extra["applicativo"]);
         Assert.Null(ticket.Extra["tipologia"]);
+        Assert.Equal("Rossi Forniture S.r.l.", ticket.Labels[TicketLabels.Customer]);
+        Assert.Equal("Luca Bianchi", ticket.Labels[TicketLabels.Owner]);
+        Assert.Equal("Fatturazione", ticket.Labels["applicativo"]);
+        Assert.Null(ticket.Labels[TicketLabels.Queue]);
     }
 
     [Fact]

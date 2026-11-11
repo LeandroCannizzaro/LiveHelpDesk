@@ -8,13 +8,28 @@ namespace LiveHelpDesk.Dynamics;
 public static class DataverseMapper
 {
     private const string LogicalNameAnnotation = "@Microsoft.Dynamics.CRM.lookuplogicalname";
+    private const string FormattedValueAnnotation = "@OData.Community.Display.V1.FormattedValue";
 
     public static TicketSnapshot Ticket(JsonElement row, DynamicsFieldMap map)
     {
         var extra = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        var labels = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            [TicketLabels.Customer] = Formatted(row, DynamicsFieldMap.Lookup(map.Customer)),
+            [TicketLabels.Owner] = Formatted(row, "_ownerid_value"),
+            [TicketLabels.Queue] = Formatted(row, DynamicsFieldMap.Lookup(map.Queue)),
+            [TicketLabels.Level2User] = Formatted(row, DynamicsFieldMap.Lookup(map.Level2User)),
+            [TicketLabels.CommunicationStatus] = Formatted(row, map.CommunicationStatus),
+            [TicketLabels.CreatedBy] = Formatted(row, "_createdby_value"),
+            [TicketLabels.ModifiedBy] = Formatted(row, "_modifiedby_value"),
+            [TicketLabels.State] = Formatted(row, "statecode"),
+            [TicketLabels.Status] = Formatted(row, "statuscode"),
+            [TicketLabels.Priority] = Formatted(row, "prioritycode"),
+        };
         foreach (var (role, column) in map.Extras)
         {
             extra[role] = Text(row, column);
+            labels[role] = Formatted(row, column);
         }
 
         return new TicketSnapshot(
@@ -35,6 +50,7 @@ public static class DataverseMapper
             Time(row, "modifiedon"))
         {
             Extra = extra,
+            Labels = labels,
         };
     }
 
@@ -97,6 +113,12 @@ public static class DataverseMapper
             _ => null,
         };
     }
+
+    /// <summary>What Dynamics shows for the column (record name, option label); null when it sends nothing.</summary>
+    private static string? Formatted(JsonElement row, string column) =>
+        row.TryGetProperty(column + FormattedValueAnnotation, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
 
     private static int? Int(JsonElement row, string column) =>
         row.TryGetProperty(column, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number)

@@ -274,19 +274,23 @@
         <div class="note"><div>🧩</div><div>Una regola su un canale può avere <b>un solo</b> testo: se due testi si sovrappongono la pagina lo segnala in rosso e non permette di salvare. Per questo la copia creata con <b>Duplica</b> parte senza canali.</div></div>
 
         <h3>Inserire i dati del ticket</h3>
-        <p>I dati del ticket si inseriscono come <b>campi</b> tra doppie parentesi graffe, per esempio <code>{{numero}}</code>: al momento dell'invio vengono sostituiti con il valore vero. Non serve ricordarli: scrivendo <code>{{</code> (oppure premendo <b>Ctrl+Spazio</b>) si apre l'elenco dei campi con la loro spiegazione, che si filtra mentre scrivi; con <b>Invio</b> scegli quello evidenziato. C'è anche il pulsante <b>Inserisci campo</b>. I campi riconosciuti appaiono in blu, quelli scritti male in rosso.</p>
+        <p>I dati del ticket si inseriscono come <b>campi</b> tra doppie parentesi graffe, per esempio <code>{{numero}}</code>: al momento dell'invio vengono sostituiti con il valore vero. Non serve ricordarli: scrivendo <code>{{</code> (oppure premendo <b>Ctrl+Spazio</b>) si apre l'elenco dei campi con la loro spiegazione, che si filtra mentre scrivi; con <b>Invio</b> scegli quello evidenziato. C'è anche il pulsante <b>Inserisci campo</b>, con i campi divisi per argomento (Ticket, Cliente e persone, Classificazione, Evento, Regola). I campi riconosciuti appaiono in blu, quelli scritti male in rosso.</p>
         <table class="channels">
           <tr><th>Campo</th><th>Cosa contiene</th></tr>
           <tr><td><code>{{numero}}</code>, <code>{{titolo}}</code></td><td>Numero e titolo del ticket</td></tr>
           <tr><td><code>{{priorita}}</code>, <code>{{stato}}</code>, <code>{{livello}}</code></td><td>Priorità, stato e livello di supporto (L0, L1, L2)</td></tr>
+          <tr><td><code>{{stato_ticket}}</code>, <code>{{stato_comunicazioni}}</code></td><td>Stato del record (Attivo, Risolto, Annullato) e stato delle comunicazioni</td></tr>
+          <tr><td><code>{{cliente}}</code>, <code>{{proprietario}}</code>, <code>{{coda}}</code>, <code>{{utente_l2}}</code></td><td>Il nome del cliente, di chi ha in carico il ticket, della coda/team e dell'utente di 2° livello</td></tr>
+          <tr><td><code>{{creato_da}}</code>, <code>{{modificato_da}}</code></td><td>Chi ha aperto il ticket e chi l'ha modificato per ultimo</td></tr>
           <tr><td><code>{{evento}}</code></td><td>La descrizione standard di ciò che è successo, es. «Nuova e-mail su #…»</td></tr>
           <tr><td><code>{{dettaglio}}</code>, <code>{{testo_standard}}</code></td><td>Il dettaglio dell'evento (mittente e oggetto, passaggio di stato…) e l'intero testo standard</td></tr>
-          <tr><td><code>{{mittente}}</code>, <code>{{oggetto}}</code>, <code>{{tipo_messaggio}}</code></td><td>Per gli eventi sui messaggi: chi ha scritto, l'oggetto, il tipo (E-mail, Nota…)</td></tr>
+          <tr><td><code>{{mittente}}</code>, <code>{{oggetto}}</code>, <code>{{tipo_messaggio}}</code>, <code>{{direzione}}</code></td><td>Per gli eventi sui messaggi: chi ha scritto, l'oggetto, il tipo (E-mail, Nota…) e se è ricevuto o inviato</td></tr>
           <tr><td><code>{{data_evento}}</code>, <code>{{creato_il}}</code>, <code>{{modificato_il}}</code>, <code>{{eta_ticket}}</code></td><td>Date e da quanto è aperto il ticket</td></tr>
           <tr><td><code>{{in_sospeso}}</code>, <code>{{sollecito}}</code></td><td>«Sì» o «No»</td></tr>
           <tr><td><code>{{link}}</code></td><td>L'indirizzo del ticket in Dynamics; usalo così: <code>[Apri il ticket]({{link}})</code></td></tr>
           <tr><td><code>{{regola}}</code>, <code>{{urgenza}}</code></td><td>Il nome della regola e l'urgenza scelta</td></tr>
-          <tr><td><code>{{applicativo}}</code>, <code>{{tipologia}}</code>, <code>{{businessunit}}</code>, <code>{{classificazione}}</code></td><td>I codici di questi campi del ticket</td></tr>
+          <tr><td><code>{{applicativo_nome}}</code>, <code>{{tipologia_nome}}</code>, <code>{{businessunit_nome}}</code>, <code>{{classificazione_nome}}</code>, <code>{{prioritariaqualificata_nome}}</code></td><td>Questi campi del ticket come li mostra Dynamics</td></tr>
+          <tr><td><code>{{applicativo}}</code>, <code>{{tipologia}}</code>, <code>{{businessunit}}</code>, <code>{{classificazione}}</code>, <code>{{prioritariaqualificata}}</code></td><td>I codici degli stessi campi</td></tr>
         </table>
         <p>Se un dato non c'è (per esempio il mittente su un evento che non riguarda un messaggio), il campo resta vuoto.</p>
 

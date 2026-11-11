@@ -19,14 +19,18 @@ public sealed class SqliteStateStoreTests : IDisposable
     [Fact]
     public void ATicket_RoundTripsWithItsExtraFields()
     {
-        var ticket = T.Ticket(3, extra: new Dictionary<string, string?> { ["applicativo"] = "BFA" });
+        var ticket = T.Ticket(3, extra: new Dictionary<string, string?> { ["applicativo"] = "BFA" }) with
+        {
+            Labels = new Dictionary<string, string?> { [TicketLabels.Customer] = "Rossi S.r.l." },
+        };
 
         _store.SaveTicket(ticket);
         var loaded = _store.GetTicket(ticket.Id);
 
         Assert.NotNull(loaded);
-        Assert.Equal(ticket with { }, loaded with { Extra = ticket.Extra });
+        Assert.Equal(ticket with { }, loaded with { Extra = ticket.Extra, Labels = ticket.Labels });
         Assert.Equal("BFA", loaded.Extra["applicativo"]);
+        Assert.Equal("Rossi S.r.l.", loaded.Labels[TicketLabels.Customer]);
     }
 
     [Fact]
