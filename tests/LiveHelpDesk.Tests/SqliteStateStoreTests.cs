@@ -14,7 +14,7 @@ public sealed class SqliteStateStoreTests : IDisposable
 
     [Fact]
     public void ANewDatabase_IsMigratedToTheLatestSchema() =>
-        Assert.Equal(2, _store.SchemaVersion);
+        Assert.Equal(3, _store.SchemaVersion);
 
     [Fact]
     public void ATicket_RoundTripsWithItsExtraFields()
@@ -92,6 +92,19 @@ public sealed class SqliteStateStoreTests : IDisposable
     }
 
     [Fact]
+    public void EventsForTicket_KeepsOnlyThatTicketInsideTheInterval()
+    {
+        _store.TryRegisterEvent(new TicketEvent("early", TicketEventType.TicketCreated, T.At(1), T.Id(1)));
+        _store.TryRegisterEvent(new TicketEvent("in", TicketEventType.StatusChanged, T.At(5), T.Id(1)));
+        _store.TryRegisterEvent(new TicketEvent("other", TicketEventType.StatusChanged, T.At(5), T.Id(2)));
+        _store.TryRegisterEvent(new TicketEvent("edge", TicketEventType.PriorityChanged, T.At(10), T.Id(1)));
+
+        var events = _store.EventsForTicket(T.Id(1), T.At(5), T.At(10));
+
+        Assert.Equal(["in", "edge"], events.Select(e => e.DedupKey).ToArray());
+    }
+
+    [Fact]
     public void AFailedTransaction_LeavesNothingBehind()
     {
         Assert.Throws<InvalidOperationException>(() => _store.InTransaction(() =>
@@ -126,7 +139,7 @@ public sealed class SqliteStateStoreTests : IDisposable
             }
 
             using var second = new SqliteStateStore(path);
-            Assert.Equal(2, second.SchemaVersion);
+            Assert.Equal(3, second.SchemaVersion);
             Assert.NotNull(second.GetTicket(T.Id(1)));
             Assert.Equal(T.Baseline, second.BaselineAt);
         }

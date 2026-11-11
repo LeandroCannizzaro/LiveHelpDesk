@@ -164,6 +164,95 @@ public sealed class PollingEngineTests : IDisposable
         Assert.Equal(0, result.Queued);
     }
 
+    private const int CommNone = 717600000;
+    private const int CommReplySent = 717600001;
+    private const int CommReplyReceived = 717600002;
+
+    private static Rule RuleOn(params TicketEventType[] events) =>
+        new() { Id = "test", Name = "Test", Events = [.. events], Actions = new RuleActions { Channels = ["toast"] } };
+
+    [Fact]
+    public async Task ACustomerEmail_ThatAlsoFlipsTheCommunicationsField_IsNotifiedOnce()
+    {
+        await StartWith(T.Ticket(1, comm: CommNone));
+        _source.Messages.Add(T.Message(1, 1, atMinutes: 4));
+        _source.Tickets[0] = T.Ticket(1, comm: CommReplyReceived, modified: T.At(4));
+
+        var result = await PollAt(5);
+
+        Assert.Contains(result.Events, e => e.Type == TicketEventType.MessageReceived);
+        Assert.Contains(result.Events, e => e.Type == TicketEventType.CustomerReplied);
+        Assert.Equal(2, result.Queued); // toast + overlay, once
+        Assert.All(_store.Due(T.At(5), 10), i => Assert.Equal("Nuova e-mail su #261000001", i.Notification.Title));
+    }
+
+    [Fact]
+    public async Task OurReply_ThatAlsoFlipsTheCommunicationsField_IsNotifiedOnce()
+    {
+        _rules = [RuleOn(TicketEventType.ReplySent)];
+        await StartWith(T.Ticket(1, comm: CommReplyReceived));
+        _source.Messages.Add(T.Message(1, 1, incoming: false, atMinutes: 4));
+        _source.Tickets[0] = T.Ticket(1, comm: CommReplySent, modified: T.At(4));
+
+        var result = await PollAt(5);
+
+        Assert.Equal(2, result.Events.Count(e => e.Type == TicketEventType.ReplySent));
+        Assert.Equal(1, result.Queued);
+    }
+
+    [Fact]
+    public async Task TheCommunicationsField_ReadInALaterPoll_IsNotNotifiedAgain()
+    {
+        await StartWith(T.Ticket(1, comm: CommNone));
+        _source.Messages.Add(T.Message(1, 1, atMinutes: 4));
+        await PollAt(5);
+        _source.Tickets[0] = T.Ticket(1, comm: CommReplyReceived, modified: T.At(7));
+
+        var later = await PollAt(8);
+
+        Assert.Contains(later.Events, e => e.Type == TicketEventType.CustomerReplied);
+        Assert.Equal(0, later.Queued);
+        Assert.Equal(2, Queued);
+    }
+
+    [Fact]
+    public async Task ARuleListeningOnlyToTheCommunicationsField_IsStillNotified()
+    {
+        _rules = [RuleOn(TicketEventType.CustomerReplied)];
+        await StartWith(T.Ticket(1, comm: CommNone));
+        _source.Messages.Add(T.Message(1, 1, atMinutes: 4));
+        _source.Tickets[0] = T.Ticket(1, comm: CommReplyReceived, modified: T.At(4));
+
+        var result = await PollAt(5);
+
+        Assert.Equal(1, result.Queued);
+        Assert.Equal("Il cliente ha risposto su #261000001", Assert.Single(_store.Due(T.At(5), 10)).Notification.Title);
+    }
+
+    [Fact]
+    public async Task TheCommunicationsField_WithoutAnEmailBehindIt_IsNotified()
+    {
+        await StartWith(T.Ticket(1, comm: CommNone));
+        _source.Tickets[0] = T.Ticket(1, comm: CommReplyReceived, modified: T.At(4));
+
+        var result = await PollAt(5);
+
+        Assert.Equal(2, result.Queued);
+    }
+
+    [Fact]
+    public async Task AnEmailInTheOtherDirection_DoesNotHideTheCommunicationsField()
+    {
+        _rules = [RuleOn(TicketEventType.ReplySent, TicketEventType.CustomerReplied)];
+        await StartWith(T.Ticket(1, comm: CommNone));
+        _source.Messages.Add(T.Message(1, 1, incoming: false, atMinutes: 3));
+        _source.Tickets[0] = T.Ticket(1, comm: CommReplyReceived, modified: T.At(4));
+
+        var result = await PollAt(5);
+
+        Assert.Equal(2, result.Queued); // our e-mail, and the customer reply flagged on the ticket
+    }
+
     [Fact]
     public async Task AMessageForATicketNotSeenBefore_FetchesTheTicketAndStillNotifies()
     {

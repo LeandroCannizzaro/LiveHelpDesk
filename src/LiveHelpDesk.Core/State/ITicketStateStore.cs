@@ -41,6 +41,9 @@ public interface ITicketStateStore
     /// <summary>Most recent events first.</summary>
     IReadOnlyList<TicketEvent> RecentEvents(int count);
 
+    /// <summary>Events about one ticket that occurred between <paramref name="from"/> and <paramref name="to"/>, oldest first.</summary>
+    IReadOnlyList<TicketEvent> EventsForTicket(Guid ticketId, DateTimeOffset from, DateTimeOffset to);
+
     string? GetValue(string key);
 
     void SetValue(string key, string value);

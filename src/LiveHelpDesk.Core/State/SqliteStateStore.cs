@@ -59,6 +59,9 @@ public sealed class SqliteStateStore : ITicketStateStore, IOutbox, IDisposable
         );
         CREATE INDEX ix_outbox_due ON outbox(status, not_before);
         """,
+        """
+        CREATE INDEX ix_events_ticket ON events(ticket_id, occurred_at);
+        """,
     ];
 
     private const string BaselineKey = "baseline_at";
@@ -201,6 +204,23 @@ public sealed class SqliteStateStore : ITicketStateStore, IOutbox, IDisposable
     public IReadOnlyList<TicketEvent> RecentEvents(int count)
     {
         using var cmd = Command("SELECT json FROM events ORDER BY seq DESC LIMIT $n;", ("$n", count));
+        using var reader = cmd.ExecuteReader();
+        var result = new List<TicketEvent>();
+        while (reader.Read())
+        {
+            result.Add(JsonSerializer.Deserialize<TicketEvent>(reader.GetString(0), Json)!);
+        }
+
+        return result;
+    }
+
+    public IReadOnlyList<TicketEvent> EventsForTicket(Guid ticketId, DateTimeOffset from, DateTimeOffset to)
+    {
+        using var cmd = Command(
+            "SELECT json FROM events WHERE ticket_id = $ticket AND occurred_at >= $from AND occurred_at <= $to ORDER BY seq;",
+            ("$ticket", ticketId.ToString("D")),
+            ("$from", Format(from)),
+            ("$to", Format(to)));
         using var reader = cmd.ExecuteReader();
         var result = new List<TicketEvent>();
         while (reader.Read())

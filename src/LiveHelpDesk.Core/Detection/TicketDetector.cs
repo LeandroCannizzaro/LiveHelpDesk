@@ -205,7 +205,7 @@ public sealed class TicketDetector(ITicketStateStore store, TicketMapping mappin
             }
             else if (comm == mapping.CommunicationReplySent)
             {
-                yield return Changed(previous, ticket, "Comm", TicketEventType.ReplySent, previous.CommunicationStatus?.ToString(), comm.ToString(), subtype: "CommunicationStatus");
+                yield return Changed(previous, ticket, "Comm", TicketEventType.ReplySent, previous.CommunicationStatus?.ToString(), comm.ToString(), subtype: CommunicationEcho.Subtype);
             }
         }
 

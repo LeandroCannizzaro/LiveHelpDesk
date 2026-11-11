@@ -109,8 +109,18 @@ public sealed class PollingEngine(
             // Events from the detector are registered already; health events arrive here for the first time.
             store.TryRegisterEvent(evt);
 
+            var causes = CommunicationEcho.CausesOf(evt, store);
             foreach (var match in RuleEngine.Evaluate(evt, current, context))
             {
+                // The same reply seen through the ticket's communications field: this rule has the e-mail already.
+                if (causes.Any(cause => RuleEngine.Evaluate(cause, [match.Rule], context).Count > 0))
+                {
+                    logger.LogInformation(
+                        "Rule {Rule} skips {Type} on {Ticket}: it already matched the e-mail behind it",
+                        match.Rule.Id, evt.Type, evt.TicketNumber ?? "-");
+                    continue;
+                }
+
                 foreach (var item in planner.Plan(match, now))
                 {
                     if (outbox.TryAdd(item) && item.Status == OutboxStatus.Pending)
