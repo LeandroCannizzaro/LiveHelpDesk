@@ -120,6 +120,22 @@ li carica come artefatti e, sui tag, crea la Release allegandoli.
 Il manuale d'uso è un sito statico in `docs/`, pubblicato su GitHub Pages dal workflow `.github/workflows/pages.yml`
 (da abilitare una volta in *Settings → Pages → Source = GitHub Actions*).
 
+### Aggiornamento automatico
+
+Senza alcun server: il workflow `Release` genera `update.json` (versione, URL di MSI e ZIP nella Release, SHA-256),
+lo allega alla Release e rilancia il workflow `Pages`, che lo pubblica accanto al manuale:
+`https://leandrocannizzaro.github.io/LiveHelpDesk/update.json`.
+
+L'app lo legge 30 secondi dopo l'avvio e poi ogni 6 ore (`Services\Updates.cs`). Se la versione è più recente compare
+il pulsante «⬆ Aggiornamento x.y.z» nella barra laterale e, in *Impostazioni → Aggiornamenti*, «Aggiorna e riavvia»:
+scarica il pacchetto adatto all'installazione (MSI se installata con l'MSI, ZIP se con `install.ps1`), ne verifica lo SHA-256,
+si chiude e lascia a uno script (`apply-update.ps1`, in `%TEMP%\LiveHelpDesk-update`) l'installazione (`msiexec /passive`
+o `install.ps1 -NoStart`, con UAC se serve) e il riavvio. Log in `%LocalAppData%\LiveHelpDesk\logs\update.log`.
+Una copia non installata (cartella di build) segnala soltanto la nuova versione.
+
+Per rilasciare: aggiornare `VersionPrefix` in `Directory.Build.props`, poi `git tag vX.Y.Z && git push origin vX.Y.Z`.
+La variabile d'ambiente `LIVEHELPDESK_UPDATE_URL` sostituisce l'indirizzo del manifesto (prove o fork).
+
 ## Installazione da una share di rete
 
 Non è firmato: se i file vengono copiati da una share interna (senza "Mark of the Web") SmartScreen non interviene.

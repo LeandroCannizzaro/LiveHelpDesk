@@ -17,6 +17,7 @@ env:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   package:
@@ -50,6 +51,27 @@ jobs:
         shell: pwsh
         run: ./installer/build-zip.ps1 -Version ${{ steps.version.outputs.version }} -Package artifacts/package/app -Output artifacts
 
+      # Il manifesto letto dall'app per l'aggiornamento automatico: versione, indirizzi degli asset della Release e loro SHA-256.
+      # Viene allegato alla Release e poi pubblicato su GitHub Pages (workflow Pages) come update.json.
+      - name: Genera update.json
+        shell: pwsh
+        run: |
+          $v = '${{ steps.version.outputs.version }}'
+          $tag = if ('${{ github.ref_type }}' -eq 'tag') { '${{ github.ref_name }}' } else { "v$v" }
+          $base = "https://github.com/${{ github.repository }}/releases/download/$tag"
+          function Package($name) {
+            $file = Get-Item (Join-Path artifacts $name)
+            [ordered]@{ url = "$base/$name"; sha256 = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant(); size = $file.Length }
+          }
+          [ordered]@{
+            version     = $v
+            publishedAt = (Get-Date).ToUniversalTime().ToString('o')
+            notesUrl    = "https://github.com/${{ github.repository }}/releases/tag/$tag"
+            msi         = Package "LiveHelpDesk-$v-x64.msi"
+            zip         = Package "LiveHelpDesk-$v-win-x64.zip"
+          } | ConvertTo-Json -Depth 3 | Set-Content artifacts/update.json -Encoding utf8
+          Get-Content artifacts/update.json
+
       - name: Carica l'artefatto MSI
         uses: actions/upload-artifact@v4
         with:
@@ -72,4 +94,15 @@ jobs:
           files: |
             artifacts/LiveHelpDesk-${{ steps.version.outputs.version }}-x64.msi
             artifacts/LiveHelpDesk-${{ steps.version.outputs.version }}-win-x64.zip
+            artifacts/update.json
           generate_release_notes: true
+
+      # Ripubblica Pages (dal ramo main, l'unico ammesso dall'ambiente github-pages) con il nuovo update.json:
+      # da quel momento le app installate vedono l'aggiornamento. workflow_dispatch e` l'unico evento che il
+      # GITHUB_TOKEN puo' far partire.
+      - name: Aggiorna il manifesto su GitHub Pages (solo sui tag)
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo ${{ github.repository }} --ref ${{ github.event.repository.default_branch }}

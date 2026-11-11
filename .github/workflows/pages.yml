@@ -1,6 +1,8 @@
 name: Pages
 
-# Pubblica il sito del manuale (cartella docs/) su GitHub Pages.
+# Pubblica il sito del manuale (cartella docs/) su GitHub Pages, insieme a update.json: il manifesto che le app
+# installate leggono per sapere se c'e` una versione piu' recente. update.json viene preso dall'ultima Release
+# (lo genera il workflow Release, che al termine riavvia anche questo workflow).
 # Per attivarlo la prima volta: Impostazioni del repository -> Pages -> Source = "GitHub Actions".
 on:
   push:
@@ -29,6 +31,17 @@ jobs:
 
       - name: Configura Pages
         uses: actions/configure-pages@v5
+
+      - name: Aggiungi update.json dall'ultima Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release download --repo "${{ github.repository }}" --pattern update.json --dir docs --clobber; then
+            cat docs/update.json
+          else
+            echo "::warning::Nessuna Release con update.json: il sito viene pubblicato senza manifesto degli aggiornamenti."
+          fi
 
       - name: Carica il sito
         uses: actions/upload-pages-artifact@v3
