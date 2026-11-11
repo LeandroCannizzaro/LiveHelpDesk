@@ -26,9 +26,9 @@
       <Style.Animations>
         <Animation Duration="0:0:1.1" IterationCount="INFINITE" Easing="SineEaseInOut">
           <KeyFrame Cue="0%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
-          <KeyFrame Cue="12%"><Setter Property="ScaleTransform.ScaleX" Value="1.22" /><Setter Property="ScaleTransform.ScaleY" Value="1.22" /></KeyFrame>
+          <KeyFrame Cue="12%"><Setter Property="ScaleTransform.ScaleX" Value="1.32" /><Setter Property="ScaleTransform.ScaleY" Value="1.32" /></KeyFrame>
           <KeyFrame Cue="24%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
-          <KeyFrame Cue="38%"><Setter Property="ScaleTransform.ScaleX" Value="1.13" /><Setter Property="ScaleTransform.ScaleY" Value="1.13" /></KeyFrame>
+          <KeyFrame Cue="38%"><Setter Property="ScaleTransform.ScaleX" Value="1.18" /><Setter Property="ScaleTransform.ScaleY" Value="1.18" /></KeyFrame>
           <KeyFrame Cue="52%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
           <KeyFrame Cue="100%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
         </Animation>
@@ -38,35 +38,106 @@
       <Style.Animations>
         <Animation Duration="0:0:0.65" IterationCount="INFINITE" Easing="SineEaseInOut">
           <KeyFrame Cue="0%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
-          <KeyFrame Cue="12%"><Setter Property="ScaleTransform.ScaleX" Value="1.28" /><Setter Property="ScaleTransform.ScaleY" Value="1.28" /></KeyFrame>
+          <KeyFrame Cue="12%"><Setter Property="ScaleTransform.ScaleX" Value="1.38" /><Setter Property="ScaleTransform.ScaleY" Value="1.38" /></KeyFrame>
           <KeyFrame Cue="24%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
-          <KeyFrame Cue="38%"><Setter Property="ScaleTransform.ScaleX" Value="1.16" /><Setter Property="ScaleTransform.ScaleY" Value="1.16" /></KeyFrame>
+          <KeyFrame Cue="38%"><Setter Property="ScaleTransform.ScaleX" Value="1.2" /><Setter Property="ScaleTransform.ScaleY" Value="1.2" /></KeyFrame>
           <KeyFrame Cue="52%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
           <KeyFrame Cue="100%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
         </Animation>
       </Style.Animations>
     </Style>
+
+    <!-- Escalation while nobody answers (OverlayUrgency). 1: the number gets an outline and rings ripple out of it. -->
+    <Style Selector="Border#Badge.insistent">
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+    <Style Selector="Border.ripple">
+      <Setter Property="Width" Value="42" />
+      <Setter Property="Height" Value="42" />
+      <Setter Property="CornerRadius" Value="21" />
+      <Setter Property="BorderThickness" Value="3" />
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+    </Style>
+    <Style Selector="Border.ripple.on">
+      <Style.Animations>
+        <Animation Duration="0:0:1.6" IterationCount="INFINITE" Easing="CubicEaseOut">
+          <KeyFrame Cue="0%"><Setter Property="Opacity" Value="0.9" /><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="Opacity" Value="0" /><Setter Property="ScaleTransform.ScaleX" Value="1.9" /><Setter Property="ScaleTransform.ScaleY" Value="1.9" /></KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+    <Style Selector="Border.ripple.on.late">
+      <Style.Animations>
+        <Animation Duration="0:0:1.6" Delay="0:0:0.8" IterationCount="INFINITE" Easing="CubicEaseOut">
+          <KeyFrame Cue="0%"><Setter Property="Opacity" Value="0.9" /><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="Opacity" Value="0" /><Setter Property="ScaleTransform.ScaleX" Value="1.9" /><Setter Property="ScaleTransform.ScaleY" Value="1.9" /></KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
+    <!-- 2: the pill's outline glows in and out. -->
+    <Style Selector="Border#Glow">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="Border#Glow.on">
+      <Style.Animations>
+        <Animation Duration="0:0:1.4" IterationCount="INFINITE" Easing="SineEaseInOut">
+          <KeyFrame Cue="0%"><Setter Property="Opacity" Value="0.15" /></KeyFrame>
+          <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0.95" /></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="Opacity" Value="0.15" /></KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
+    <!-- 3: a short, small shake every 20 seconds; still the rest of the time. -->
+    <Style Selector="Panel#Frame.shake">
+      <Style.Animations>
+        <Animation Duration="0:0:20" IterationCount="INFINITE">
+          <KeyFrame Cue="0%"><Setter Property="TranslateTransform.X" Value="0" /></KeyFrame>
+          <KeyFrame Cue="0.6%"><Setter Property="TranslateTransform.X" Value="-6" /></KeyFrame>
+          <KeyFrame Cue="1.2%"><Setter Property="TranslateTransform.X" Value="6" /></KeyFrame>
+          <KeyFrame Cue="1.8%"><Setter Property="TranslateTransform.X" Value="-5" /></KeyFrame>
+          <KeyFrame Cue="2.4%"><Setter Property="TranslateTransform.X" Value="5" /></KeyFrame>
+          <KeyFrame Cue="3%"><Setter Property="TranslateTransform.X" Value="-2" /></KeyFrame>
+          <KeyFrame Cue="3.6%"><Setter Property="TranslateTransform.X" Value="0" /></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="TranslateTransform.X" Value="0" /></KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
   </Window.Styles>
 
+  <Panel x:Name="Frame" Margin="12" Classes.shake="{Binding IsUrgent}">
   <Border x:Name="Pill"
-          Margin="12"
           Padding="16,12"
           CornerRadius="16"
           BoxShadow="0 4 18 0 #66000000"
           Background="{Binding Background}"
           TextElement.Foreground="{Binding Foreground}">
     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-      <Border x:Name="Badge" Grid.Column="0" Width="42" Height="42" CornerRadius="21" VerticalAlignment="Center"
-              Background="{Binding Accent}"
-              RenderTransformOrigin="50%,50%"
-              Classes.attention="{Binding IsAttention}"
-              Classes.critical="{Binding IsCritical}">
-        <TextBlock Text="{Binding CountText}" FontSize="18" FontWeight="Bold"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
-      </Border>
+      <Panel Grid.Column="0" VerticalAlignment="Center">
+        <Border Classes="ripple" Classes.on="{Binding IsInsistent}" BorderBrush="{Binding Foreground}" />
+        <Border Classes="ripple late" Classes.on="{Binding IsInsistent}" BorderBrush="{Binding Foreground}" />
+        <Border x:Name="Badge" Width="42" Height="42" CornerRadius="21"
+                Background="{Binding Accent}"
+                BorderBrush="{Binding Foreground}"
+                RenderTransformOrigin="50%,50%"
+                Classes.attention="{Binding IsAttention}"
+                Classes.critical="{Binding IsCritical}"
+                Classes.insistent="{Binding IsInsistent}">
+          <TextBlock Text="{Binding CountText}" FontSize="18" FontWeight="Bold"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+      </Panel>
 
       <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis" />
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Right" Text="{Binding WaitingText}" FontSize="12" FontWeight="SemiBold" Opacity="0.85"
+                     VerticalAlignment="Center" Margin="8,0,0,0"
+                     IsVisible="{Binding WaitingText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis" />
+        </DockPanel>
         <TextBlock Text="{Binding Subtitle}" Opacity="0.85" TextTrimming="CharacterEllipsis"
                    IsVisible="{Binding !IsExpanded}" />
         <ScrollViewer MaxHeight="88" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
@@ -84,4 +155,7 @@
       </StackPanel>
     </Grid>
   </Border>
+  <Border x:Name="Glow" CornerRadius="16" BorderThickness="3" BorderBrush="{Binding Foreground}" IsHitTestVisible="False"
+          Classes.on="{Binding IsPressing}" />
+  </Panel>
 </Window>

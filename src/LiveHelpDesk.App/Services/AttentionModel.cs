@@ -21,7 +21,9 @@ public sealed class AttentionModel
     private const int MaxItems = 50;
 
     private readonly List<AttentionItem> _items = [];
+    private readonly Dictionary<string, DateTimeOffset> _addedAt = [];
     private DateTimeOffset? _snoozedUntil;
+    private DateTimeOffset? _answeredAt;
 
     public event EventHandler? Changed;
 
@@ -45,6 +47,31 @@ public sealed class AttentionModel
 
     public bool IsSnoozed(DateTimeOffset now) => _snoozedUntil is { } until && now < until;
 
+    /// <summary>
+    /// How long the overlay has been asking with nobody answering: since the oldest waiting item arrived, the user
+    /// last opened, saw or snoozed something, or the snooze ran out, whichever is latest. Zero when nothing waits or while snoozed.
+    /// </summary>
+    public TimeSpan UnansweredFor(DateTimeOffset now)
+    {
+        if (_items.Count == 0 || IsSnoozed(now))
+        {
+            return TimeSpan.Zero;
+        }
+
+        var since = _items.Min(i => _addedAt.GetValueOrDefault(i.EventKey, now));
+        if (_answeredAt is { } answered && answered > since)
+        {
+            since = answered;
+        }
+
+        if (_snoozedUntil is { } snoozeEnd && snoozeEnd > since)
+        {
+            since = snoozeEnd;
+        }
+
+        return now > since ? now - since : TimeSpan.Zero;
+    }
+
     /// <summary>False when the same event is already waiting. A critical item always ends a snooze.</summary>
     public bool Add(AttentionItem item, DateTimeOffset now)
     {
@@ -54,10 +81,13 @@ public sealed class AttentionModel
         }
 
         _items.Add(item);
+        _addedAt[item.EventKey] = now;
         if (_items.Count > MaxItems)
         {
             // Keep the urgent ones: drop the oldest of the least urgent.
-            _items.Remove(_items.OrderBy(i => i.Severity).ThenBy(i => i.ReceivedAt).First());
+            var dropped = _items.OrderBy(i => i.Severity).ThenBy(i => i.ReceivedAt).First();
+            _items.Remove(dropped);
+            _addedAt.Remove(dropped.EventKey);
         }
 
         if (item.Severity == Severity.Critical)
@@ -69,7 +99,8 @@ public sealed class AttentionModel
         return true;
     }
 
-    public AttentionItem? Acknowledge(string eventKey)
+    /// <param name="now">When the user answered; restarts the overlay's escalation for what is still waiting.</param>
+    public AttentionItem? Acknowledge(string eventKey, DateTimeOffset? now = null)
     {
         var item = _items.FirstOrDefault(i => i.EventKey == eventKey);
         if (item is null)
@@ -78,16 +109,20 @@ public sealed class AttentionModel
         }
 
         _items.Remove(item);
+        _addedAt.Remove(eventKey);
+        _answeredAt = now ?? DateTimeOffset.UtcNow;
         Raise();
         return item;
     }
 
-    public IReadOnlyList<AttentionItem> AcknowledgeAll()
+    public IReadOnlyList<AttentionItem> AcknowledgeAll(DateTimeOffset? now = null)
     {
         var all = Items;
         if (all.Count > 0)
         {
             _items.Clear();
+            _addedAt.Clear();
+            _answeredAt = now ?? DateTimeOffset.UtcNow;
             Raise();
         }
 
@@ -97,6 +132,7 @@ public sealed class AttentionModel
     public void Snooze(TimeSpan duration, DateTimeOffset now)
     {
         _snoozedUntil = now + duration;
+        _answeredAt = now;
         Raise();
     }
 

@@ -299,6 +299,36 @@ public class Phase6UiTests
             controller.Stop();
         }
     }
+
+    [AvaloniaFact]
+    public void ACriticalEventLeftUnanswered_SoundsOneReminder()
+    {
+        var now = T.At(0);
+        var model = new AttentionModel();
+        var sounds = 0;
+        var overlayVm = new OverlayViewModel(() => Task.CompletedTask, () => Task.CompletedTask, _ => { });
+        var controller = new OverlayController(model, new UiSettings(), new NeverBusy(), () => now, overlayVm, () => sounds++);
+        try
+        {
+            model.Add(new AttentionItem("c", "Ticket senza risposta", "", Severity.Critical, null, now), now);
+            controller.Refresh();
+            Assert.Equal(1, sounds); // on arrival, as before
+
+            now = T.At(3);
+            controller.Refresh();
+            Assert.Equal(1, sounds); // pressing, still quiet
+
+            now = T.At(4);
+            controller.Refresh();
+            now = T.At(6);
+            controller.Refresh();
+            Assert.Equal(2, sounds); // one reminder on becoming urgent, not one per tick
+        }
+        finally
+        {
+            controller.Stop();
+        }
+    }
 }
 
 public class Phase6ServiceTests

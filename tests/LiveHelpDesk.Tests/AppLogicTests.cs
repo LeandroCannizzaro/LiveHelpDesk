@@ -23,6 +23,40 @@ public class AttentionModelTests
     }
 
     [Fact]
+    public void UnansweredTime_CountsFromTheOldestWaiting_AndRestartsWhenTheUserAnswers()
+    {
+        var model = new AttentionModel();
+        Assert.Equal(TimeSpan.Zero, model.UnansweredFor(T.At(5)));
+
+        model.Add(Item("a"), T.At(0));
+        model.Add(Item("b"), T.At(4));
+        Assert.Equal(TimeSpan.FromMinutes(6), model.UnansweredFor(T.At(6))); // from "a", not from the newest
+
+        model.Acknowledge("b", T.At(7)); // "Apri" or "Vista" on one of them
+        Assert.Equal(TimeSpan.FromMinutes(2), model.UnansweredFor(T.At(9)));
+
+        model.Snooze(TimeSpan.FromMinutes(15), T.At(10));
+        Assert.Equal(TimeSpan.Zero, model.UnansweredFor(T.At(20))); // snoozed: not asking
+        Assert.Equal(TimeSpan.FromMinutes(1), model.UnansweredFor(T.At(26))); // from the end of the snooze
+
+        model.AcknowledgeAll(T.At(27));
+        Assert.Equal(TimeSpan.Zero, model.UnansweredFor(T.At(40)));
+    }
+
+    [Theory]
+    [InlineData(0, false, OverlayUrgency.Calm)]
+    [InlineData(59, false, OverlayUrgency.Calm)]
+    [InlineData(60, false, OverlayUrgency.Insistent)]
+    [InlineData(180, false, OverlayUrgency.Pressing)]
+    [InlineData(480, false, OverlayUrgency.Urgent)]
+    [InlineData(30, true, OverlayUrgency.Insistent)] // critical climbs twice as fast
+    [InlineData(90, true, OverlayUrgency.Pressing)]
+    [InlineData(240, true, OverlayUrgency.Urgent)]
+    public void TheUrgency_GrowsWithTheUnansweredTime(int seconds, bool critical, OverlayUrgency expected) =>
+        Assert.Equal(expected, OverlayViewModel.UrgencyFor(
+            TimeSpan.FromSeconds(seconds), critical ? AttentionLevel.Critical : AttentionLevel.Attention));
+
+    [Fact]
     public void TheLevel_IsTheMostUrgentItem()
     {
         var model = new AttentionModel();

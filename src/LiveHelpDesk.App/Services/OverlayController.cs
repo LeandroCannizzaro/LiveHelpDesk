@@ -23,6 +23,7 @@ public sealed class OverlayController
     private readonly DispatcherTimer _timer;
     private readonly List<OverlayWindow> _windows = [];
     private bool _wasCritical;
+    private bool _remindedUrgent;
 
     public OverlayController(
         AttentionModel model,
@@ -78,12 +79,21 @@ public sealed class OverlayController
                 _playAlertSound();
             }
 
+            // A critical event nobody has answered for a while gets one reminder, not a sound on every beat.
+            var urgent = _viewModel.Urgency == OverlayUrgency.Urgent;
+            if (critical && urgent && !_remindedUrgent && _settings.PlaySoundForCritical)
+            {
+                _playAlertSound();
+            }
+
+            _remindedUrgent = urgent;
             _wasCritical = critical;
         }
         else
         {
             // The pills share one view model: "Vista", "15 min" or "Apri" on any of them empties the model and hides them all.
             _wasCritical = false;
+            _remindedUrgent = false;
             foreach (var window in _windows)
             {
                 window.Hide();

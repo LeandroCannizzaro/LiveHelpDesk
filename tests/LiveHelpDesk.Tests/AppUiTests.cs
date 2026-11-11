@@ -131,6 +131,58 @@ public class AppUiTests
     }
 
     [AvaloniaFact]
+    public void TheLongerNobodyAnswers_TheMoreThePillInsists()
+    {
+        var model = new AttentionModel();
+        model.Add(Item("a", Severity.Attention), T.At(0));
+        var vm = new OverlayViewModel(() => Task.CompletedTask, () => Task.CompletedTask, _ => { });
+        vm.Update(model, T.At(0));
+        var window = new OverlayWindow { DataContext = vm };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var badge = window.FindControl<Border>("Badge")!;
+        var glow = window.FindControl<Border>("Glow")!;
+        var frame = window.FindControl<Panel>("Frame")!;
+        var ripples = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("ripple")).ToList();
+        string Waiting() => string.Join("|", window.GetVisualDescendants().OfType<TextBlock>().Where(t => t.IsEffectivelyVisible && (t.Text ?? "").StartsWith('⏱')).Select(t => t.Text));
+
+        // Just arrived: only the heartbeat.
+        Assert.Equal(2, ripples.Count);
+        Assert.DoesNotContain(ripples, r => r.Classes.Contains("on"));
+        Assert.DoesNotContain("insistent", badge.Classes);
+        Assert.Equal("", Waiting());
+
+        vm.ToggleExpandCommand.Execute(null); // the user reduced it to one line
+        vm.Update(model, T.At(1));
+        Dispatcher.UIThread.RunJobs();
+        Assert.All(ripples, r => Assert.Contains("on", r.Classes));
+        Assert.Contains("insistent", badge.Classes);
+        Assert.Equal("⏱ da 1 min", Waiting());
+        Assert.DoesNotContain("on", glow.Classes);
+        Assert.False(vm.IsExpanded);
+
+        vm.Update(model, T.At(3));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("on", glow.Classes);
+        Assert.True(vm.IsExpanded); // opened up again
+        Assert.DoesNotContain("shake", frame.Classes);
+
+        vm.Update(model, T.At(8));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("shake", frame.Classes);
+        Assert.Equal("⏱ da 8 min", Waiting());
+        Save(window.CaptureRenderedFrame()!, "overlay-urgent");
+
+        model.Snooze(TimeSpan.FromMinutes(15), T.At(8)); // "15 min" calms it down...
+        vm.Update(model, T.At(23)); // ...and when the snooze runs out it starts over
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(OverlayUrgency.Calm, vm.Urgency);
+        Assert.DoesNotContain("shake", frame.Classes);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void TheOverlayButtons_AreThere()
     {
         var model = new AttentionModel();
