@@ -10,9 +10,12 @@ public interface IToastPresenter
 
 /// <summary>
 /// Collects what the service has queued for this screen. "toast" items become Windows toasts, "overlay" items
-/// go to the attention model that the overlay and the tray icon follow.
+/// go to the attention model that the overlay and the tray icon follow. When <paramref name="suppression"/> says the
+/// moment is wrong (a presentation, an untrusted network), a toast is held back and routed to the attention model
+/// instead, so nothing pops up uncontrolled on screen yet nothing is lost either.
 /// </summary>
-public sealed class NotificationPump(ServiceLink link, AttentionModel attention, IToastPresenter toasts, Func<DateTimeOffset> clock)
+public sealed class NotificationPump(
+    ServiceLink link, AttentionModel attention, IToastPresenter toasts, Func<DateTimeOffset> clock, IDoNotDisturb? suppression = null)
 {
     public const string ToastChannel = "toast";
     public const string OverlayChannel = "overlay";
@@ -49,6 +52,14 @@ public sealed class NotificationPump(ServiceLink link, AttentionModel attention,
     {
         if (item.Channel.Equals(ToastChannel, StringComparison.OrdinalIgnoreCase))
         {
+            if (suppression?.IsBusy() == true)
+            {
+                // Hold the Windows toast back, but keep the information by routing it to the overlay (which is itself
+                // suppressed meanwhile); it surfaces quietly once the presentation ends or the VPN drops.
+                attention.Add(new AttentionItem(item.EventKey, item.Title, item.Body, item.Severity, item.Url, clock()), clock());
+                return;
+            }
+
             toasts.Show(item);
         }
         else if (item.Channel.Equals(OverlayChannel, StringComparison.OrdinalIgnoreCase))

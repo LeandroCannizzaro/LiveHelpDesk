@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using LiveHelpDesk.Abstractions;
 using LiveHelpDesk.App.Services;
 using LiveHelpDesk.App.ViewModels;
+using LiveHelpDesk.Core;
 using LiveHelpDesk.Ipc;
 
 namespace LiveHelpDesk.App;
@@ -19,6 +20,8 @@ public sealed class AppHost
     private readonly string[] _args;
     private readonly AttentionModel _attention = new();
     private readonly ServiceLink _link = new(IpcProtocol.PipeName);
+    private readonly HttpClient _http = CreateHttp();
+    private readonly InstallKind _installKind = InstallKindDetector.Detect();
 
     private SingleInstance? _single;
     private UiSettings _settings = new();
@@ -31,6 +34,7 @@ public sealed class AppHost
     private NotificationsViewModel _notifications = null!;
     private ChannelsViewModel _channels = null!;
     private SettingsViewModel _appSettings = null!;
+    private UpdatesViewModel _updates = null!;
     private NotificationPump _pump = null!;
     private OverlayController _overlay = null!;
     private TrayController _tray = null!;
@@ -73,16 +77,21 @@ public sealed class AppHost
         _appSettings = new SettingsViewModel(
             _settings, new AutoStart(), Environment.ProcessPath ?? "LiveHelpDesk.exe", _window.ScreenNames(),
             ShowOverlayExample, () => _overlay?.Reposition());
+        _updates = CreateUpdates();
+        _appSettings.Updates = _updates;
         _window.Attach(_events, _status, _rules, _notifications, _channels, _appSettings);
         _window.PaneChanged += pane => _ = OnPaneChangedAsync(pane);
 
-        _pump = new NotificationPump(_link, _attention, new ToastService(), () => DateTimeOffset.UtcNow);
+        // One policy shared by the overlay and the toast pump: hold uncontrolled, on-screen notifications back
+        // during a presentation / screen share, or while a VPN is up — each governed by its own user switch.
+        var suppression = new SuppressionPolicy(_settings, new WindowsDoNotDisturb(), new WindowsVpnDetector());
+        _pump = new NotificationPump(_link, _attention, new ToastService(), () => DateTimeOffset.UtcNow, suppression);
         var overlayModel = new OverlayViewModel(OpenHeadlineAsync, AcknowledgeAllAsync, duration =>
         {
             _attention.Snooze(duration, DateTimeOffset.UtcNow);
         });
         _overlay = new OverlayController(
-            _attention, _settings, new WindowsDoNotDisturb(), () => DateTimeOffset.UtcNow, overlayModel,
+            _attention, _settings, suppression, () => DateTimeOffset.UtcNow, overlayModel,
             () => SystemSounds.Exclamation.Play());
 
         _tray = new TrayController(
@@ -101,6 +110,10 @@ public sealed class AppHost
 
         // A safety net: even if a change notice is missed, the app catches up within seconds.
         new DispatcherTimer(TimeSpan.FromSeconds(20), DispatcherPriority.Background, (_, _) => _ = CatchUpAsync()).Start();
+
+        // Updates: a first look shortly after start (not to slow it down), then every few hours.
+        DispatcherTimer.RunOnce(CheckForUpdates, TimeSpan.FromSeconds(30));
+        new DispatcherTimer(TimeSpan.FromHours(6), DispatcherPriority.Background, (_, _) => CheckForUpdates()).Start();
 
         if (!_args.Contains("--minimized"))
         {
@@ -360,6 +373,49 @@ public sealed class AppHost
 
     private static void OpenInBrowser(Uri url) =>
         Process.Start(new ProcessStartInfo(url.ToString()) { UseShellExecute = true });
+
+    // ---- updates ------------------------------------------------------------------------------------------------
+
+    private static HttpClient CreateHttp()
+    {
+        var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+        http.DefaultRequestHeaders.UserAgent.ParseAdd($"LiveHelpDesk/{UpdateVersions.Current().ToString(3)}");
+        return http;
+    }
+
+    private UpdatesViewModel CreateUpdates()
+    {
+        var current = UpdateVersions.Current();
+        var checker = new UpdateChecker(_http, UpdateChecker.ManifestUrl(), current, _installKind);
+        var updates = new UpdatesViewModel(current, _installKind, checker.CheckAsync, InstallUpdateAsync, OpenInBrowser);
+        updates.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(UpdatesViewModel.IsAvailable) or nameof(UpdatesViewModel.AvailableVersion))
+            {
+                _window.SetUpdateAvailable(updates.IsAvailable ? updates.AvailableVersion : null);
+            }
+        };
+        return updates;
+    }
+
+    private void CheckForUpdates()
+    {
+        if (_updates.CheckCommand.CanExecute(null))
+        {
+            _ = _updates.CheckCommand.ExecuteAsync(null);
+        }
+    }
+
+    /// <summary>"Aggiorna e riavvia": download, verify, hand over to the installer script, and get out of its way.</summary>
+    private async Task InstallUpdateAsync(AvailableUpdate update, IProgress<double> progress, CancellationToken cancellationToken)
+    {
+        var package = await UpdateInstaller.DownloadAsync(
+            _http, update.Package!, UpdateInstaller.DownloadDirectory(update.Version), progress, cancellationToken);
+        UpdateInstaller.Launch(
+            _installKind, package, AppContext.BaseDirectory, Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "LiveHelpDesk.exe"),
+            Environment.ProcessId, Path.Combine(AppPaths.UserLogs, "update.log"));
+        Exit();
+    }
 
     private void Exit() => _ = ExitAsync();
 

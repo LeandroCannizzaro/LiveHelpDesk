@@ -196,6 +196,24 @@ public class NotificationPumpTests
         Assert.Empty(toasts.Shown);
         Assert.Equal(0, attention.Count);
     }
+
+    [Fact]
+    public void WhileSuppressing_AToastIsHeldBack_ButKeptInTheOverlay()
+    {
+        var toasts = new RecordingToasts();
+        var attention = new AttentionModel();
+        var pump = new NotificationPump(new ServiceLink("unused"), attention, toasts, () => T.At(1), new AlwaysBusy());
+
+        pump.Deliver(new NotificationInfo(1, "k", "toast", "t", "b", Severity.Critical, null));
+
+        Assert.Empty(toasts.Shown); // nothing pops up on screen during a presentation / on a VPN
+        Assert.Equal(1, attention.Count); // but the ticket is kept and surfaces once it is safe again
+    }
+
+    private sealed class AlwaysBusy : IDoNotDisturb
+    {
+        public bool IsBusy() => true;
+    }
 }
 
 public class ServiceLinkTests
@@ -312,6 +330,32 @@ public class SmallAppPartsTests
     [InlineData(7, false)]
     public void TheOverlayYields_ToPresentationsAndFullScreenApps(int state, bool busy) =>
         Assert.Equal(busy, WindowsDoNotDisturb.IsBusyState(state));
+
+    [Theory]
+    [InlineData(false, false, false, false, false)] // both switches off: never suppress
+    [InlineData(true, false, true, false, true)]  // presentation on + presenting -> suppress
+    [InlineData(true, false, false, true, false)] // presentation on but only VPN up -> allow
+    [InlineData(false, true, false, true, true)]  // vpn on + vpn up -> suppress
+    [InlineData(false, true, true, false, false)] // vpn on but only presenting -> allow
+    [InlineData(true, true, true, true, true)]    // both on, both conditions -> suppress
+    public void SuppressionPolicy_HonoursEachSwitchIndependently(
+        bool onPresenting, bool onVpn, bool presenting, bool vpnUp, bool expected)
+    {
+        var settings = new UiSettings { SuppressWhenPresenting = onPresenting, SuppressWhenOnVpn = onVpn };
+        var policy = new SuppressionPolicy(settings, new FakeBusy(presenting), new FakeVpn(vpnUp));
+
+        Assert.Equal(expected, policy.IsBusy());
+    }
+
+    private sealed class FakeBusy(bool busy) : IDoNotDisturb
+    {
+        public bool IsBusy() => busy;
+    }
+
+    private sealed class FakeVpn(bool up) : IVpnDetector
+    {
+        public bool IsVpnActive() => up;
+    }
 
     [Theory]
     [InlineData(LinkState.Connected, false, AttentionLevel.None, TrayLook.Ok)]

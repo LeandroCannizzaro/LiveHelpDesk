@@ -18,6 +18,12 @@ public sealed class UiSettings
 
     public bool PlaySoundForCritical { get; set; } = true;
 
+    /// <summary>Hold back the overlay and Windows toasts while a presentation, screen share, or full-screen app is active.</summary>
+    public bool SuppressWhenPresenting { get; set; } = true;
+
+    /// <summary>Hold back the overlay and Windows toasts while a VPN / tunnel connection is up (an untrusted network).</summary>
+    public bool SuppressWhenOnVpn { get; set; }
+
     /// <summary>Which screen shows the overlay: 0 = the main one, N = the Nth screen Windows lists.</summary>
     public int OverlayScreen { get; set; }
 

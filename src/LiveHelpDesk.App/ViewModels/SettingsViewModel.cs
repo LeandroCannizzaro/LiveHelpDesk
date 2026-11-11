@@ -27,6 +27,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         Screens = [new Choice("0", "Lo schermo principale"), .. screens.Select((name, i) => new Choice((i + 1).ToString(), name))];
         _overlayEnabled = settings.OverlayEnabled;
         _playSound = settings.PlaySoundForCritical;
+        _suppressWhenPresenting = settings.SuppressWhenPresenting;
+        _suppressWhenOnVpn = settings.SuppressWhenOnVpn;
         _screen = Screens.FirstOrDefault(c => c.Value == settings.OverlayScreen.ToString()) ?? Screens[0];
         _startWithWindows = autoStart.IsEnabled;
         _overlayBackground = settings.OverlayBackground;
@@ -37,11 +39,20 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<Choice> Screens { get; }
 
+    /// <summary>The "Aggiornamenti" section; set by the host once the update checker exists.</summary>
+    public UpdatesViewModel? Updates { get; set; }
+
     [ObservableProperty]
     private bool _overlayEnabled;
 
     [ObservableProperty]
     private bool _playSound;
+
+    [ObservableProperty]
+    private bool _suppressWhenPresenting;
+
+    [ObservableProperty]
+    private bool _suppressWhenOnVpn;
 
     [ObservableProperty]
     private Choice _screen;
@@ -64,6 +75,10 @@ public sealed partial class SettingsViewModel : ObservableObject
     partial void OnOverlayEnabledChanged(bool value) => Apply(() => _settings.OverlayEnabled = value);
 
     partial void OnPlaySoundChanged(bool value) => Apply(() => _settings.PlaySoundForCritical = value);
+
+    partial void OnSuppressWhenPresentingChanged(bool value) => Apply(() => _settings.SuppressWhenPresenting = value);
+
+    partial void OnSuppressWhenOnVpnChanged(bool value) => Apply(() => _settings.SuppressWhenOnVpn = value);
 
     partial void OnScreenChanged(Choice value) => Apply(() => _settings.OverlayScreen = int.Parse(value.Value));
 

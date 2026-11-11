@@ -33,6 +33,7 @@ public partial class MainWindow : Window
 
     private Uri _home = DefaultHome;
     private bool _userNavigated;
+    private SettingsViewModel? _settingsVm;
 
     public MainWindow()
     {
@@ -56,6 +57,17 @@ public partial class MainWindow : Window
         NavNotifications.Click += (_, _) => ShowPane(Pane.Notifications);
         NavChannels.Click += (_, _) => ShowPane(Pane.Channels);
         NavSettings.Click += (_, _) => ShowPane(Pane.Settings);
+        UpdateButton.Click += (_, _) => ShowPane(Pane.Settings);
+
+        OverlayToggle.Click += (_, _) =>
+        {
+            if (_settingsVm is { } vm)
+            {
+                // Flows through SettingsViewModel so the change is saved and the overlay refreshes at once,
+                // keeping the Settings checkbox in sync with this button.
+                vm.OverlayEnabled = !vm.OverlayEnabled;
+            }
+        };
 
         Opened += (_, _) => Web.Navigate(_home);
         Closing += (_, e) =>
@@ -86,6 +98,35 @@ public partial class MainWindow : Window
         NotificationsPane.DataContext = notifications;
         ChannelsPane.DataContext = channels;
         SettingsPane.DataContext = settings;
+
+        _settingsVm = settings;
+        settings.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SettingsViewModel.OverlayEnabled))
+            {
+                UpdateOverlayToggle();
+            }
+        };
+        UpdateOverlayToggle();
+    }
+
+    /// <summary>Reflects whether on-screen alerts are active or blocked on the sidebar guard button.</summary>
+    private void UpdateOverlayToggle()
+    {
+        var active = _settingsVm?.OverlayEnabled ?? true;
+        OverlayToggle.Content = active ? "🔔  Avvisi a video attivi" : "🔕  Avvisi a video in pausa";
+        if (active)
+        {
+            OverlayToggle.Classes.Remove("paused");
+        }
+        else if (!OverlayToggle.Classes.Contains("paused"))
+        {
+            OverlayToggle.Classes.Add("paused");
+        }
+
+        ToolTip.SetTip(OverlayToggle, active
+            ? "Clic per bloccare la finestrella a video (utile durante presentazioni o condivisioni)."
+            : "Clic per riattivare la finestrella a video.");
     }
 
     /// <summary>The screens Windows lists, for the overlay's screen choice.</summary>
@@ -158,6 +199,13 @@ public partial class MainWindow : Window
     {
         LinkText.Text = text;
         NavEvents.Content = waiting > 0 ? $"Eventi ({waiting})" : "Eventi";
+    }
+
+    /// <summary>The side bar's "new version" button; null hides it.</summary>
+    public void SetUpdateAvailable(string? version)
+    {
+        UpdateButton.IsVisible = version is not null;
+        UpdateButton.Content = $"⬆  Aggiornamento {version}";
     }
 
     private void Navigate(Uri url)

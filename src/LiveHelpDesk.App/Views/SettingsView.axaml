@@ -20,7 +20,14 @@
         <Button Content="Rimetti al centro" Command="{Binding ResetPositionCommand}" />
       </StackPanel>
       <TextBlock Opacity="0.65" TextWrapping="Wrap"
-                 Text="Si può trascinare con il mouse. Non appare mentre fai una presentazione o usi un programma a schermo intero." />
+                 Text="Si può trascinare con il mouse." />
+
+      <TextBlock Text="Sospensione automatica" FontWeight="SemiBold" Margin="0,12,0,0" />
+      <CheckBox Content="Sospendi gli avvisi durante presentazioni e condivisioni dello schermo" IsChecked="{Binding SuppressWhenPresenting}" />
+      <CheckBox Content="Sospendi gli avvisi quando sei connesso a una VPN" IsChecked="{Binding SuppressWhenOnVpn}" />
+      <TextBlock Opacity="0.65" TextWrapping="Wrap"
+                 Text="Mentre è sospeso non appaiono né la finestrella né le notifiche di Windows: quello che arriva viene conservato e mostrato nella finestrella appena finisci la presentazione o ti scolleghi dalla VPN." />
+
 
       <TextBlock Text="Colori della finestrella" FontWeight="SemiBold" Margin="0,12,0,0" />
       <Grid ColumnDefinitions="150,220,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
@@ -47,6 +54,23 @@
 
       <TextBlock Text="{Binding Note}" Opacity="0.85" TextWrapping="Wrap"
                  IsVisible="{Binding Note, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <StackPanel Spacing="8" Margin="0,12,0,0" IsVisible="{Binding Updates, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <TextBlock Text="Aggiornamenti" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Updates.CurrentVersion, StringFormat='Versione installata: {0}'}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Controlla aggiornamenti" Command="{Binding Updates.CheckCommand}" />
+          <Button Content="Aggiorna e riavvia" Classes="accent" Command="{Binding Updates.InstallCommand}"
+                  IsVisible="{Binding Updates.CanInstall}" />
+          <Button Content="Novità" Command="{Binding Updates.OpenReleaseNotesCommand}" IsVisible="{Binding Updates.IsAvailable}" />
+        </StackPanel>
+        <ProgressBar Minimum="0" Maximum="100" Value="{Binding Updates.Progress}" IsVisible="{Binding Updates.IsBusy}" MaxWidth="400"
+                     HorizontalAlignment="Left" Width="400" />
+        <TextBlock Text="{Binding Updates.Status}" Opacity="0.85" TextWrapping="Wrap"
+                   IsVisible="{Binding Updates.Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Opacity="0.65" TextWrapping="Wrap"
+                   Text="LiveHelpDesk controlla da solo all'avvio e ogni qualche ora. L'aggiornamento non tocca impostazioni, regole e canali." />
+      </StackPanel>
     </StackPanel>
   </ScrollViewer>
 </UserControl>
