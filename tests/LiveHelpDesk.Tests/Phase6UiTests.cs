@@ -182,6 +182,123 @@ public class Phase6UiTests
         Save(window.CaptureRenderedFrame()!, "settings");
         Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(@"Software\LiveHelpDeskTests", throwOnMissingSubKey: false);
     }
+
+    [AvaloniaFact]
+    public void TheColourPickers_LeaveAutomaticColoursAlone_AndWriteWhatIsPicked()
+    {
+        var settings = new UiSettings { OverlayTextColor = "#112233" };
+        var vm = new SettingsViewModel(
+            settings, new AutoStart(@"Software\LiveHelpDeskTests\ui", "x"), "LiveHelpDesk.exe", [], () => { }, () => { });
+        var window = Show(new SettingsView { DataContext = vm }, 900, 900);
+        var pickers = window.GetVisualDescendants().OfType<ColorPicker>().ToDictionary(p => p.Name!);
+
+        // Showing the pickers must not turn "automatic" into a fixed colour.
+        Assert.Equal("", vm.OverlayBackground);
+        Assert.Equal("#112233", vm.OverlayTextColor);
+        Assert.Equal(Avalonia.Media.Color.Parse("#F59E0B"), pickers["BackgroundPicker"].Color);
+        Assert.Equal(Avalonia.Media.Color.Parse("#112233"), pickers["TextPicker"].Color);
+
+        pickers["BackgroundPicker"].Color = Avalonia.Media.Color.Parse("#336699");
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("#336699", vm.OverlayBackground);
+        Assert.Equal("#336699", settings.OverlayBackground);
+
+        vm.ResetColorCommand.Execute("background");
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("", vm.OverlayBackground);
+        Assert.Equal(Avalonia.Media.Color.Parse("#F59E0B"), pickers["BackgroundPicker"].Color);
+        Save(window.CaptureRenderedFrame()!, "settings-colours");
+        Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(@"Software\LiveHelpDeskTests", throwOnMissingSubKey: false);
+    }
+
+    [AvaloniaFact]
+    public void TheSideBar_CollapsesToIcons_AndExpandsBackToLabels()
+    {
+        var bar = new SidebarView { VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch };
+        var window = Show(new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Children = { bar } }, 600, 640);
+        bar.SetStatus("in funzione", 3);
+        bar.SetUpdateAvailable("0.2.0");
+        LiveHelpDesk.App.Pane? requested = null;
+        bar.PaneRequested += pane => requested = pane;
+        Dispatcher.UIThread.RunJobs();
+
+        bool LabelShown(string text) =>
+            window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == text && t.IsEffectivelyVisible);
+
+        var nav = bar.NavRules;
+        Assert.True(LabelShown("Regole"));
+        Assert.True(LabelShown("Avvisi attivi"));
+        Assert.True(LabelShown("Versione 0.2.0"));
+        Assert.True(LabelShown("3")); // the events badge
+        Assert.False(ToolTip.GetServiceEnabled(nav));
+        Assert.False(ToolTip.GetServiceEnabled(bar.OverlayToggle)); // the label says it all
+        // The alerts switch sits at the top, right under the header.
+        Assert.True(bar.OverlayToggle.TranslatePoint(default, bar)!.Value.Y < bar.NavBrowser.TranslatePoint(default, bar)!.Value.Y);
+        Assert.True(bar.OverlayToggle.DesiredSize.Width <= SidebarView.ExpandedWidth);
+        Save(window.CaptureRenderedFrame()!, "sidebar-expanded");
+
+        bar.SetOverlayActive(false);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(LabelShown("Avvisi in pausa"));
+        Assert.Contains("paused", bar.OverlayToggle.Classes);
+
+        bool? remembered = null;
+        bar.CollapsedChanged += collapsed => remembered = collapsed;
+        bar.SidebarToggle.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(remembered);
+        Assert.False(LabelShown("Regole"));
+        Assert.False(LabelShown("Avvisi in pausa"));
+        Assert.False(LabelShown("LiveHelpDesk"));
+        Assert.False(LabelShown("in funzione"));
+        Assert.True(LabelShown("3"));
+        Assert.True(ToolTip.GetServiceEnabled(nav));
+        Assert.True(ToolTip.GetServiceEnabled(bar.OverlayToggle));
+        Assert.Equal("Regole: quando e a chi inviare un avviso", ToolTip.GetTip(nav));
+        Assert.Equal("Espandi la barra · in funzione", ToolTip.GetTip(bar.SidebarToggle));
+        Assert.True(bar.Bounds.Width < 70);
+        Save(window.CaptureRenderedFrame()!, "sidebar-collapsed");
+
+        nav.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Assert.Equal(LiveHelpDesk.App.Pane.Rules, requested);
+
+        bar.SetCollapsed(false);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(LabelShown("Regole"));
+    }
+
+    [AvaloniaFact]
+    public void OnAllScreens_ThereIsAPillPerScreen_AndOneActionHidesThemAll()
+    {
+        var model = new AttentionModel();
+        var settings = new UiSettings { OverlayScreen = UiSettings.AllScreens };
+        var overlayVm = new OverlayViewModel(() => Task.CompletedTask, () => { model.AcknowledgeAll(); return Task.CompletedTask; }, _ => { });
+        var controller = new OverlayController(model, settings, new NeverBusy(), () => DateTimeOffset.UtcNow, overlayVm, () => { });
+        try
+        {
+            model.Add(new AttentionItem("a", "Nuovo ticket", "corpo", Severity.Attention, null, DateTimeOffset.UtcNow), DateTimeOffset.UtcNow);
+            controller.Refresh();
+            Dispatcher.UIThread.RunJobs();
+
+            var screens = new Window().Screens.All.Count;
+            Assert.True(screens >= 1);
+            Assert.Equal(screens, controller.ShownCount);
+
+            overlayVm.AcknowledgeAllCommand.Execute(null); // "Vista" on any of them
+            controller.Refresh();
+            Assert.Equal(0, controller.ShownCount);
+
+            settings.OverlayScreen = 0; // back to one screen
+            model.Add(new AttentionItem("b", "Nuovo ticket", "corpo", Severity.Attention, null, DateTimeOffset.UtcNow), DateTimeOffset.UtcNow);
+            controller.Reposition();
+            Assert.Equal(1, controller.ShownCount);
+        }
+        finally
+        {
+            controller.Stop();
+        }
+    }
 }
 
 public class Phase6ServiceTests

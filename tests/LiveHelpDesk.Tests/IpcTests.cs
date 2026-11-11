@@ -164,6 +164,16 @@ internal sealed class FakeApi : ILiveHelpDeskApi
         Task.FromResult<IReadOnlyList<LookupItem>>(
             [new LookupItem(QueueId.ToString("D"), "Assistenza L1", "queue"), new LookupItem("aaaaaaaa-0000-0000-0000-000000000001", "Mario Rossi", "user")]);
 
+    public int PollSeconds { get; set; }
+
+    public Task<PollSettings> GetPollSettingsAsync() => Task.FromResult(new PollSettings(PollSeconds > 0 ? PollSeconds : 30, 30, 10, 3600));
+
+    public Task<PollSettings> SetPollSecondsAsync(int seconds)
+    {
+        PollSeconds = seconds <= 0 ? 0 : Math.Clamp(seconds, 10, 3600);
+        return GetPollSettingsAsync();
+    }
+
     public Task<DryRunResult> DryRunRulesAsync() =>
         Task.FromResult(new DryRunResult(3, [new RuleHitCount("new-tickets", "Nuovi ticket", 2)], [new DryRunTicket("261000001", "Errore", "new-tickets")]));
 }

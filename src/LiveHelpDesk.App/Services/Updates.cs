@@ -69,6 +69,9 @@ public sealed class UpdateChecker(HttpClient http, Uri manifestUrl, Version curr
     public static Uri ManifestUrl() =>
         Uri.TryCreate(Environment.GetEnvironmentVariable("LIVEHELPDESK_UPDATE_URL"), UriKind.Absolute, out var url) ? url : DefaultManifestUrl;
 
+    /// <summary>The release notes page, published next to the manifest.</summary>
+    public static Uri ReleaseNotesUrl(Uri manifestUrl) => new(manifestUrl, "release-notes.html");
+
     public async Task<AvailableUpdate?> CheckAsync(CancellationToken cancellationToken = default)
     {
         // Pages sits behind a CDN that caches for minutes: a changing query string asks for a fresh copy.

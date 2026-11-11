@@ -139,7 +139,7 @@ public class AppUiTests
 
         var buttons = window.GetVisualDescendants().OfType<Button>().Select(b => b.Content?.ToString()).ToArray();
 
-        Assert.Equal(new[] { "\u25B2", "Apri", "Riconosci", "15 min" }, buttons.Select(b => b ?? "").ToArray());
+        Assert.Equal(new[] { "\u25B2", "Apri", "Vista", "15 min" }, buttons.Select(b => b ?? "").ToArray());
     }
 
     [AvaloniaFact]

@@ -366,6 +366,10 @@ public class RulesViewModelTests
 
         public Task<IReadOnlyList<LookupItem>> GetLookupsAsync() => inner.GetLookupsAsync();
 
+        public Task<PollSettings> GetPollSettingsAsync() => inner.GetPollSettingsAsync();
+
+        public Task<PollSettings> SetPollSecondsAsync(int seconds) => inner.SetPollSecondsAsync(seconds);
+
         public Task<ServiceStatus> GetStatusAsync() => inner.GetStatusAsync();
 
         public Task<LoginChallenge> StartLoginAsync() => inner.StartLoginAsync();
@@ -642,7 +646,7 @@ public sealed class SettingsViewModelTests : IDisposable
 
         Assert.False(vm.OverlayEnabled);
         Assert.Equal("Schermo 2 · 1366×768", vm.Screen.Label);
-        Assert.Equal(3, vm.Screens.Count); // "main screen" plus the two listed
+        Assert.Equal(4, vm.Screens.Count); // "main screen", the two listed, "all screens"
 
         vm.OverlayEnabled = true;
         vm.PlaySound = false;

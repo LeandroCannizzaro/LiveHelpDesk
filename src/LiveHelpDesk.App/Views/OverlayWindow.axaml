@@ -79,7 +79,7 @@
         <Button Content="{Binding ToggleGlyph}" Command="{Binding ToggleExpandCommand}"
                 ToolTip.Tip="{Binding ToggleTip}" Padding="10,6" />
         <Button Content="Apri" Command="{Binding OpenCommand}" />
-        <Button Content="Riconosci" Command="{Binding AcknowledgeAllCommand}" />
+        <Button Content="Vista" Command="{Binding AcknowledgeAllCommand}" />
         <Button Content="15 min" Command="{Binding SnoozeQuarterHourCommand}" ToolTip.Tip="Posticipa di 15 minuti" />
       </StackPanel>
     </Grid>

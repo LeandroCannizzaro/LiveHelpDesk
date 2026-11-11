@@ -4,7 +4,15 @@
              x:Class="LiveHelpDesk.App.Views.EventsView"
              x:DataType="vm:EventsViewModel">
   <Grid RowDefinitions="Auto,*" Margin="16">
-    <TextBlock Grid.Row="0" Text="Eventi recenti" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,8" />
+    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Content="✓ Visti tutti" Command="{Binding AcknowledgeAllCommand}"
+                ToolTip.Tip="Segna come visti tutti gli eventi dell'elenco" />
+        <Button Content="Pulisci" Command="{Binding ClearCommand}"
+                ToolTip.Tip="Svuota l'elenco: da ora compaiono solo gli eventi nuovi" />
+      </StackPanel>
+      <TextBlock Text="Eventi recenti" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+    </DockPanel>
 
     <TextBlock Grid.Row="1" Text="{Binding Message}" Opacity="0.7" Margin="0,8"
                IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -24,7 +32,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
               <Button Content="Apri" Command="{Binding OpenCommand}" IsEnabled="{Binding CanOpen}" />
-              <Button Content="Riconosci" Command="{Binding AcknowledgeCommand}" IsVisible="{Binding CanAcknowledge}" />
+              <Button Content="Vista" Command="{Binding AcknowledgeCommand}" IsVisible="{Binding CanAcknowledge}" />
               <TextBlock Text="✓ visto" Opacity="0.6" VerticalAlignment="Center" IsVisible="{Binding Acknowledged}" />
             </StackPanel>
           </Grid>

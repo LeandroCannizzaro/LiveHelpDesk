@@ -19,6 +19,7 @@
         <a href="#notifiche">Notifiche</a>
         <a href="#canali">Canali</a>
         <a href="#faq">Domande frequenti</a>
+        <a href="release-notes.html">Note di rilascio</a>
         <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk">GitHub</a>
       </nav>
     </div>
@@ -140,7 +141,7 @@
           <tr><td><code>uninstall.cmd</code></td><td>Disinstalla. Aggiungi <code>-RemoveData</code> per cancellare anche le impostazioni.</td></tr>
         </table>
         <div class="tip"><div>🗂️</div><div>In entrambi i casi i tuoi dati (configurazione, regole, canali) non vengono mai toccati da un aggiornamento o da una disinstallazione, a meno che tu non lo chieda esplicitamente.</div></div>
-        <div class="note"><div>⬆️</div><div><b>Aggiornamenti</b>LiveHelpDesk controlla da solo se esce una nuova versione. Quando c'è, nella barra laterale compare il pulsante «⬆ Aggiornamento x.y.z»: aprilo e premi «Aggiorna e riavvia» (in <i>Impostazioni → Aggiornamenti</i>). Il programma scarica la nuova versione, si chiude, la installa e riparte da solo; Windows potrebbe chiederti la conferma da amministratore. Puoi controllare anche a mano con «Controlla aggiornamenti».</div></div>
+        <div class="note"><div>⬆️</div><div><b>Aggiornamenti</b>LiveHelpDesk controlla da solo se esce una nuova versione. Quando c'è, nella barra laterale compare il pulsante «⬆ Versione x.y.z»: aprilo e premi «Aggiorna e riavvia» (in <i>Impostazioni → Aggiornamenti</i>). Il programma scarica la nuova versione, si chiude, la installa e riparte da solo; Windows potrebbe chiederti la conferma da amministratore. Puoi controllare anche a mano con «Controlla aggiornamenti»; «Note di rilascio» apre le <a href="release-notes.html">novità di ogni versione</a>.</div></div>
         <div class="warn"><div>⚠️</div><div><b>Avviso di Windows (SmartScreen)</b>Il programma non è firmato con un certificato commerciale, quindi al primo avvio Windows potrebbe chiedere una conferma. È normale per i programmi distribuiti internamente: scegli «Ulteriori informazioni → Esegui comunque».</div></div>
       </article>
 
@@ -353,10 +354,14 @@
         <div class="eyebrow">Preferenze</div>
         <h2>12. Impostazioni</h2>
         <ul>
-          <li><b>Finestrella lampeggiante</b> — attivala o disattivala, scegli lo <b>schermo</b> su cui mostrarla, trascinala dove preferisci e usa <i>Rimetti al centro</i> se la perdi di vista. <i>Mostra un esempio</i> ti fa vedere come appare.</li>
+          <li><b>Finestrella lampeggiante</b> — attivala o disattivala, scegli lo <b>schermo</b> su cui mostrarla, trascinala dove preferisci e usa <i>Rimetti al centro</i> se la perdi di vista. <i>Mostra un esempio</i> ti fa vedere come appare. Con <b>Tutti gli schermi</b> compare su ogni monitor: quando ne chiudi una (con <i>Vista</i>, <i>Apri</i> o <i>15 min</i>) si chiudono tutte.</li>
+          <li><b>Colori della finestrella</b> — scegli sfondo, testo e numero con il selettore di colore o scrivendo il codice; <i>Automatico</i> torna ai colori predefiniti.</li>
           <li><b>Suona un avviso per gli eventi critici</b> — un suono solo per le cose davvero importanti.</li>
+          <li><b>Controllo dei nuovi eventi</b> — ogni quanti secondi LiveHelpDesk cerca novità su Dynamics (da 10 a 3600; predefinito 30). Premi <i>Applica</i>: il nuovo intervallo vale subito.</li>
           <li><b>Avvia LiveHelpDesk quando accedo a Windows</b> — il programma parte da solo e resta nell'area di notifica, pronto ad avvisarti.</li>
+          <li><b>Ripristina predefiniti</b> — dopo una conferma riporta tutte le opzioni della pagina ai valori iniziali, tranne l'avvio con Windows.</li>
         </ul>
+        <p>La barra laterale si può ridurre alle sole icone con il pulsante <b>☰</b> in alto: passando con il mouse su un'icona compare la sua spiegazione. Quando esce una nuova versione, la finestrella te lo segnala una volta e nella barra compare il pulsante per aggiornare.</p>
       </article>
 
       <article id="eventi" class="section">
@@ -365,8 +370,9 @@
         <p>La scheda <b>Eventi</b> raccoglie ciò che è successo di recente sui ticket: per ciascuno vedi l'orario, il tipo di evento e il ticket coinvolto. Da qui puoi:</p>
         <ul>
           <li><b>Apri</b> — porta direttamente al ticket su Dynamics.</li>
-          <li><b>Riconosci</b> — segna l'evento come «visto», così smette di risultare da gestire (e si ferma anche l'eventuale inoltro «se nessuno risponde»).</li>
+          <li><b>Vista</b> — segna l'evento come «visto», così smette di risultare da gestire (e si ferma anche l'eventuale inoltro «se nessuno risponde»).</li>
         </ul>
+        <p>In alto, <b>✓ Visti tutti</b> segna come visti tutti gli eventi dell'elenco e <b>Pulisci</b> svuota l'elenco a video: da quel momento compaiono solo gli eventi nuovi. Pulire non cancella nulla dallo storico e non segna gli eventi come visti; l'elenco si ricompone quando riavvii il programma.</p>
       </article>
 
       <article id="privacy" class="section">

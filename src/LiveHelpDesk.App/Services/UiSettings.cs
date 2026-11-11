@@ -24,8 +24,10 @@ public sealed class UiSettings
     /// <summary>Hold back the overlay and Windows toasts while a VPN / tunnel connection is up (an untrusted network).</summary>
     public bool SuppressWhenOnVpn { get; set; }
 
-    /// <summary>Which screen shows the overlay: 0 = the main one, N = the Nth screen Windows lists.</summary>
+    /// <summary>Which screen shows the overlay: 0 = the main one, N = the Nth screen Windows lists, <see cref="AllScreens"/> = every screen.</summary>
     public int OverlayScreen { get; set; }
+
+    public const int AllScreens = -1;
 
     /// <summary>Overlay background colour as "#RRGGBB". Blank = the urgency default (amber for attention, red for critical).</summary>
     public string OverlayBackground { get; set; } = "";
@@ -38,6 +40,12 @@ public sealed class UiSettings
 
     /// <summary>When no service answers, the app starts the monitor itself (<c>LiveHelpDesk.Service run</c>).</summary>
     public bool StartMonitorProcess { get; set; } = true;
+
+    /// <summary>The main window's side bar shows only icons.</summary>
+    public bool SidebarCollapsed { get; set; }
+
+    /// <summary>The last version announced in the overlay, so each new version is announced once.</summary>
+    public string AnnouncedUpdate { get; set; } = "";
 
     public static string DefaultPath => Path.Combine(AppPaths.UserRoot, "ui.json");
 

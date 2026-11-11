@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LiveHelpDesk — Note di rilascio</title>
+  <meta name="description" content="Le novità, le modifiche e le correzioni di ogni versione di LiveHelpDesk." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand"><span class="logo">🎧</span> LiveHelpDesk</div>
+      <nav>
+        <a href="index.html">Manuale d'uso</a>
+        <a href="release-notes.html">Note di rilascio</a>
+        <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk/releases">Download</a>
+        <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <!--
+    Una sezione per versione, la più recente in alto, con id="vX.Y.Z": l'app apre questa pagina sull'ancora della versione
+    e il workflow Release rifiuta di pubblicare una versione che qui non c'è.
+    Si scrive per chi usa il programma: cosa cambia per lui, non come è fatto il codice.
+  -->
+
+  <div class="layout">
+    <aside class="toc">
+      <strong>Versioni</strong>
+      <ol>
+        <li><a href="#v0.2.0">0.2.0</a></li>
+        <li><a href="#v0.1.1">0.1.1</a></li>
+      </ol>
+    </aside>
+
+    <main class="content">
+
+      <article id="v0.2.0" class="section">
+        <div class="eyebrow">Versione 0.2.0</div>
+        <h2>Aggiornamenti automatici, finestrella rinnovata e più controllo sugli avvisi</h2>
+
+        <h3>✨ Novità</h3>
+        <ul>
+          <li><b>Aggiornamento automatico.</b> LiveHelpDesk controlla da solo se c'è una nuova versione. Quando c'è, te lo dice la finestrella e nella barra laterale compare il pulsante «⬆ Versione x.y.z». In <i>Impostazioni → Aggiornamenti</i> premi «Aggiorna e riavvia»: il programma scarica la nuova versione, ne verifica l'integrità, si installa e riparte da solo. Le tue impostazioni restano come sono.</li>
+          <li><b>Note di rilascio.</b> Questa pagina: da <i>Impostazioni → Aggiornamenti</i> il pulsante «Note di rilascio» ti porta qui.</li>
+          <li><b>Finestrella rinnovata.</b> Mostra il testo completo dell'avviso su più righe e si riduce a una sola riga con la freccia. Invece di lampeggiare tutta, ora pulsa solo il numero (più in fretta per gli eventi critici).</li>
+          <li><b>Colori della finestrella.</b> Scegli sfondo, testo e numero con il selettore di colore. «Automatico» torna ai colori predefiniti (ambra per i solleciti, rosso per gli eventi critici).</li>
+          <li><b>Su tutti gli schermi.</b> In <i>Impostazioni → Schermo</i> la nuova voce «Tutti gli schermi» mostra la finestrella su ogni monitor; quando ne chiudi una si chiudono tutte.</li>
+          <li><b>Sospensione automatica degli avvisi.</b> Durante una presentazione o una condivisione dello schermo (e, se vuoi, quando sei collegato a una VPN) la finestrella e le notifiche di Windows aspettano: quello che arriva nel frattempo non va perso e compare appena finisci.</li>
+          <li><b>Pulsante «Avvisi attivi / in pausa».</b> In cima alla barra laterale, blocca o riattiva con un clic la finestrella a video.</li>
+          <li><b>Barra laterale riducibile.</b> Con il pulsante ☰ la barra mostra solo le icone; passando con il mouse compare la spiegazione. Il numero di eventi da gestire resta visibile sull'icona «Eventi».</li>
+          <li><b>Eventi: «Visti tutti» e «Pulisci».</b> Segna come visti tutti gli eventi dell'elenco con un clic, oppure svuota l'elenco a video per vedere solo quelli nuovi.</li>
+          <li><b>Intervallo di controllo regolabile.</b> In <i>Impostazioni → Controllo dei nuovi eventi</i> scegli ogni quanti secondi cercare novità su Dynamics (da 10 a 3600).</li>
+          <li><b>Ripristina predefiniti.</b> Un pulsante in Impostazioni riporta tutte le opzioni ai valori iniziali (tranne l'avvio con Windows).</li>
+          <li><b>Testi delle notifiche.</b> Nella scheda <i>Notifiche</i> puoi scrivere i testi dei messaggi con i dati del ticket, con anteprima e suggerimenti dei campi.</li>
+        </ul>
+
+        <h3>🔄 Modifiche</h3>
+        <ul>
+          <li>Il pulsante «Riconosci» si chiama ora <b>«Vista»</b> (nella finestrella, nelle notifiche di Windows e nell'elenco degli eventi); nel menu dell'icona vicino all'orologio la voce è «Visti tutti».</li>
+        </ul>
+
+        <h3>🛠️ Correzioni</h3>
+        <ul>
+          <li>Un'e-mail del cliente (o una nostra risposta) non genera più <b>due notifiche</b>: Dynamics aggiorna anche il campo «Comunicazioni» del ticket e LiveHelpDesk lo contava come un secondo fatto.</li>
+          <li>Avviare il programma quando è già aperto ora porta in primo piano la finestra esistente, invece di chiudersi con un errore.</li>
+          <li>Il servizio di Windows può usare i dati preparati prima della sua installazione, senza riparazioni manuali.</li>
+        </ul>
+      </article>
+
+      <article id="v0.1.1" class="section">
+        <div class="eyebrow">Versione 0.1.1</div>
+        <h2>Prima versione pubblicata</h2>
+        <ul>
+          <li>Controllo dei ticket su Dynamics 365 con regole di notifica configurabili.</li>
+          <li>Avvisi sul desktop (notifiche di Windows e finestrella lampeggiante) e sui canali esterni: e-mail, Teams, WhatsApp e SMS.</li>
+          <li>Installazione con l'installer <code>.msi</code> o con l'archivio portatile <code>.zip</code>.</li>
+        </ul>
+      </article>
+
+    </main>
+  </div>
+
+  <footer>
+    <p>LiveHelpDesk — monitoraggio proattivo dei ticket di assistenza su Dynamics 365.<br />
+    Progetto su <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk">GitHub</a>. © Leandro Cannizzaro.</p>
+  </footer>
+
+</body>
+</html>

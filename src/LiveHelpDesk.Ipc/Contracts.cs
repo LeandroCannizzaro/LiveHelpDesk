@@ -110,6 +110,11 @@ public sealed record DryRunTicket(string TicketNumber, string? Title, string Rul
 /// <summary>What the rules would do with today's tickets if each had just been created.</summary>
 public sealed record DryRunResult(int TicketsEvaluated, IReadOnlyList<RuleHitCount> Rules, IReadOnlyList<DryRunTicket> Examples);
 
+/// <summary>How often this profile looks for new events in Dynamics.</summary>
+/// <param name="Seconds">The interval in force.</param>
+/// <param name="DefaultSeconds">The machine default (<c>config.json</c>), used when the user has not chosen one.</param>
+public sealed record PollSettings(int Seconds, int DefaultSeconds, int MinSeconds, int MaxSeconds);
+
 /// <summary>
 /// What the desktop app can ask of the service, always about the caller's own profile (the service tells
 /// callers apart by their Windows identity, so there is no way to name someone else's).
@@ -172,6 +177,11 @@ public interface ILiveHelpDeskApi
 
     /// <summary>Names for the queues, teams and users the active tickets point at, so rules can be written by name.</summary>
     Task<IReadOnlyList<LookupItem>> GetLookupsAsync();
+
+    Task<PollSettings> GetPollSettingsAsync();
+
+    /// <summary>Sets this profile's polling interval (kept within the limits) and polls at once; 0 goes back to the default.</summary>
+    Task<PollSettings> SetPollSecondsAsync(int seconds);
 
     /// <summary>Something changed: ask again. Sent to every connected app of that profile.</summary>
     event EventHandler<ChangedEventArgs>? Changed;

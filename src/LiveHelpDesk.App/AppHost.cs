@@ -79,7 +79,14 @@ public sealed class AppHost
             ShowOverlayExample, () => _overlay?.Reposition());
         _updates = CreateUpdates();
         _appSettings.Updates = _updates;
+        _appSettings.Service = () => _link.Api;
         _window.Attach(_events, _status, _rules, _notifications, _channels, _appSettings);
+        _window.SetSidebarCollapsed(_settings.SidebarCollapsed);
+        _window.SidebarCollapsedChanged += collapsed =>
+        {
+            _settings.SidebarCollapsed = collapsed;
+            _settings.Save();
+        };
         _window.PaneChanged += pane => _ = OnPaneChangedAsync(pane);
 
         // One policy shared by the overlay and the toast pump: hold uncontrolled, on-screen notifications back
@@ -139,6 +146,11 @@ public sealed class AppHost
     /// <summary>Shows a pane's current data when the user opens it, but never over edits that are not saved.</summary>
     private async Task OnPaneChangedAsync(Pane pane)
     {
+        if (pane == Pane.Settings)
+        {
+            await _appSettings.LoadPollAsync();
+        }
+
         if (_link.State != LinkState.Connected)
         {
             return;
@@ -181,6 +193,10 @@ public sealed class AppHost
         await _status.RefreshAsync(state);
         _hosting.Refresh(state);
         await _hosting.AutoStartAsync(state);
+        if (_window.CurrentPane == Pane.Settings)
+        {
+            await _appSettings.LoadPollAsync();
+        }
         if (state == LinkState.Connected)
         {
             await CatchUpAsync();
@@ -293,7 +309,12 @@ public sealed class AppHost
     private Task OpenHeadlineAsync()
     {
         var item = _attention.Headline;
-        if (item?.Url is { } url)
+        if (item?.EventKey.StartsWith(UpdateNoticePrefix, StringComparison.Ordinal) == true)
+        {
+            _window.ShowPane(Pane.Settings);
+            _window.Bring();
+        }
+        else if (item?.Url is { } url)
         {
             _window.OpenTicket(url);
         }
@@ -319,12 +340,17 @@ public sealed class AppHost
     private async Task AcknowledgeAsync(string eventKey)
     {
         _attention.Acknowledge(eventKey);
+        if (eventKey.StartsWith(UpdateNoticePrefix, StringComparison.Ordinal))
+        {
+            return; // the app's own notice: the service has never heard of it
+        }
+
         await TellServiceAsync(api => api.AcknowledgeAsync(eventKey));
     }
 
     private async Task AcknowledgeAllAsync()
     {
-        foreach (var item in _attention.AcknowledgeAll())
+        foreach (var item in _attention.AcknowledgeAll().Where(i => !i.EventKey.StartsWith(UpdateNoticePrefix, StringComparison.Ordinal)))
         {
             await TellServiceAsync(api => api.AcknowledgeAsync(item.EventKey));
         }
@@ -387,16 +413,41 @@ public sealed class AppHost
     {
         var current = UpdateVersions.Current();
         var checker = new UpdateChecker(_http, UpdateChecker.ManifestUrl(), current, _installKind);
-        var updates = new UpdatesViewModel(current, _installKind, checker.CheckAsync, InstallUpdateAsync, OpenInBrowser);
+        var updates = new UpdatesViewModel(
+            current, _installKind, checker.CheckAsync, InstallUpdateAsync, OpenInBrowser, UpdateChecker.ReleaseNotesUrl(UpdateChecker.ManifestUrl()));
         updates.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(UpdatesViewModel.IsAvailable) or nameof(UpdatesViewModel.AvailableVersion))
             {
                 _window.SetUpdateAvailable(updates.IsAvailable ? updates.AvailableVersion : null);
+                AnnounceUpdate(updates);
             }
         };
         return updates;
     }
+
+    /// <summary>A new version gets one notice in the on-screen overlay; clicking it opens Settings → Aggiornamenti.</summary>
+    private void AnnounceUpdate(UpdatesViewModel updates)
+    {
+        if (!updates.IsAvailable || updates.AvailableVersion.Length == 0 || _settings.AnnouncedUpdate == updates.AvailableVersion)
+        {
+            return;
+        }
+
+        _settings.AnnouncedUpdate = updates.AvailableVersion;
+        _settings.Save();
+        var now = DateTimeOffset.UtcNow;
+        _attention.Add(
+            new AttentionItem(
+                UpdateNoticePrefix + updates.AvailableVersion, $"Aggiornamento disponibile: LiveHelpDesk {updates.AvailableVersion}",
+                updates.CanInstall
+                    ? "Premi «Apri» e poi «Aggiorna e riavvia»: le impostazioni restano come sono."
+                    : "Premi «Apri» per i dettagli.",
+                Severity.Attention, null, now),
+            now);
+    }
+
+    private const string UpdateNoticePrefix = "update:";
 
     private void CheckForUpdates()
     {

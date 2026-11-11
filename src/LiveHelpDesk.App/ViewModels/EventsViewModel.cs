@@ -54,6 +54,9 @@ public sealed partial class EventRow : ObservableObject
 /// <summary>The recent events of this user's monitor, newest first.</summary>
 public sealed partial class EventsViewModel(Func<ILiveHelpDeskApi?> api, Func<EventRow, Task> open, Func<string, Task> acknowledge) : ObservableObject
 {
+    // "Pulisci" only clears the screen: the service keeps its events (they also stop duplicates), the app stops showing them.
+    private readonly HashSet<string> _cleared = [];
+
     public ObservableCollection<EventRow> Rows { get; } = [];
 
     [ObservableProperty]
@@ -71,18 +74,44 @@ public sealed partial class EventsViewModel(Func<ILiveHelpDeskApi?> api, Func<Ev
         {
             var events = await service.GetRecentEventsAsync(100);
             Rows.Clear();
-            foreach (var evt in events)
+            foreach (var evt in events.Where(e => !_cleared.Contains(e.Key)))
             {
                 Rows.Add(new EventRow(evt, open, AcknowledgeRowAsync));
             }
 
-            Message = events.Count == 0 ? "Nessun evento finora." : "";
+            ShowEmptyMessage(events.Count);
         }
         catch (Exception ex) when (ex is StreamJsonRpc.RemoteInvocationException or StreamJsonRpc.ConnectionLostException or IOException)
         {
             Message = $"Impossibile leggere gli eventi: {ex.Message}";
         }
     }
+
+    /// <summary>"Visti tutti": every event in the list not seen yet is marked as seen.</summary>
+    [RelayCommand]
+    private async Task AcknowledgeAllAsync()
+    {
+        foreach (var row in Rows.Where(r => !r.Acknowledged).ToList())
+        {
+            await AcknowledgeRowAsync(row);
+        }
+    }
+
+    /// <summary>"Pulisci": empties the list on screen; only events that arrive afterwards show up.</summary>
+    [RelayCommand]
+    private void Clear()
+    {
+        foreach (var row in Rows)
+        {
+            _cleared.Add(row.Key);
+        }
+
+        Rows.Clear();
+        ShowEmptyMessage(_cleared.Count);
+    }
+
+    private void ShowEmptyMessage(int total) =>
+        Message = Rows.Count > 0 ? "" : total == 0 ? "Nessun evento finora." : "Nessun evento nuovo dall'ultima pulizia.";
 
     private async Task AcknowledgeRowAsync(EventRow row)
     {

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveHelpDesk.App.Services;
+using LiveHelpDesk.Ipc;
 
 namespace LiveHelpDesk.App.ViewModels;
 
@@ -24,7 +25,12 @@ public sealed partial class SettingsViewModel : ObservableObject
         _showOverlayDemo = showOverlayDemo;
         _settingsChanged = settingsChanged;
 
-        Screens = [new Choice("0", "Lo schermo principale"), .. screens.Select((name, i) => new Choice((i + 1).ToString(), name))];
+        Screens =
+        [
+            new Choice("0", "Lo schermo principale"),
+            .. screens.Select((name, i) => new Choice((i + 1).ToString(), name)),
+            new Choice(UiSettings.AllScreens.ToString(), "Tutti gli schermi"),
+        ];
         _overlayEnabled = settings.OverlayEnabled;
         _playSound = settings.PlaySoundForCritical;
         _suppressWhenPresenting = settings.SuppressWhenPresenting;
@@ -119,6 +125,24 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void ShowOverlayDemo() => _showOverlayDemo();
 
+    /// <summary>"Automatico": clears one overlay colour so the urgency default applies again.</summary>
+    [RelayCommand]
+    private void ResetColor(string? which)
+    {
+        switch (which)
+        {
+            case "background":
+                OverlayBackground = "";
+                break;
+            case "text":
+                OverlayTextColor = "";
+                break;
+            case "accent":
+                OverlayAccent = "";
+                break;
+        }
+    }
+
     private void Apply(Action change)
     {
         if (_loading)
@@ -129,5 +153,118 @@ public sealed partial class SettingsViewModel : ObservableObject
         change();
         _settings.Save();
         _settingsChanged();
+    }
+
+    // ---- polling interval (kept by the monitor, per user) -------------------------------------------------------
+
+    /// <summary>The monitor, for the polling interval; set by the host.</summary>
+    public Func<ILiveHelpDeskApi?> Service { get; set; } = () => null;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ApplyPollCommand))]
+    private bool _pollAvailable;
+
+    [ObservableProperty]
+    private decimal? _pollSeconds;
+
+    [ObservableProperty]
+    private string _pollNote = "";
+
+    public async Task LoadPollAsync()
+    {
+        if (Service() is not { } api)
+        {
+            PollAvailable = false;
+            PollNote = "Il servizio non è raggiungibile: l'intervallo si potrà cambiare quando sarà in funzione.";
+            return;
+        }
+
+        try
+        {
+            ShowPoll(await api.GetPollSettingsAsync());
+            PollAvailable = true;
+        }
+        catch (Exception ex) when (IsServiceFailure(ex))
+        {
+            PollAvailable = false;
+            PollNote = ex is StreamJsonRpc.RemoteMethodNotFoundException
+                ? "Il servizio in esecuzione è di una versione precedente: aggiornalo per cambiare l'intervallo."
+                : $"Impossibile leggere l'intervallo: {ex.Message}";
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(PollAvailable))]
+    private async Task ApplyPollAsync()
+    {
+        if (Service() is not { } api)
+        {
+            return;
+        }
+
+        try
+        {
+            var applied = await api.SetPollSecondsAsync((int)(PollSeconds ?? 0));
+            ShowPoll(applied);
+            Note = $"I nuovi eventi vengono cercati ogni {applied.Seconds} secondi.";
+        }
+        catch (Exception ex) when (IsServiceFailure(ex))
+        {
+            PollNote = $"Impossibile cambiare l'intervallo: {ex.Message}";
+        }
+    }
+
+    private void ShowPoll(PollSettings poll)
+    {
+        PollSeconds = poll.Seconds;
+        PollNote = $"Predefinito: {poll.DefaultSeconds} secondi; da {poll.MinSeconds} a {poll.MaxSeconds}. Un intervallo breve avvisa prima ma interroga Dynamics più spesso.";
+    }
+
+    private static bool IsServiceFailure(Exception ex) =>
+        ex is StreamJsonRpc.RemoteRpcException or IOException or ObjectDisposedException;
+
+    // ---- back to defaults ---------------------------------------------------------------------------------------
+
+    /// <summary>The first click on «Ripristina predefiniti» asks for a confirmation.</summary>
+    [ObservableProperty]
+    private bool _confirmingReset;
+
+    [RelayCommand]
+    private void AskReset() => ConfirmingReset = true;
+
+    [RelayCommand]
+    private void CancelReset() => ConfirmingReset = false;
+
+    /// <summary>Every option on this page back to its default, except starting with Windows (an installation choice).</summary>
+    [RelayCommand]
+    private async Task ResetDefaultsAsync()
+    {
+        ConfirmingReset = false;
+        var defaults = new UiSettings();
+        OverlayEnabled = defaults.OverlayEnabled;
+        PlaySound = defaults.PlaySoundForCritical;
+        SuppressWhenPresenting = defaults.SuppressWhenPresenting;
+        SuppressWhenOnVpn = defaults.SuppressWhenOnVpn;
+        Screen = Screens[0];
+        OverlayBackground = defaults.OverlayBackground;
+        OverlayTextColor = defaults.OverlayTextColor;
+        OverlayAccent = defaults.OverlayAccent;
+        _settings.OverlayOffsetX = defaults.OverlayOffsetX;
+        _settings.OverlayTop = defaults.OverlayTop;
+        _settings.Save();
+        _settingsChanged();
+
+        if (PollAvailable && Service() is { } api)
+        {
+            try
+            {
+                ShowPoll(await api.SetPollSecondsAsync(0));
+            }
+            catch (Exception ex) when (IsServiceFailure(ex))
+            {
+                PollNote = $"Impossibile ripristinare l'intervallo: {ex.Message}";
+            }
+        }
+
+        Note = "Opzioni riportate ai valori predefiniti (l'avvio con Windows non è stato cambiato).";
     }
 }

@@ -67,7 +67,7 @@ public sealed class ProfileHost : IProfile
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopping.Token);
         var stop = linked.Token;
-        _logger.LogInformation("Monitor started (every {Seconds}s)", _pipeline.Settings.PollInterval.TotalSeconds);
+        _logger.LogInformation("Monitor started (every {Seconds}s)", PollInterval.TotalSeconds);
         var delivering = DeliverAsync(stop);
 
         while (!stop.IsCancellationRequested)
@@ -105,7 +105,7 @@ public sealed class ProfileHost : IProfile
                     WakeDelivery();
                 }
 
-                delay = PollingSchedule.AfterSuccess(_pipeline.Settings.PollInterval, Random.Shared.NextDouble());
+                delay = PollingSchedule.AfterSuccess(PollInterval, Random.Shared.NextDouble());
             }
             catch (OperationCanceledException) when (stop.IsCancellationRequested)
             {
@@ -379,6 +379,48 @@ public sealed class ProfileHost : IProfile
         }
 
         return Task.CompletedTask;
+    }
+
+    public const int MinPollSeconds = 10;
+    public const int MaxPollSeconds = 3600;
+    private const string PollSecondsKey = "poll_seconds";
+
+    /// <summary>The user's own interval (0 = none chosen), read once from the profile and then kept here.</summary>
+    private int _pollOverride = -1;
+
+    private int DefaultPollSeconds => Math.Max(5, _pipeline.Settings.PollSeconds);
+
+    private TimeSpan PollInterval
+    {
+        get
+        {
+            if (_pollOverride < 0)
+            {
+                lock (_apiGate)
+                {
+                    _pollOverride = int.TryParse(_api.GetValue(PollSecondsKey), out var stored) ? Math.Max(0, stored) : 0;
+                }
+            }
+
+            return TimeSpan.FromSeconds(_pollOverride > 0 ? _pollOverride : DefaultPollSeconds);
+        }
+    }
+
+    public Task<PollSettings> GetPollSettingsAsync() =>
+        Task.FromResult(new PollSettings((int)PollInterval.TotalSeconds, DefaultPollSeconds, MinPollSeconds, MaxPollSeconds));
+
+    public Task<PollSettings> SetPollSecondsAsync(int seconds)
+    {
+        var value = seconds <= 0 ? 0 : Math.Clamp(seconds, MinPollSeconds, MaxPollSeconds);
+        lock (_apiGate)
+        {
+            _api.SetValue(PollSecondsKey, value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            _pollOverride = value;
+        }
+
+        _logger.LogInformation("Polling interval set to {Seconds}s", PollInterval.TotalSeconds);
+        Wake(); // the wait in progress was computed with the old interval
+        return GetPollSettingsAsync();
     }
 
     public Task<IReadOnlyList<NotificationInfo>> ClaimNotificationsAsync(IReadOnlyList<string> channels)

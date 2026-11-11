@@ -4,60 +4,8 @@
         x:Class="LiveHelpDesk.App.MainWindow"
         Title="LiveHelpDesk"
         Width="1280" Height="820" MinWidth="760" MinHeight="480">
-  <Window.Styles>
-    <Style Selector="ToggleButton.nav">
-      <Setter Property="HorizontalAlignment" Value="Stretch" />
-      <Setter Property="HorizontalContentAlignment" Value="Left" />
-      <Setter Property="Padding" Value="12,8" />
-      <Setter Property="Background" Value="Transparent" />
-    </Style>
-
-    <!-- Prominent guard button that blocks or re-enables the on-screen overlay. -->
-    <Style Selector="Button.overlayGuard">
-      <Setter Property="HorizontalAlignment" Value="Stretch" />
-      <Setter Property="HorizontalContentAlignment" Value="Center" />
-      <Setter Property="Padding" Value="8,10" />
-      <Setter Property="FontSize" Value="13" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="CornerRadius" Value="8" />
-      <Setter Property="Foreground" Value="White" />
-    </Style>
-    <Style Selector="Button.overlayGuard /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#2E7D32" />
-    </Style>
-    <Style Selector="Button.overlayGuard:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#357A38" />
-    </Style>
-    <Style Selector="Button.overlayGuard.paused /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#C62828" />
-    </Style>
-    <Style Selector="Button.overlayGuard.paused:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#D33A3A" />
-    </Style>
-  </Window.Styles>
-
-  <Grid ColumnDefinitions="170,*">
-    <Border Grid.Column="0" Background="#14808080">
-      <DockPanel Margin="8">
-        <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,8,0,0">
-          <Button x:Name="UpdateButton" Classes="accent" IsVisible="False" HorizontalAlignment="Stretch"
-                  HorizontalContentAlignment="Center" ToolTip.Tip="Apri Impostazioni → Aggiornamenti" />
-          <Button x:Name="OverlayToggle" Classes="overlayGuard" Content="🔔  Avvisi a video attivi" />
-          <TextBlock x:Name="LinkText" Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="8,0" />
-        </StackPanel>
-        <StackPanel Spacing="4">
-          <TextBlock Text="LiveHelpDesk" FontWeight="Bold" FontSize="16" Margin="8,8,8,16" />
-          <ToggleButton x:Name="NavBrowser" Classes="nav" Content="Dynamics" IsChecked="True" />
-          <ToggleButton x:Name="NavEvents" Classes="nav" Content="Eventi" />
-          <ToggleButton x:Name="NavStatus" Classes="nav" Content="Servizio" />
-          <TextBlock Text="CONFIGURAZIONE" FontSize="11" Opacity="0.6" Margin="12,16,0,2" />
-          <ToggleButton x:Name="NavRules" Classes="nav" Content="Regole" />
-          <ToggleButton x:Name="NavNotifications" Classes="nav" Content="Notifiche" />
-          <ToggleButton x:Name="NavChannels" Classes="nav" Content="Canali" />
-          <ToggleButton x:Name="NavSettings" Classes="nav" Content="Impostazioni" />
-        </StackPanel>
-      </DockPanel>
-    </Border>
+  <Grid x:Name="Root" ColumnDefinitions="Auto,*">
+    <views:SidebarView x:Name="SideBar" Grid.Column="0" />
 
     <Grid Grid.Column="1">
       <DockPanel x:Name="BrowserPane">

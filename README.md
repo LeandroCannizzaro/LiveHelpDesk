@@ -127,14 +127,29 @@ lo allega alla Release e rilancia il workflow `Pages`, che lo pubblica accanto a
 `https://leandrocannizzaro.github.io/LiveHelpDesk/update.json`.
 
 L'app lo legge 30 secondi dopo l'avvio e poi ogni 6 ore (`Services\Updates.cs`). Se la versione è più recente compare
-il pulsante «⬆ Aggiornamento x.y.z» nella barra laterale e, in *Impostazioni → Aggiornamenti*, «Aggiorna e riavvia»:
+il pulsante «⬆ Versione x.y.z» nella barra laterale e, in *Impostazioni → Aggiornamenti*, «Aggiorna e riavvia»:
 scarica il pacchetto adatto all'installazione (MSI se installata con l'MSI, ZIP se con `install.ps1`), ne verifica lo SHA-256,
 si chiude e lascia a uno script (`apply-update.ps1`, in `%TEMP%\LiveHelpDesk-update`) l'installazione (`msiexec /passive`
 o `install.ps1 -NoStart`, con UAC se serve) e il riavvio. Log in `%LocalAppData%\LiveHelpDesk\logs\update.log`.
 Una copia non installata (cartella di build) segnala soltanto la nuova versione.
 
-Per rilasciare: aggiornare `VersionPrefix` in `Directory.Build.props`, poi `git tag vX.Y.Z && git push origin vX.Y.Z`.
+Per rilasciare vedi *Pubblicare una versione* qui sotto.
 La variabile d'ambiente `LIVEHELPDESK_UPDATE_URL` sostituisce l'indirizzo del manifesto (prove o fork).
+
+### Pubblicare una versione
+
+A ogni pubblicazione, nell'ordine:
+
+1. **Analizzare tutte le modifiche dall'ultimo tag**: `.\installer\release-notes.ps1` elenca commit, descrizioni e file toccati.
+2. **Scrivere le note di rilascio** in `docs\release-notes.html`: una nuova sezione `<article id="vX.Y.Z">` in cima
+   (e la voce nell'indice), in italiano e per chi usa il programma: *Novità*, *Modifiche*, *Correzioni*.
+   La pagina è pubblicata su <https://leandrocannizzaro.github.io/LiveHelpDesk/release-notes.html>; l'app la apre da
+   *Impostazioni → Aggiornamenti → Note di rilascio* sull'ancora della versione, e `update.json` la indica in `notesUrl`.
+3. **Aggiornare il manuale d'uso** `docs\index.html` (<https://leandrocannizzaro.github.io/LiveHelpDesk/>) con tutto ciò che è cambiato.
+4. Aggiornare `VersionPrefix` in `Directory.Build.props`, committare su `main`, poi `git tag vX.Y.Z && git push origin vX.Y.Z`.
+
+Il workflow `Release` esegue `release-notes.ps1 -Check` e **non pubblica** se manca la sezione della versione nelle note
+o se il manuale non è cambiato dall'ultimo tag.
 
 ## Installazione da una share di rete
 

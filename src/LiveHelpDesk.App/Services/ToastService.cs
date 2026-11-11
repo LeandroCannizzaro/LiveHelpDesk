@@ -7,7 +7,7 @@ namespace LiveHelpDesk.App.Services;
 /// <param name="Action">"open" or "acknowledge".</param>
 public sealed record ToastAction(string Action, string EventKey, Uri? Url);
 
-/// <summary>Windows toasts with "Apri" and "Riconosci" buttons. What a click means travels in the toast's own arguments.</summary>
+/// <summary>Windows toasts with "Apri" and "Vista" buttons. What a click means travels in the toast's own arguments.</summary>
 public sealed class ToastService : IToastPresenter
 {
     public const string OpenAction = "open";
@@ -44,7 +44,7 @@ public sealed class ToastService : IToastPresenter
                 .AddArgument("key", notification.EventKey)
                 .AddArgument("url", notification.Url?.ToString() ?? ""))
             .AddButton(new ToastButton()
-                .SetContent("Riconosci")
+                .SetContent("Vista")
                 .AddArgument("action", AcknowledgeAction)
                 .AddArgument("key", notification.EventKey)
                 .SetBackgroundActivation());

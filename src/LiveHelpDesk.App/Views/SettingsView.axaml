@@ -1,7 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LiveHelpDesk.App.ViewModels"
-             xmlns:conv="using:LiveHelpDesk.App.Converters"
              x:Class="LiveHelpDesk.App.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
   <ScrollViewer>
@@ -30,27 +29,51 @@
 
 
       <TextBlock Text="Colori della finestrella" FontWeight="SemiBold" Margin="0,12,0,0" />
-      <Grid ColumnDefinitions="150,220,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+      <Grid ColumnDefinitions="150,160,Auto,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Sfondo" VerticalAlignment="Center" />
-        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding OverlayBackground}" PlaceholderText="#RRGGBB" />
-        <Border Grid.Row="0" Grid.Column="2" Width="34" Height="28" CornerRadius="6" BorderThickness="1" BorderBrush="#55000000"
-                Background="{Binding OverlayBackground, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding OverlayBackground}" PlaceholderText="automatico" />
+        <ColorPicker x:Name="BackgroundPicker" Grid.Row="0" Grid.Column="2" IsAlphaEnabled="False" IsAlphaVisible="False"
+                     ToolTip.Tip="Scegli il colore dello sfondo" />
+        <Button Grid.Row="0" Grid.Column="3" Content="Automatico" Command="{Binding ResetColorCommand}" CommandParameter="background" />
 
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Testo" VerticalAlignment="Center" />
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding OverlayTextColor}" PlaceholderText="#RRGGBB" />
-        <Border Grid.Row="1" Grid.Column="2" Width="34" Height="28" CornerRadius="6" BorderThickness="1" BorderBrush="#55000000"
-                Background="{Binding OverlayTextColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding OverlayTextColor}" PlaceholderText="automatico" />
+        <ColorPicker x:Name="TextPicker" Grid.Row="1" Grid.Column="2" IsAlphaEnabled="False" IsAlphaVisible="False"
+                     ToolTip.Tip="Scegli il colore del testo" />
+        <Button Grid.Row="1" Grid.Column="3" Content="Automatico" Command="{Binding ResetColorCommand}" CommandParameter="text" />
 
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Numero (accento)" VerticalAlignment="Center" />
-        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding OverlayAccent}" PlaceholderText="#RRGGBB" />
-        <Border Grid.Row="2" Grid.Column="2" Width="34" Height="28" CornerRadius="6" BorderThickness="1" BorderBrush="#55000000"
-                Background="{Binding OverlayAccent, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding OverlayAccent}" PlaceholderText="automatico" />
+        <ColorPicker x:Name="AccentPicker" Grid.Row="2" Grid.Column="2" IsAlphaEnabled="False" IsAlphaVisible="False"
+                     ToolTip.Tip="Scegli il colore del numero" />
+        <Button Grid.Row="2" Grid.Column="3" Content="Automatico" Command="{Binding ResetColorCommand}" CommandParameter="accent" />
       </Grid>
       <TextBlock Opacity="0.65" TextWrapping="Wrap"
-                 Text="Lascia vuoto per i colori automatici (ambra per i solleciti, rosso per gli eventi critici). Formato #RRGGBB." />
+                 Text="Scegli il colore con il selettore o scrivi il codice #RRGGBB. «Automatico» torna ai colori predefiniti (ambra per i solleciti, rosso per gli eventi critici)." />
+
+      <TextBlock Text="Controllo dei nuovi eventi" FontWeight="SemiBold" Margin="0,12,0,0" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="Cerca nuovi eventi ogni" VerticalAlignment="Center" />
+        <NumericUpDown Value="{Binding PollSeconds}" Minimum="10" Maximum="3600" Increment="5" FormatString="0" Width="150"
+                       IsEnabled="{Binding PollAvailable}" />
+        <TextBlock Text="secondi" VerticalAlignment="Center" />
+        <Button Content="Applica" Command="{Binding ApplyPollCommand}" />
+      </StackPanel>
+      <TextBlock Text="{Binding PollNote}" Opacity="0.65" TextWrapping="Wrap"
+                 IsVisible="{Binding PollNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
       <TextBlock Text="Avvio" FontWeight="SemiBold" Margin="0,12,0,0" />
       <CheckBox Content="Avvia LiveHelpDesk quando accedo a Windows (resta nell'area di notifica)" IsChecked="{Binding StartWithWindows}" />
+
+      <TextBlock Text="Valori predefiniti" FontWeight="SemiBold" Margin="0,12,0,0" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Ripristina predefiniti" Command="{Binding AskResetCommand}" IsVisible="{Binding !ConfirmingReset}"
+                ToolTip.Tip="Riporta tutte le opzioni di questa pagina ai valori iniziali (tranne l'avvio con Windows)" />
+        <Button Content="Sì, ripristina" Classes="accent" Command="{Binding ResetDefaultsCommand}" IsVisible="{Binding ConfirmingReset}" />
+        <Button Content="Annulla" Command="{Binding CancelResetCommand}" IsVisible="{Binding ConfirmingReset}" />
+      </StackPanel>
+      <TextBlock Text="Le tue scelte su finestrella, colori, sospensione e intervallo andranno perse."
+                 Opacity="0.75" TextWrapping="Wrap" IsVisible="{Binding ConfirmingReset}" />
 
       <TextBlock Text="{Binding Note}" Opacity="0.85" TextWrapping="Wrap"
                  IsVisible="{Binding Note, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -62,7 +85,8 @@
           <Button Content="Controlla aggiornamenti" Command="{Binding Updates.CheckCommand}" />
           <Button Content="Aggiorna e riavvia" Classes="accent" Command="{Binding Updates.InstallCommand}"
                   IsVisible="{Binding Updates.CanInstall}" />
-          <Button Content="Novità" Command="{Binding Updates.OpenReleaseNotesCommand}" IsVisible="{Binding Updates.IsAvailable}" />
+          <Button Content="Note di rilascio" Command="{Binding Updates.OpenReleaseNotesCommand}"
+                  ToolTip.Tip="Apre la pagina con le novità di ogni versione" />
         </StackPanel>
         <ProgressBar Minimum="0" Maximum="100" Value="{Binding Updates.Progress}" IsVisible="{Binding Updates.IsBusy}" MaxWidth="400"
                      HorizontalAlignment="Left" Width="400" />

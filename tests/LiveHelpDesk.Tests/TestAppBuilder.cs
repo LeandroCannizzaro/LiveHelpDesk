@@ -15,6 +15,7 @@ public sealed class TestApp : Application
     {
         Styles.Add(new FluentTheme());
         Styles.Add(new StyleInclude(new Uri("avares://LiveHelpDesk.Tests")) { Source = new Uri("avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml") });
+        Styles.Add(new StyleInclude(new Uri("avares://LiveHelpDesk.Tests")) { Source = new Uri("avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml") });
     }
 }
 

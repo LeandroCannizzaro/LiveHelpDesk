@@ -83,7 +83,7 @@ public sealed class TrayController
         var menu = new NativeMenu();
         var openItem = new NativeMenuItem("Apri LiveHelpDesk");
         openItem.Click += (_, _) => open();
-        var ackItem = new NativeMenuItem("Riconosci tutto");
+        var ackItem = new NativeMenuItem("Visti tutti");
         ackItem.Click += (_, _) => acknowledgeAll();
         var exitItem = new NativeMenuItem("Esci");
         exitItem.Click += (_, _) => exit();

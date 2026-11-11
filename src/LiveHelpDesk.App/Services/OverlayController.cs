@@ -21,7 +21,7 @@ public sealed class OverlayController
     private readonly Action _playAlertSound;
     private readonly OverlayViewModel _viewModel;
     private readonly DispatcherTimer _timer;
-    private OverlayWindow? _window;
+    private readonly List<OverlayWindow> _windows = [];
     private bool _wasCritical;
 
     public OverlayController(
@@ -44,15 +44,22 @@ public sealed class OverlayController
         _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(TickMilliseconds), DispatcherPriority.Background, (_, _) => OnTick());
     }
 
-    public bool IsShown => _window?.IsVisible == true;
+    public bool IsShown => _windows.Any(w => w.IsVisible);
+
+    /// <summary>How many pills are on screen: one, or one per screen with "Tutti gli schermi".</summary>
+    public int ShownCount => _windows.Count(w => w.IsVisible);
 
     public void Start() => _timer.Start();
 
     public void Stop()
     {
         _timer.Stop();
-        _window?.Close();
-        _window = null;
+        foreach (var window in _windows)
+        {
+            window.Close();
+        }
+
+        _windows.Clear();
     }
 
     /// <summary>Re-evaluates what should be on screen right now.</summary>
@@ -75,8 +82,12 @@ public sealed class OverlayController
         }
         else
         {
+            // The pills share one view model: "Vista", "15 min" or "Apri" on any of them empties the model and hides them all.
             _wasCritical = false;
-            _window?.Hide();
+            foreach (var window in _windows)
+            {
+                window.Hide();
+            }
         }
     }
 
@@ -93,23 +104,40 @@ public sealed class OverlayController
 
     private void Show()
     {
-        if (_window is null)
+        var targets = TargetScreens(Window(0));
+        for (var i = 0; i < Math.Max(1, targets.Count); i++)
         {
-            _window = new OverlayWindow { DataContext = _viewModel };
-            _window.Moved += (_, _) => RememberPosition();
+            var window = Window(i);
+            if (!window.IsVisible)
+            {
+                Place(window, targets.ElementAtOrDefault(i));
+                window.Show();
+                window.KeepOffTheKeyboard();
+            }
         }
 
-        if (!_window.IsVisible)
+        // Fewer screens than before (a monitor unplugged, or back to a single screen): the extra pills go.
+        while (_windows.Count > Math.Max(1, targets.Count))
         {
-            Place(_window);
-            _window.Show();
-            _window.KeepOffTheKeyboard();
+            _windows[^1].Close();
+            _windows.RemoveAt(_windows.Count - 1);
         }
     }
 
-    private void Place(OverlayWindow window)
+    private OverlayWindow Window(int index)
     {
-        var screen = ChooseScreen(window);
+        while (_windows.Count <= index)
+        {
+            var window = new OverlayWindow { DataContext = _viewModel };
+            window.Moved += (_, _) => RememberPosition(window);
+            _windows.Add(window);
+        }
+
+        return _windows[index];
+    }
+
+    private void Place(OverlayWindow window, Avalonia.Platform.Screen? screen)
+    {
         if (screen is null)
         {
             return;
@@ -121,33 +149,45 @@ public sealed class OverlayController
         window.Position = new PixelPoint((int)x, (int)(area.Y + _settings.OverlayTop * scale));
     }
 
-    /// <summary>The screen the user picked, or the main one when that screen is gone (a laptop undocked).</summary>
-    private Avalonia.Platform.Screen? ChooseScreen(OverlayWindow window)
+    /// <summary>
+    /// Every screen with "Tutti gli schermi"; otherwise the one the user picked, or the main one when that screen
+    /// is gone (a laptop undocked).
+    /// </summary>
+    private IReadOnlyList<Avalonia.Platform.Screen> TargetScreens(OverlayWindow window)
     {
         var all = window.Screens.All;
+        if (_settings.OverlayScreen == UiSettings.AllScreens)
+        {
+            return all;
+        }
+
         var index = _settings.OverlayScreen - 1;
-        return index >= 0 && index < all.Count ? all[index] : window.Screens.Primary ?? all.FirstOrDefault();
+        var chosen = index >= 0 && index < all.Count ? all[index] : window.Screens.Primary ?? all.FirstOrDefault();
+        return chosen is null ? [] : [chosen];
     }
 
     /// <summary>Settings changed (screen, position, on/off): apply them now.</summary>
     public void Reposition()
     {
-        if (_window is { IsVisible: true })
+        if (IsShown)
         {
-            Place(_window);
+            var targets = TargetScreens(_windows[0]);
+            for (var i = 0; i < _windows.Count; i++)
+            {
+                if (_windows[i].IsVisible)
+                {
+                    Place(_windows[i], targets.ElementAtOrDefault(i));
+                }
+            }
         }
 
+        // Showing again also adds or removes pills when "Tutti gli schermi" was switched on or off.
         Refresh();
     }
 
-    private void RememberPosition()
+    private void RememberPosition(OverlayWindow window)
     {
-        if (_window is null)
-        {
-            return;
-        }
-
-        var screen = ChooseScreen(_window);
+        var screen = window.Screens.ScreenFromWindow(window) ?? TargetScreens(window).FirstOrDefault();
         if (screen is null)
         {
             return;
@@ -156,8 +196,18 @@ public sealed class OverlayController
         var scale = screen.Scaling;
         var area = screen.WorkingArea;
         var centred = area.X + (area.Width - OverlayWidth * scale) / 2;
-        _settings.OverlayOffsetX = (_window.Position.X - centred) / scale;
-        _settings.OverlayTop = Math.Max(0, (_window.Position.Y - area.Y) / scale);
+        _settings.OverlayOffsetX = (window.Position.X - centred) / scale;
+        _settings.OverlayTop = Math.Max(0, (window.Position.Y - area.Y) / scale);
         _settings.Save();
+
+        // With a pill on every screen, the others follow to the same spot on theirs.
+        var targets = TargetScreens(window);
+        for (var i = 0; i < _windows.Count; i++)
+        {
+            if (_windows[i] != window && _windows[i].IsVisible)
+            {
+                Place(_windows[i], targets.ElementAtOrDefault(i));
+            }
+        }
     }
 }

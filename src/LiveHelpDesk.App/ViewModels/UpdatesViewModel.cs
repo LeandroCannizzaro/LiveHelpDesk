@@ -7,22 +7,23 @@ namespace LiveHelpDesk.App.ViewModels;
 /// <summary>Settings → "Aggiornamenti": the installed version, whether a newer one is out, and the button that installs it.</summary>
 public sealed partial class UpdatesViewModel : ObservableObject
 {
-    private static readonly Uri ReleasesPage = new("https://github.com/LeandroCannizzaro/LiveHelpDesk/releases/latest");
-
     private readonly Func<CancellationToken, Task<AvailableUpdate?>> _check;
     private readonly Func<AvailableUpdate, IProgress<double>, CancellationToken, Task> _install;
     private readonly Action<Uri> _open;
+    private readonly Uri _releaseNotes;
     private AvailableUpdate? _update;
 
+    /// <param name="releaseNotes">The release notes page on GitHub Pages; each version is an anchor "#vX.Y.Z".</param>
     public UpdatesViewModel(
         Version current, InstallKind kind, Func<CancellationToken, Task<AvailableUpdate?>> check,
-        Func<AvailableUpdate, IProgress<double>, CancellationToken, Task> install, Action<Uri> open)
+        Func<AvailableUpdate, IProgress<double>, CancellationToken, Task> install, Action<Uri> open, Uri? releaseNotes = null)
     {
         CurrentVersion = current.ToString(3);
         Kind = kind;
         _check = check;
         _install = install;
         _open = open;
+        _releaseNotes = releaseNotes ?? UpdateChecker.ReleaseNotesUrl(UpdateChecker.DefaultManifestUrl);
     }
 
     public string CurrentVersion { get; }
@@ -108,6 +109,8 @@ public sealed partial class UpdatesViewModel : ObservableObject
         }
     }
 
+    /// <summary>«Note di rilascio»: the notes of the version on offer, or of the one installed.</summary>
     [RelayCommand]
-    private void OpenReleaseNotes() => _open(_update?.Manifest.NotesUrl ?? ReleasesPage);
+    private void OpenReleaseNotes() =>
+        _open(_update?.Manifest.NotesUrl ?? new UriBuilder(_releaseNotes) { Fragment = $"v{_update?.Version.ToString(3) ?? CurrentVersion}" }.Uri);
 }

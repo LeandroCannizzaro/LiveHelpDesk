@@ -68,6 +68,10 @@ internal sealed class FakeProfile(string sid) : IProfile
 
     public Task<IReadOnlyList<LookupItem>> GetLookupsAsync() => _api.GetLookupsAsync();
 
+    public Task<PollSettings> GetPollSettingsAsync() => _api.GetPollSettingsAsync();
+
+    public Task<PollSettings> SetPollSecondsAsync(int seconds) => _api.SetPollSecondsAsync(seconds);
+
     public Task<ChannelSettings> GetChannelSettingsAsync() => _api.GetChannelSettingsAsync();
 
     public Task SaveChannelSettingsAsync(ChannelSettings settings) => _api.SaveChannelSettingsAsync(settings);

@@ -173,6 +173,26 @@ public class UpdateTests
         Assert.Contains("offline", vm.Status);
     }
 
+    [Fact]
+    public async Task ReleaseNotes_OpenOnTheInstalledVersion_ThenOnTheOneOnOffer()
+    {
+        var opened = new List<Uri>();
+        var notes = UpdateChecker.ReleaseNotesUrl(new Uri("https://pages.test/LiveHelpDesk/update.json"));
+        var manifest = new UpdateManifest("0.3.0", NotesUrl: new Uri("https://pages.test/LiveHelpDesk/release-notes.html#v0.3.0"), Msi: Msi);
+        var vm = new UpdatesViewModel(
+            new Version(0, 2, 0, 0), InstallKind.Msi,
+            _ => Task.FromResult(UpdateChecker.Evaluate(manifest, new Version(0, 2, 0, 0), InstallKind.Msi)),
+            (_, _, _) => Task.CompletedTask, opened.Add, notes);
+
+        vm.OpenReleaseNotesCommand.Execute(null);
+        await vm.CheckCommand.ExecuteAsync(null);
+        vm.OpenReleaseNotesCommand.Execute(null);
+
+        Assert.Equal(
+            ["https://pages.test/LiveHelpDesk/release-notes.html#v0.2.0", "https://pages.test/LiveHelpDesk/release-notes.html#v0.3.0"],
+            opened.Select(u => u.ToString()));
+    }
+
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>

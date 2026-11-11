@@ -1,0 +1,140 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LiveHelpDesk.App.Views.SidebarView">
+  <UserControl.Styles>
+    <Style Selector="ToggleButton.nav">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <!-- Prominent guard button that blocks or re-enables the on-screen overlay. -->
+    <Style Selector="Button.overlayGuard">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Padding" Value="8,10" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.overlayGuard /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#2E7D32" />
+    </Style>
+    <Style Selector="Button.overlayGuard:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#357A38" />
+    </Style>
+    <Style Selector="Button.overlayGuard.paused /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#C62828" />
+    </Style>
+    <Style Selector="Button.overlayGuard.paused:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#D33A3A" />
+    </Style>
+
+    <!-- Side bar items: an icon, plus a short label while the bar is expanded. -->
+    <Style Selector="Border#Sidebar TextBlock.icon">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border#Sidebar TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="Border#Sidebar.collapsed TextBlock.label">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Border#Sidebar.collapsed :is(Control).expandedOnly">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Border#Sidebar :is(Control).collapsedOnly">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Border#Sidebar.collapsed :is(Control).collapsedOnly">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Border#Sidebar.collapsed ToggleButton.nav">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Padding" Value="4,8" />
+    </Style>
+    <Style Selector="Border#Sidebar.collapsed Button.overlayGuard, Border#Sidebar.collapsed Button#UpdateButton">
+      <Setter Property="Padding" Value="4,8" />
+    </Style>
+    <Style Selector="Border#Sidebar.collapsed Grid#Header">
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <!-- The number of events waiting, over the Eventi icon; visible in both states. -->
+    <Style Selector="Border.badge">
+      <Setter Property="Background" Value="#DC2626" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="MinWidth" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="Padding" Value="3,0" />
+      <Setter Property="HorizontalAlignment" Value="Right" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Margin" Value="0,-7,-5,0" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border x:Name="Sidebar" Background="#14808080">
+    <DockPanel Margin="8">
+      <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,8,0,0">
+        <Button x:Name="UpdateButton" Classes="accent" IsVisible="False" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Classes="icon" Text="⬆" />
+            <TextBlock x:Name="UpdateLabel" Classes="label" />
+          </StackPanel>
+        </Button>
+        <TextBlock x:Name="LinkText" Classes="expandedOnly" Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="8,0" />
+      </StackPanel>
+      <StackPanel Spacing="4">
+        <Grid x:Name="Header" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+          <TextBlock Classes="expandedOnly" Text="LiveHelpDesk" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"
+                     Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+          <Button x:Name="SidebarToggle" Grid.Column="1" Content="☰" Background="Transparent" Padding="10,6" />
+        </Grid>
+        <Button x:Name="OverlayToggle" Classes="overlayGuard" Margin="0,0,0,8">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock x:Name="OverlayToggleIcon" Classes="icon" Text="🔔" />
+            <TextBlock x:Name="OverlayToggleLabel" Classes="label" Text="Avvisi attivi" />
+          </StackPanel>
+        </Button>
+        <ToggleButton x:Name="NavBrowser" Classes="nav" IsChecked="True" ToolTip.Tip="Dynamics: la dashboard dell'assistenza">
+          <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="icon" Text="🌐" /><TextBlock Classes="label" Text="Dynamics" /></StackPanel>
+        </ToggleButton>
+        <ToggleButton x:Name="NavEvents" Classes="nav" ToolTip.Tip="Eventi: gli ultimi avvisi ricevuti">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Panel>
+              <TextBlock Classes="icon" Text="📥" />
+              <Border x:Name="EventsBadge" Classes="badge" IsVisible="False">
+                <TextBlock x:Name="EventsBadgeText" FontSize="10" Foreground="White" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+            </Panel>
+            <TextBlock Classes="label" Text="Eventi" />
+          </StackPanel>
+        </ToggleButton>
+        <ToggleButton x:Name="NavStatus" Classes="nav" ToolTip.Tip="Servizio: stato del monitoraggio e accesso a Dynamics">
+          <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="icon" Text="🖥" /><TextBlock Classes="label" Text="Servizio" /></StackPanel>
+        </ToggleButton>
+        <TextBlock Classes="expandedOnly" Text="CONFIGURAZIONE" FontSize="11" Opacity="0.6" Margin="12,16,0,2" />
+        <Separator Classes="collapsedOnly" Margin="4,8" />
+        <ToggleButton x:Name="NavRules" Classes="nav" ToolTip.Tip="Regole: quando e a chi inviare un avviso">
+          <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="icon" Text="📐" /><TextBlock Classes="label" Text="Regole" /></StackPanel>
+        </ToggleButton>
+        <ToggleButton x:Name="NavNotifications" Classes="nav" ToolTip.Tip="Notifiche: testi e modelli dei messaggi">
+          <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="icon" Text="💬" /><TextBlock Classes="label" Text="Notifiche" /></StackPanel>
+        </ToggleButton>
+        <ToggleButton x:Name="NavChannels" Classes="nav" ToolTip.Tip="Canali: e-mail, SMS, webhook">
+          <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="icon" Text="📡" /><TextBlock Classes="label" Text="Canali" /></StackPanel>
+        </ToggleButton>
+        <ToggleButton x:Name="NavSettings" Classes="nav" ToolTip.Tip="Impostazioni: finestrella, colori, avvio, aggiornamenti">
+          <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="icon" Text="⚙" /><TextBlock Classes="label" Text="Impostazioni" /></StackPanel>
+        </ToggleButton>
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</UserControl>

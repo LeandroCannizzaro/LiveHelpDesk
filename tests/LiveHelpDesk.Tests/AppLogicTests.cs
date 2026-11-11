@@ -570,4 +570,124 @@ public class AppViewModelTests
         Assert.Contains("non è raggiungibile", vm.Message);
         Assert.Empty(vm.Rows);
     }
+
+    [Fact]
+    public async Task SeenAll_MarksEveryRowNotSeenYet()
+    {
+        var acknowledged = new List<string>();
+        var vm = new EventsViewModel(() => new FakeApi(), _ => Task.CompletedTask, key => { acknowledged.Add(key); return Task.CompletedTask; });
+        await vm.RefreshAsync();
+
+        await vm.AcknowledgeAllCommand.ExecuteAsync(null);
+        await vm.AcknowledgeAllCommand.ExecuteAsync(null); // nothing left to mark
+
+        Assert.Equal(["k1"], acknowledged);
+        Assert.All(vm.Rows, r => Assert.True(r.Acknowledged));
+    }
+
+    [Fact]
+    public async Task Clear_EmptiesTheListOnScreenOnly_AndKeepsItEmptyUntilSomethingNewArrives()
+    {
+        var api = new FakeApi();
+        var vm = new EventsViewModel(() => api, _ => Task.CompletedTask, _ => Task.CompletedTask);
+        await vm.RefreshAsync();
+
+        vm.ClearCommand.Execute(null);
+        Assert.Empty(vm.Rows);
+        Assert.Equal("Nessun evento nuovo dall'ultima pulizia.", vm.Message);
+
+        await vm.RefreshAsync(); // the service still has k1: it stays hidden
+        Assert.Empty(vm.Rows);
+        Assert.Empty(api.Acknowledged); // clearing the screen is not "seen"
+    }
+}
+
+public sealed class SettingsExtrasTests : IDisposable
+{
+    private readonly string _runKey = $@"Software\LiveHelpDeskTests\{Guid.NewGuid():N}\Run";
+
+    public void Dispose() =>
+        Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(_runKey.Split('\\')[0] + @"\" + _runKey.Split('\\')[1], throwOnMissingSubKey: false);
+
+    private SettingsViewModel Create(UiSettings settings, FakeApi? api = null) =>
+        new(settings, new AutoStart(_runKey, "LiveHelpDeskTest"), "x.exe", ["Schermo 1", "Schermo 2"], () => { }, () => { })
+        {
+            Service = () => api,
+        };
+
+    [Fact]
+    public void AllScreens_IsAChoice()
+    {
+        var settings = new UiSettings();
+        var vm = Create(settings);
+
+        var all = Assert.Single(vm.Screens, c => c.Label == "Tutti gli schermi");
+        vm.Screen = all;
+
+        Assert.Equal(UiSettings.AllScreens, settings.OverlayScreen);
+        Assert.Equal(all, Create(settings).Screen); // and it is read back
+    }
+
+    [Fact]
+    public async Task ThePollingInterval_IsReadAndChangedThroughTheService()
+    {
+        var api = new FakeApi();
+        var vm = Create(new UiSettings(), api);
+
+        await vm.LoadPollAsync();
+        Assert.True(vm.PollAvailable);
+        Assert.Equal(30m, vm.PollSeconds);
+        Assert.Contains("Predefinito: 30", vm.PollNote);
+
+        vm.PollSeconds = 2;
+        await vm.ApplyPollCommand.ExecuteAsync(null);
+        Assert.Equal(10, api.PollSeconds); // kept within the limits
+        Assert.Equal(10m, vm.PollSeconds);
+    }
+
+    [Fact]
+    public async Task WithoutTheService_ThePollingIntervalCannotBeChanged()
+    {
+        var vm = Create(new UiSettings());
+
+        await vm.LoadPollAsync();
+
+        Assert.False(vm.PollAvailable);
+        Assert.False(vm.ApplyPollCommand.CanExecute(null));
+        Assert.Contains("non è raggiungibile", vm.PollNote);
+    }
+
+    [Fact]
+    public async Task ResetToDefaults_AsksFirst_ThenPutsEverythingBack_ButStartWithWindows()
+    {
+        var api = new FakeApi { PollSeconds = 120 };
+        var settings = new UiSettings
+        {
+            OverlayEnabled = false, PlaySoundForCritical = false, SuppressWhenOnVpn = true, SuppressWhenPresenting = false,
+            OverlayScreen = UiSettings.AllScreens, OverlayBackground = "#112233", OverlayAccent = "#445566", OverlayOffsetX = 50, OverlayTop = 300,
+        };
+        var vm = Create(settings, api);
+        vm.StartWithWindows = true;
+        await vm.LoadPollAsync();
+
+        vm.AskResetCommand.Execute(null);
+        Assert.True(vm.ConfirmingReset);
+        vm.CancelResetCommand.Execute(null);
+        Assert.False(vm.ConfirmingReset);
+        Assert.False(settings.OverlayEnabled);
+
+        vm.AskResetCommand.Execute(null);
+        await vm.ResetDefaultsCommand.ExecuteAsync(null);
+
+        var defaults = new UiSettings();
+        Assert.False(vm.ConfirmingReset);
+        Assert.Equal(
+            (defaults.OverlayEnabled, defaults.PlaySoundForCritical, defaults.SuppressWhenOnVpn, defaults.SuppressWhenPresenting, defaults.OverlayScreen),
+            (settings.OverlayEnabled, settings.PlaySoundForCritical, settings.SuppressWhenOnVpn, settings.SuppressWhenPresenting, settings.OverlayScreen));
+        Assert.Equal(("", "", 0d, 8d), (settings.OverlayBackground, settings.OverlayAccent, settings.OverlayOffsetX, settings.OverlayTop));
+        Assert.Equal(0, api.PollSeconds);
+        Assert.Equal(30m, vm.PollSeconds);
+        Assert.True(vm.StartWithWindows);
+        Assert.Contains("predefiniti", vm.Note);
+    }
 }
