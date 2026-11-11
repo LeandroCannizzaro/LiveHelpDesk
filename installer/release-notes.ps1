@@ -64,3 +64,6 @@ if ($problems) {
 }
 
 Write-Host "Note di rilascio e manuale pronti per la versione $Version (modifiche da $(if ($previous) { $previous } else { "l'inizio" }))."
+
+# git diff --quiet lascia 1 in $LASTEXITCODE quando il manuale e' cambiato (il caso buono): non deve diventare l'esito dello script.
+exit 0
