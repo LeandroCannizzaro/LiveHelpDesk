@@ -271,12 +271,12 @@ public class NotificationsPageTests
     public async Task AnOverlap_IsShownWhileEditing_AndNotSaved()
     {
         var (vm, api) = await LoadedAsync(
-            new NotificationTemplate { Id = "a", Name = "Primo", RuleIds = ["new-tickets"], Channels = ["sms"], Body = "x" });
+            new NotificationTemplate { Id = "a", Name = "Primo", RuleIds = ["new-tickets"], Channels = ["email"], Body = "x" });
 
         vm.DuplicateTemplateCommand.Execute(null);
         Assert.Equal("Primo (copia)", vm.Selected!.Name);
         Assert.False(vm.HasConflicts);
-        vm.Selected.ChannelChoices.Single(c => c.Value == "sms").IsSelected = true;
+        vm.Selected.ChannelChoices.Single(c => c.Value == "email").IsSelected = true;
         Assert.True(vm.HasConflicts);
         Assert.Contains("Primo", vm.Conflicts);
 
@@ -284,6 +284,18 @@ public class NotificationsPageTests
 
         Assert.Null(api.SavedTemplates);
         Assert.True(vm.HasErrors);
+    }
+
+    [AvaloniaFact]
+    public async Task ChannelsNotInUse_AreHidden_UnlessAlreadyChosen()
+    {
+        var (vm, _) = await LoadedAsync(
+            new NotificationTemplate { Id = "a", Name = "Vecchio", RuleIds = ["new-tickets"], Channels = ["sms"], Body = "x" },
+            new NotificationTemplate { Id = "b", Name = "Nuovo", RuleIds = ["new-tickets"], Channels = ["email"], Body = "y" });
+
+        Assert.True(vm.Templates[0].ChannelChoices.Single(c => c.Value == "sms").IsSelected);
+        Assert.DoesNotContain(vm.Templates[0].ChannelChoices, c => c.Value == "whatsapp");
+        Assert.DoesNotContain(vm.Templates[1].ChannelChoices, c => c.Value is "sms" or "whatsapp");
     }
 
     [AvaloniaFact]
@@ -297,10 +309,10 @@ public class NotificationsPageTests
         Assert.Equal("CAS-01234-X1Y2Z3", vm.PreviewTitle);
         Assert.Equal("**Alta**", vm.PreviewBody);
 
-        vm.PreviewChannel = vm.PreviewChannels.Single(c => c.Value == "sms");
+        Assert.DoesNotContain(vm.PreviewChannels, c => c.Value is "sms" or "whatsapp");
+        vm.PreviewChannel = vm.PreviewChannels.Single(c => c.Value == "toast");
         Assert.False(vm.IsRichPreview);
         Assert.Equal("Alta", vm.PreviewBody);
-        Assert.Contains("320", vm.PreviewInfo);
 
         vm.Selected!.BodyDocument.Text = "{{regola}}";
         Assert.Equal("Nuovi ticket", vm.PreviewBody);

@@ -17,7 +17,8 @@ public sealed partial class TemplateViewModel : ObservableObject
         Id = template.Id;
         _name = template.Name;
         RuleChoices = [.. rules.Select(r => new SelectableItem(r, template.RuleIds.Contains(r.Value, StringComparer.OrdinalIgnoreCase)))];
-        ChannelChoices = [.. RuleCatalog.Channels.Select(c => new SelectableItem(c, template.Channels.Contains(c.Value, StringComparer.OrdinalIgnoreCase)))];
+        bool HasChannel(string value) => template.Channels.Contains(value, StringComparer.OrdinalIgnoreCase);
+        ChannelChoices = [.. RuleCatalog.Offered(RuleCatalog.Channels, HasChannel).Select(c => new SelectableItem(c, HasChannel(c.Value)))];
         _missingRules = [.. template.RuleIds.Where(id => !rules.Any(r => r.Value.Equals(id, StringComparison.OrdinalIgnoreCase)))];
         TitleDocument = new TextDocument(template.Title);
         BodyDocument = new TextDocument(template.Body);

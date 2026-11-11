@@ -25,7 +25,7 @@ public sealed partial class NotificationsViewModel(Func<ILiveHelpDeskApi?> api) 
 
     public ObservableCollection<string> Errors { get; } = [];
 
-    public IReadOnlyList<Choice> PreviewChannels => RuleCatalog.Channels;
+    public IReadOnlyList<Choice> PreviewChannels { get; } = [.. RuleCatalog.Channels.Where(c => !c.Hidden)];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]

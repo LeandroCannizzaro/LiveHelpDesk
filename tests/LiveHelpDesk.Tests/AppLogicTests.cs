@@ -564,8 +564,7 @@ public class AppViewModelTests
 
         await vm.RefreshAsync(LinkState.Connected);
 
-        Assert.Equal(["E-mail", "SMS"], vm.Channels.Select(c => c.Name).ToArray());
-        Assert.False(vm.Channels[1].Enabled);
+        Assert.Equal(["E-mail"], vm.Channels.Select(c => c.Name).ToArray()); // SMS is switched off and not in use: hidden
         Assert.Contains("ultimo invio", vm.Channels[0].Detail);
         await vm.Channels[0].TestCommand.ExecuteAsync(null);
         Assert.Equal("Messaggio di prova inviato.", vm.Channels[0].TestResult);

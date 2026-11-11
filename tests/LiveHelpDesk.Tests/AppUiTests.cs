@@ -261,7 +261,7 @@ public class AppUiTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Contains("E-mail", Texts(window));
-        Assert.Contains("SMS", Texts(window));
+        Assert.DoesNotContain("SMS", Texts(window));
         Assert.Contains(Texts(window), t => t.StartsWith("Tutto in ordine"));
         Save(window.CaptureRenderedFrame()!, "status-running");
     }

@@ -192,9 +192,12 @@ public sealed partial class RuleViewModel : ObservableObject
         _escalateEnabled = rule.Actions.EscalateAfterMinutes is > 0;
         _escalateMinutes = (rule.Actions.EscalateAfterMinutes ?? 15).ToString(CultureInfo.InvariantCulture);
 
-        EventChoices = [.. RuleCatalog.Events.Select(e => new SelectableItem(e, rule.Events.Any(t => t.ToString() == e.Value)))];
-        ChannelChoices = [.. RuleCatalog.Channels.Select(c => new SelectableItem(c, rule.Actions.Channels.Contains(c.Value, StringComparer.OrdinalIgnoreCase)))];
-        EscalateChannelChoices = [.. RuleCatalog.Channels.Select(c => new SelectableItem(c, rule.Actions.EscalateChannels.Contains(c.Value, StringComparer.OrdinalIgnoreCase)))];
+        bool HasEvent(string value) => rule.Events.Any(t => t.ToString() == value);
+        bool HasChannel(string value) => rule.Actions.Channels.Contains(value, StringComparer.OrdinalIgnoreCase);
+        bool HasEscalation(string value) => rule.Actions.EscalateChannels.Contains(value, StringComparer.OrdinalIgnoreCase);
+        EventChoices = [.. RuleCatalog.Offered(RuleCatalog.Events, HasEvent).Select(e => new SelectableItem(e, HasEvent(e.Value)))];
+        ChannelChoices = [.. RuleCatalog.Offered(RuleCatalog.Channels, HasChannel).Select(c => new SelectableItem(c, HasChannel(c.Value)))];
+        EscalateChannelChoices = [.. RuleCatalog.Offered(RuleCatalog.Channels, HasEscalation).Select(c => new SelectableItem(c, HasEscalation(c.Value)))];
 
         IsAdvanced = !TryReadCondition(rule.When);
 

@@ -128,7 +128,7 @@
         <ToggleButton x:Name="NavNotifications" Classes="nav" ToolTip.Tip="Notifiche: testi e modelli dei messaggi">
           <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="icon" Text="💬" /><TextBlock Classes="label" Text="Notifiche" /></StackPanel>
         </ToggleButton>
-        <ToggleButton x:Name="NavChannels" Classes="nav" ToolTip.Tip="Canali: e-mail, SMS, webhook">
+        <ToggleButton x:Name="NavChannels" Classes="nav" ToolTip.Tip="Canali: e-mail e Teams">
           <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="icon" Text="📡" /><TextBlock Classes="label" Text="Canali" /></StackPanel>
         </ToggleButton>
         <ToggleButton x:Name="NavSettings" Classes="nav" ToolTip.Tip="Impostazioni: finestrella, colori, avvio, aggiornamenti">

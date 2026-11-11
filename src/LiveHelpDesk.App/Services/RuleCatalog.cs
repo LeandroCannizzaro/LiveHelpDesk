@@ -4,7 +4,8 @@ using LiveHelpDesk.Ipc;
 
 namespace LiveHelpDesk.App.Services;
 
-public sealed record Choice(string Value, string Label)
+/// <summary>A value offered by an editor. Hidden choices are not in use and only appear where they are already selected.</summary>
+public sealed record Choice(string Value, string Label, bool Hidden = false)
 {
     public override string ToString() => Label;
 }
@@ -46,8 +47,8 @@ public static class RuleCatalog
         new(nameof(TicketEventType.ReminderFlagged), "Sollecito"),
         new(nameof(TicketEventType.Unattended), "Ticket senza risposta"),
         new(nameof(TicketEventType.MonitorHealth), "Problemi del monitoraggio"),
-        new(nameof(TicketEventType.SlaWarning), "SLA in scadenza (non ancora attivo)"),
-        new(nameof(TicketEventType.SlaBreached), "SLA scaduto (non ancora attivo)"),
+        new(nameof(TicketEventType.SlaWarning), "SLA in scadenza (non ancora attivo)", Hidden: true),
+        new(nameof(TicketEventType.SlaBreached), "SLA scaduto (non ancora attivo)", Hidden: true),
     ];
 
     public static IReadOnlyList<Choice> Channels { get; } =
@@ -56,9 +57,13 @@ public static class RuleCatalog
         new("overlay", "Finestrella lampeggiante"),
         new("email", "E-mail"),
         new("teams", "Teams"),
-        new("sms", "SMS"),
-        new("whatsapp", "WhatsApp"),
+        new("sms", "SMS", Hidden: true),
+        new("whatsapp", "WhatsApp", Hidden: true),
     ];
+
+    /// <summary>The choices an editor shows: the ones in use, plus hidden ones already selected so saving does not drop them.</summary>
+    public static IEnumerable<Choice> Offered(IReadOnlyList<Choice> choices, Func<string, bool> isSelected) =>
+        choices.Where(c => !c.Hidden || isSelected(c.Value));
 
     public static IReadOnlyList<Choice> Severities { get; } =
     [

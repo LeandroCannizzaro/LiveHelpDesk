@@ -111,7 +111,7 @@ public sealed partial class StatusViewModel(
             Apply(await service.GetStatusAsync());
             var channels = await service.GetChannelStatusAsync();
             Channels.Clear();
-            foreach (var channel in channels)
+            foreach (var channel in channels.Where(c => c.Enabled || c.Id is not ("sms" or "whatsapp")))
             {
                 Channels.Add(new ChannelRow(channel, id => TestChannelAsync(service, id)));
             }

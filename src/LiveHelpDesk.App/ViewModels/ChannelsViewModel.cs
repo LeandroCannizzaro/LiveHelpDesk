@@ -436,6 +436,7 @@ public sealed partial class TwilioEditor : ChannelEditor
         : base(id, title, quiet, test)
     {
         ShowTemplate = whatsApp;
+        IsShown = s.Enabled;
         Enabled = s.Enabled;
         _accountSid = s.AccountSid;
         _authToken = s.AuthToken;
@@ -446,6 +447,9 @@ public sealed partial class TwilioEditor : ChannelEditor
 
     /// <summary>WhatsApp conversations started by a company need an approved template.</summary>
     public bool ShowTemplate { get; }
+
+    /// <summary>SMS and WhatsApp are not in use: their card only appears when the channel was already switched on.</summary>
+    public bool IsShown { get; }
 
     [ObservableProperty]
     private string _accountSid;

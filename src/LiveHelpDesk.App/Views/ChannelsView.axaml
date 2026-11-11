@@ -127,7 +127,7 @@
         </Border>
 
         <!-- SMS -->
-        <Border Classes="card" DataContext="{Binding Sms}" x:DataType="vm:TwilioEditor">
+        <Border Classes="card" DataContext="{Binding Sms}" x:DataType="vm:TwilioEditor" IsVisible="{Binding IsShown}">
           <StackPanel Spacing="8">
             <CheckBox Content="{Binding Title}" IsChecked="{Binding Enabled}" FontWeight="SemiBold" />
             <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6" IsEnabled="{Binding Enabled}">
@@ -149,7 +149,7 @@
         </Border>
 
         <!-- WhatsApp -->
-        <Border Classes="card" DataContext="{Binding WhatsApp}" x:DataType="vm:TwilioEditor">
+        <Border Classes="card" DataContext="{Binding WhatsApp}" x:DataType="vm:TwilioEditor" IsVisible="{Binding IsShown}">
           <StackPanel Spacing="8">
             <CheckBox Content="{Binding Title}" IsChecked="{Binding Enabled}" FontWeight="SemiBold" />
             <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6" IsEnabled="{Binding Enabled}">
