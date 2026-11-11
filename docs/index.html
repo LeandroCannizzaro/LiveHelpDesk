@@ -16,6 +16,7 @@
         <a href="#cos-e">Cos'è</a>
         <a href="#installazione">Installazione</a>
         <a href="#regole">Regole</a>
+        <a href="#notifiche">Notifiche</a>
         <a href="#canali">Canali</a>
         <a href="#faq">Domande frequenti</a>
         <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk">GitHub</a>
@@ -75,12 +76,13 @@
         <li><a href="#finestra">6. La finestra principale</a></li>
         <li><a href="#avvisi">7. Come arrivano gli avvisi</a></li>
         <li><a href="#regole">8. Le regole di notifica</a></li>
-        <li><a href="#canali">9. I canali</a></li>
-        <li><a href="#monitoraggio">10. Il monitoraggio</a></li>
-        <li><a href="#impostazioni">11. Impostazioni</a></li>
-        <li><a href="#eventi">12. Eventi recenti</a></li>
-        <li><a href="#privacy">13. Privacy e sicurezza</a></li>
-        <li><a href="#faq">14. Domande frequenti</a></li>
+        <li><a href="#notifiche">9. I testi delle notifiche</a></li>
+        <li><a href="#canali">10. I canali</a></li>
+        <li><a href="#monitoraggio">11. Il monitoraggio</a></li>
+        <li><a href="#impostazioni">12. Impostazioni</a></li>
+        <li><a href="#eventi">13. Eventi recenti</a></li>
+        <li><a href="#privacy">14. Privacy e sicurezza</a></li>
+        <li><a href="#faq">15. Domande frequenti</a></li>
       </ol>
     </aside>
 
@@ -168,6 +170,8 @@
           <div>
             <h3>Regole</h3>
             <p>Il cuore della configurazione: decidi <i>quando</i> farti avvisare e <i>come</i>.</p>
+            <h3>Notifiche</h3>
+            <p>Scrivi, se vuoi, il testo degli avvisi al posto di quello standard, regola per regola e canale per canale.</p>
             <h3>Canali</h3>
             <p>Dove colleghi e-mail, Teams, WhatsApp e SMS e imposti gli orari di silenzio.</p>
             <h3>Impostazioni</h3>
@@ -229,6 +233,7 @@
           <li><b>Completo</b> — l'avviso include numero, titolo e informazioni del ticket.</li>
           <li><b>Minimo</b> — solo numero e priorità. Utile per i canali che escono dall'azienda (SMS, WhatsApp): così non portano fuori il titolo del ticket né il testo dei messaggi.</li>
         </ul>
+        <p>Se per una regola e un canale hai scritto un <a href="#notifiche">testo personalizzato</a>, vale quel testo: il dettaglio non si applica.</p>
 
         <h3>Se nessuno risponde — l'inoltro (escalation)</h3>
         <p>Per le cose importanti puoi dire: «se dopo <i>N</i> minuti nessuno ha ancora guardato, avvisami anche su questi altri canali». Per esempio: prima una notifica sul desktop, e se resta ignorata per 15 minuti arriva anche un messaggio WhatsApp.</p>
@@ -242,9 +247,54 @@
         </ul>
       </article>
 
+      <article id="notifiche" class="section">
+        <div class="eyebrow">Il testo degli avvisi</div>
+        <h2>9. I testi delle notifiche</h2>
+        <p>Di base ogni avviso usa un testo standard (per esempio «Nuovo ticket #261000001», con titolo, priorità e stato). Nella scheda <b>Notifiche</b> puoi scrivere un testo tuo e decidere a quali <b>regole</b> e su quali <b>canali</b> si applica: per esempio un'e-mail più ricca per i ticket urgenti e un SMS brevissimo per quelli senza risposta.</p>
+
+        <h3>Creare un testo</h3>
+        <ul>
+          <li><b>Nuovo testo</b> — ne crea uno con un contenuto di partenza da adattare. <b>Duplica</b> e <b>Elimina</b> lavorano sul testo selezionato nell'elenco a sinistra, che mostra per ognuno quante regole e quali canali copre.</li>
+          <li>Spunta <b>una o più regole</b> e <b>uno o più canali</b>: il testo vale per ogni combinazione scelta.</li>
+          <li>Scrivi il <b>titolo</b> (una riga, testo semplice: diventa l'oggetto dell'e-mail o la prima riga dell'avviso) e il <b>testo</b>. Se uno dei due resta vuoto, per quella parte si usa lo standard.</li>
+          <li>Le regole e i canali senza un testo personalizzato continuano a usare quello standard.</li>
+        </ul>
+        <div class="note"><div>🧩</div><div>Una regola su un canale può avere <b>un solo</b> testo: se due testi si sovrappongono la pagina lo segnala in rosso e non permette di salvare. Per questo la copia creata con <b>Duplica</b> parte senza canali.</div></div>
+
+        <h3>Inserire i dati del ticket</h3>
+        <p>I dati del ticket si inseriscono come <b>campi</b> tra doppie parentesi graffe, per esempio <code>{{numero}}</code>: al momento dell'invio vengono sostituiti con il valore vero. Non serve ricordarli: scrivendo <code>{{</code> (oppure premendo <b>Ctrl+Spazio</b>) si apre l'elenco dei campi con la loro spiegazione, che si filtra mentre scrivi; con <b>Invio</b> scegli quello evidenziato. C'è anche il pulsante <b>Inserisci campo</b>. I campi riconosciuti appaiono in blu, quelli scritti male in rosso.</p>
+        <table class="channels">
+          <tr><th>Campo</th><th>Cosa contiene</th></tr>
+          <tr><td><code>{{numero}}</code>, <code>{{titolo}}</code></td><td>Numero e titolo del ticket</td></tr>
+          <tr><td><code>{{priorita}}</code>, <code>{{stato}}</code>, <code>{{livello}}</code></td><td>Priorità, stato e livello di supporto (L0, L1, L2)</td></tr>
+          <tr><td><code>{{evento}}</code></td><td>La descrizione standard di ciò che è successo, es. «Nuova e-mail su #…»</td></tr>
+          <tr><td><code>{{dettaglio}}</code>, <code>{{testo_standard}}</code></td><td>Il dettaglio dell'evento (mittente e oggetto, passaggio di stato…) e l'intero testo standard</td></tr>
+          <tr><td><code>{{mittente}}</code>, <code>{{oggetto}}</code>, <code>{{tipo_messaggio}}</code></td><td>Per gli eventi sui messaggi: chi ha scritto, l'oggetto, il tipo (E-mail, Nota…)</td></tr>
+          <tr><td><code>{{data_evento}}</code>, <code>{{creato_il}}</code>, <code>{{modificato_il}}</code>, <code>{{eta_ticket}}</code></td><td>Date e da quanto è aperto il ticket</td></tr>
+          <tr><td><code>{{in_sospeso}}</code>, <code>{{sollecito}}</code></td><td>«Sì» o «No»</td></tr>
+          <tr><td><code>{{link}}</code></td><td>L'indirizzo del ticket in Dynamics; usalo così: <code>[Apri il ticket]({{link}})</code></td></tr>
+          <tr><td><code>{{regola}}</code>, <code>{{urgenza}}</code></td><td>Il nome della regola e l'urgenza scelta</td></tr>
+          <tr><td><code>{{applicativo}}</code>, <code>{{tipologia}}</code>, <code>{{businessunit}}</code>, <code>{{classificazione}}</code></td><td>I codici di questi campi del ticket</td></tr>
+        </table>
+        <p>Se un dato non c'è (per esempio il mittente su un evento che non riguarda un messaggio), il campo resta vuoto.</p>
+
+        <h3>Formattare il testo</h3>
+        <p>I pulsanti <b>Grassetto</b>, <b>Corsivo</b>, <b>Barrato</b>, <b>Elenco</b> e <b>Link al ticket</b> applicano la formattazione al testo selezionato. Sono semplici segni nel testo, che puoi anche scrivere a mano: <code>**grassetto**</code>, <code>_corsivo_</code>, <code>~~barrato~~</code>, una riga che inizia con <code>- </code> per un elenco, <code>[testo](indirizzo)</code> per un link. Ogni canale mostra ciò che sa mostrare:</p>
+        <ul>
+          <li><b>E-mail</b> — formattata (HTML), con una versione solo testo per i programmi di posta che non la leggono.</li>
+          <li><b>Teams</b> — grassetto, corsivo, elenchi e link.</li>
+          <li><b>Notifica di Windows, finestrella, SMS e WhatsApp</b> — testo semplice: la formattazione viene tolta, gli elenchi diventano «•» e i link «testo (indirizzo)». Un SMS mostra al massimo 320 caratteri, WhatsApp 1000: il resto viene tagliato.</li>
+        </ul>
+        <p>Se il testo contiene già il link al ticket, i canali non lo aggiungono una seconda volta in fondo.</p>
+
+        <h3>Anteprima e salvataggio</h3>
+        <p>Sotto l'editor l'<b>anteprima</b> mostra il risultato con dati di esempio, così come apparirebbe sul canale scelto nel menu (all'inizio il primo canale del testo); per SMS e WhatsApp indica anche quanti caratteri occupa. Come per le regole, i testi diventano attivi solo con <b>Salva</b>: <b>Annulla le modifiche</b> torna all'ultima versione salvata, e un testo con errori (campi sconosciuti, nessuna regola o nessun canale, sovrapposizioni) non viene salvato.</p>
+        <div class="note"><div>🔒</div><div>Un testo personalizzato prende il posto del livello di <b>dettaglio</b> della regola: se per SMS o WhatsApp usi campi come <code>{{titolo}}</code> o <code>{{oggetto}}</code>, quelle informazioni escono dall'azienda anche se la regola è impostata su «Minimo». Se una regola viene eliminata, i testi che la citavano la perdono al salvataggio successivo.</div></div>
+      </article>
+
       <article id="canali" class="section">
         <div class="eyebrow">Avvisi fuori dal PC</div>
-        <h2>9. I canali di notifica</h2>
+        <h2>10. I canali di notifica</h2>
         <p>I canali servono quando non sei davanti allo schermo. Le notifiche di Windows e la finestrella lampeggiante <b>non</b> vanno configurate qui: funzionano da sole. In questa scheda colleghi invece i canali esterni.</p>
         <table class="channels">
           <tr><th>Canale</th><th>Cosa ti serve</th></tr>
@@ -280,7 +330,7 @@
 
       <article id="monitoraggio" class="section">
         <div class="eyebrow">Il motore</div>
-        <h2>10. Il monitoraggio</h2>
+        <h2>11. Il monitoraggio</h2>
         <p>Perché gli avvisi arrivino serve che il monitoraggio sia in funzione. Ci sono due modi, e si sceglie dalla scheda <b>Servizio</b>. Ne basta uno.</p>
         <table class="channels">
           <tr><th></th><th>Processo in background</th><th>Servizio di Windows</th></tr>
@@ -300,7 +350,7 @@
 
       <article id="impostazioni" class="section">
         <div class="eyebrow">Preferenze</div>
-        <h2>11. Impostazioni</h2>
+        <h2>12. Impostazioni</h2>
         <ul>
           <li><b>Finestrella lampeggiante</b> — attivala o disattivala, scegli lo <b>schermo</b> su cui mostrarla, trascinala dove preferisci e usa <i>Rimetti al centro</i> se la perdi di vista. <i>Mostra un esempio</i> ti fa vedere come appare.</li>
           <li><b>Suona un avviso per gli eventi critici</b> — un suono solo per le cose davvero importanti.</li>
@@ -310,7 +360,7 @@
 
       <article id="eventi" class="section">
         <div class="eyebrow">Lo storico</div>
-        <h2>12. Eventi recenti</h2>
+        <h2>13. Eventi recenti</h2>
         <p>La scheda <b>Eventi</b> raccoglie ciò che è successo di recente sui ticket: per ciascuno vedi l'orario, il tipo di evento e il ticket coinvolto. Da qui puoi:</p>
         <ul>
           <li><b>Apri</b> — porta direttamente al ticket su Dynamics.</li>
@@ -320,7 +370,7 @@
 
       <article id="privacy" class="section">
         <div class="eyebrow">Fiducia</div>
-        <h2>13. Privacy e sicurezza</h2>
+        <h2>14. Privacy e sicurezza</h2>
         <ul>
           <li><b>I dati restano sul tuo PC.</b> Configurazione, regole, canali e cronologia sono salvati localmente, non su server esterni.</li>
           <li><b>Le credenziali sono protette.</b> L'accesso a Dynamics è gestito dal monitoraggio; l'app non vede mai password o token. Le chiavi dei canali vengono cifrate e non più mostrate.</li>
@@ -331,7 +381,7 @@
 
       <article id="faq" class="section">
         <div class="eyebrow">Aiuto</div>
-        <h2>14. Domande frequenti</h2>
+        <h2>15. Domande frequenti</h2>
 
         <details>
           <summary>Ho chiuso la finestra e il programma è sparito. L'ho spento?</summary>

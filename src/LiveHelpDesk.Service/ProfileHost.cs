@@ -228,6 +228,19 @@ public sealed class ProfileHost : IProfile
         return Task.FromResult(new RulesSaveResult(result.IsValid, result.Errors));
     }
 
+    public Task<string> GetTemplatesJsonAsync() => Task.FromResult(_pipeline.Templates.ReadJson());
+
+    public Task<RulesSaveResult> SaveTemplatesJsonAsync(string json)
+    {
+        var result = _pipeline.Templates.Replace(json);
+        if (result.IsValid)
+        {
+            _logger.LogInformation("Notification texts replaced from the app ({Count} texts)", result.File!.Templates.Count);
+        }
+
+        return Task.FromResult(new RulesSaveResult(result.IsValid, result.Errors));
+    }
+
     public async Task<IReadOnlyList<LookupItem>> GetLookupsAsync()
     {
         IReadOnlyList<TicketSnapshot> active;

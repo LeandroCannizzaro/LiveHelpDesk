@@ -5,7 +5,8 @@ using MimeKit;
 
 namespace LiveHelpDesk.Channels;
 
-public sealed record EmailMessage(string From, IReadOnlyList<string> To, string Subject, string TextBody);
+/// <param name="HtmlBody">When set the message is sent as HTML, with <paramref name="TextBody"/> as the plain alternative.</param>
+public sealed record EmailMessage(string From, IReadOnlyList<string> To, string Subject, string TextBody, string? HtmlBody = null);
 
 /// <summary>The part of sending an e-mail that touches the network; faked in tests of the channel itself.</summary>
 public interface IEmailSender
@@ -28,13 +29,14 @@ public sealed class EmailChannel(EmailSettings settings, IEmailSender sender) : 
         }
 
         var subject = notification.Severity == Severity.Critical ? $"[URGENTE] {notification.Title}" : notification.Title;
-        var body = notification.Url is null
+        var body = notification.Url is null || Mentions(notification.Body, notification.Url)
             ? notification.Body
             : $"{notification.Body}\n\nApri il ticket: {notification.Url}";
+        var html = notification.HtmlBody is null ? null : Html(notification.HtmlBody, notification.Url);
 
         try
         {
-            await sender.SendAsync(new EmailMessage(settings.From, settings.To, subject, body), cancellationToken);
+            await sender.SendAsync(new EmailMessage(settings.From, settings.To, subject, body, html), cancellationToken);
             return SendResult.Ok;
         }
         catch (MailAuthException ex)
@@ -49,6 +51,20 @@ public sealed class EmailChannel(EmailSettings settings, IEmailSender sender) : 
 
     public Task<SendResult> TestAsync(CancellationToken cancellationToken) =>
         SendAsync(new Notification("LiveHelpDesk: messaggio di prova", "Se leggi questo messaggio, il canale e-mail funziona.", Severity.Info), cancellationToken);
+
+    internal static string Html(string fragment, Uri? url)
+    {
+        var link = url is null || Mentions(fragment, url)
+            ? ""
+            : $"<p style=\"margin-top:16px\"><a href=\"{System.Net.WebUtility.HtmlEncode(url.AbsoluteUri)}\">Apri il ticket</a></p>";
+        return $"<!DOCTYPE html><html><body style=\"font-family:'Segoe UI',Arial,sans-serif;font-size:14px\">{fragment}{link}</body></html>";
+    }
+
+    /// <summary>A custom text may already carry the ticket's link: then it is not added a second time.</summary>
+    internal static bool Mentions(string text, Uri url) =>
+        text.Contains(url.AbsoluteUri, StringComparison.OrdinalIgnoreCase)
+        || text.Contains(System.Net.WebUtility.HtmlEncode(url.AbsoluteUri), StringComparison.OrdinalIgnoreCase)
+        || text.Contains(url.ToString(), StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>SMTP through MailKit.</summary>
@@ -66,7 +82,9 @@ public sealed class MailKitSender(EmailSettings settings) : IEmailSender
         }
 
         mime.Subject = message.Subject;
-        mime.Body = new TextPart("plain") { Text = message.TextBody };
+        mime.Body = message.HtmlBody is null
+            ? new TextPart("plain") { Text = message.TextBody }
+            : new BodyBuilder { TextBody = message.TextBody, HtmlBody = message.HtmlBody }.ToMessageBody();
 
         using var client = new SmtpClient { Timeout = (int)Timeout.TotalMilliseconds };
         var security = settings.Security switch

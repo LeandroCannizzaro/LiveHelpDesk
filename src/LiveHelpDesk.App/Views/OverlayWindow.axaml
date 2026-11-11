@@ -15,31 +15,36 @@
         TransparencyLevelHint="Transparent"
         WindowStartupLocation="Manual">
   <Window.Styles>
-    <Style Selector="Border#Pill">
-      <Setter Property="Transitions">
-        <Transitions>
-          <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
-        </Transitions>
-      </Setter>
-    </Style>
-    <Style Selector="Border#Pill.attention">
-      <Setter Property="Background" Value="#F59E0B" />
-      <Setter Property="TextElement.Foreground" Value="#1F1300" />
-    </Style>
-    <Style Selector="Border#Pill.critical">
-      <Setter Property="Background" Value="#DC2626" />
-      <Setter Property="TextElement.Foreground" Value="White" />
-    </Style>
-    <Style Selector="Border#Pill.pulse">
-      <Setter Property="Opacity" Value="0.55" />
-    </Style>
-    <Style Selector="Border#Badge">
-      <Setter Property="Background" Value="#33000000" />
-    </Style>
     <Style Selector="Border#Pill Button">
       <Setter Property="Background" Value="#26000000" />
-      <Setter Property="Foreground" Value="{Binding $parent[Border].(TextElement.Foreground)}" />
+      <Setter Property="Foreground" Value="{Binding Foreground}" />
       <Setter Property="Padding" Value="12,6" />
+    </Style>
+
+    <!-- The number beats like a heart instead of the whole pill blinking; critical beats faster. -->
+    <Style Selector="Border#Badge.attention">
+      <Style.Animations>
+        <Animation Duration="0:0:1.1" IterationCount="INFINITE" Easing="SineEaseInOut">
+          <KeyFrame Cue="0%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+          <KeyFrame Cue="12%"><Setter Property="ScaleTransform.ScaleX" Value="1.22" /><Setter Property="ScaleTransform.ScaleY" Value="1.22" /></KeyFrame>
+          <KeyFrame Cue="24%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+          <KeyFrame Cue="38%"><Setter Property="ScaleTransform.ScaleX" Value="1.13" /><Setter Property="ScaleTransform.ScaleY" Value="1.13" /></KeyFrame>
+          <KeyFrame Cue="52%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+    <Style Selector="Border#Badge.critical">
+      <Style.Animations>
+        <Animation Duration="0:0:0.65" IterationCount="INFINITE" Easing="SineEaseInOut">
+          <KeyFrame Cue="0%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+          <KeyFrame Cue="12%"><Setter Property="ScaleTransform.ScaleX" Value="1.28" /><Setter Property="ScaleTransform.ScaleY" Value="1.28" /></KeyFrame>
+          <KeyFrame Cue="24%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+          <KeyFrame Cue="38%"><Setter Property="ScaleTransform.ScaleX" Value="1.16" /><Setter Property="ScaleTransform.ScaleY" Value="1.16" /></KeyFrame>
+          <KeyFrame Cue="52%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="ScaleTransform.ScaleX" Value="1" /><Setter Property="ScaleTransform.ScaleY" Value="1" /></KeyFrame>
+        </Animation>
+      </Style.Animations>
     </Style>
   </Window.Styles>
 
@@ -48,21 +53,31 @@
           Padding="16,12"
           CornerRadius="16"
           BoxShadow="0 4 18 0 #66000000"
-          Classes.attention="{Binding IsAttention}"
-          Classes.critical="{Binding IsCritical}"
-          Classes.pulse="{Binding Pulse}">
+          Background="{Binding Background}"
+          TextElement.Foreground="{Binding Foreground}">
     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-      <Border x:Name="Badge" Grid.Column="0" Width="42" Height="42" CornerRadius="21" VerticalAlignment="Center">
+      <Border x:Name="Badge" Grid.Column="0" Width="42" Height="42" CornerRadius="21" VerticalAlignment="Center"
+              Background="{Binding Accent}"
+              RenderTransformOrigin="50%,50%"
+              Classes.attention="{Binding IsAttention}"
+              Classes.critical="{Binding IsCritical}">
         <TextBlock Text="{Binding CountText}" FontSize="18" FontWeight="Bold"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
       </Border>
 
       <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
         <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis" />
-        <TextBlock Text="{Binding Subtitle}" Opacity="0.85" TextTrimming="CharacterEllipsis" />
+        <TextBlock Text="{Binding Subtitle}" Opacity="0.85" TextTrimming="CharacterEllipsis"
+                   IsVisible="{Binding !IsExpanded}" />
+        <ScrollViewer MaxHeight="88" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      IsVisible="{Binding IsExpanded}">
+          <TextBlock Text="{Binding Body}" Opacity="0.9" TextWrapping="Wrap" />
+        </ScrollViewer>
       </StackPanel>
 
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+        <Button Content="{Binding ToggleGlyph}" Command="{Binding ToggleExpandCommand}"
+                ToolTip.Tip="{Binding ToggleTip}" Padding="10,6" />
         <Button Content="Apri" Command="{Binding OpenCommand}" />
         <Button Content="Riconosci" Command="{Binding AcknowledgeAllCommand}" />
         <Button Content="15 min" Command="{Binding SnoozeQuarterHourCommand}" ToolTip.Tip="Posticipa di 15 minuti" />

@@ -21,6 +21,15 @@ public sealed class UiSettings
     /// <summary>Which screen shows the overlay: 0 = the main one, N = the Nth screen Windows lists.</summary>
     public int OverlayScreen { get; set; }
 
+    /// <summary>Overlay background colour as "#RRGGBB". Blank = the urgency default (amber for attention, red for critical).</summary>
+    public string OverlayBackground { get; set; } = "";
+
+    /// <summary>Overlay text colour as "#RRGGBB". Blank = the urgency default.</summary>
+    public string OverlayTextColor { get; set; } = "";
+
+    /// <summary>Overlay accent colour (the number badge) as "#RRGGBB". Blank = a subtle translucent black.</summary>
+    public string OverlayAccent { get; set; } = "";
+
     /// <summary>When no service answers, the app starts the monitor itself (<c>LiveHelpDesk.Service run</c>).</summary>
     public bool StartMonitorProcess { get; set; } = true;
 

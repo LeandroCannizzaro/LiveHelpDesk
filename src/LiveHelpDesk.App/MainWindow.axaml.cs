@@ -13,6 +13,7 @@ public enum Pane
     Events,
     Status,
     Rules,
+    Notifications,
     Channels,
     Settings,
 }
@@ -52,6 +53,7 @@ public partial class MainWindow : Window
         NavEvents.Click += (_, _) => ShowPane(Pane.Events);
         NavStatus.Click += (_, _) => ShowPane(Pane.Status);
         NavRules.Click += (_, _) => ShowPane(Pane.Rules);
+        NavNotifications.Click += (_, _) => ShowPane(Pane.Notifications);
         NavChannels.Click += (_, _) => ShowPane(Pane.Channels);
         NavSettings.Click += (_, _) => ShowPane(Pane.Settings);
 
@@ -75,11 +77,13 @@ public partial class MainWindow : Window
     public event Action<Pane>? PaneChanged;
 
     public void Attach(
-        EventsViewModel events, StatusViewModel status, RulesViewModel rules, ChannelsViewModel channels, SettingsViewModel settings)
+        EventsViewModel events, StatusViewModel status, RulesViewModel rules, NotificationsViewModel notifications,
+        ChannelsViewModel channels, SettingsViewModel settings)
     {
         EventsPane.DataContext = events;
         StatusPane.DataContext = status;
         RulesPane.DataContext = rules;
+        NotificationsPane.DataContext = notifications;
         ChannelsPane.DataContext = channels;
         SettingsPane.DataContext = settings;
     }
@@ -111,12 +115,14 @@ public partial class MainWindow : Window
         EventsPane.IsVisible = pane == Pane.Events;
         StatusPane.IsVisible = pane == Pane.Status;
         RulesPane.IsVisible = pane == Pane.Rules;
+        NotificationsPane.IsVisible = pane == Pane.Notifications;
         ChannelsPane.IsVisible = pane == Pane.Channels;
         SettingsPane.IsVisible = pane == Pane.Settings;
         NavBrowser.IsChecked = pane == Pane.Browser;
         NavEvents.IsChecked = pane == Pane.Events;
         NavStatus.IsChecked = pane == Pane.Status;
         NavRules.IsChecked = pane == Pane.Rules;
+        NavNotifications.IsChecked = pane == Pane.Notifications;
         NavChannels.IsChecked = pane == Pane.Channels;
         NavSettings.IsChecked = pane == Pane.Settings;
         PaneChanged?.Invoke(pane);
@@ -135,6 +141,9 @@ public partial class MainWindow : Window
             WindowState = WindowState.Normal;
         }
 
+        // A brief topmost flip pulls the window above the others; Activate alone can lose to foreground rules.
+        Topmost = true;
+        Topmost = false;
         Activate();
     }
 

@@ -380,6 +380,10 @@ public class RulesViewModelTests
 
         public Task<DryRunResult> DryRunDraftAsync(string rulesJson) => inner.DryRunDraftAsync(rulesJson);
 
+        public Task<string> GetTemplatesJsonAsync() => inner.GetTemplatesJsonAsync();
+
+        public Task<RulesSaveResult> SaveTemplatesJsonAsync(string json) => inner.SaveTemplatesJsonAsync(json);
+
         public Task<ChannelSettings> GetChannelSettingsAsync() => inner.GetChannelSettingsAsync();
 
         public Task SaveChannelSettingsAsync(ChannelSettings settings) => inner.SaveChannelSettingsAsync(settings);

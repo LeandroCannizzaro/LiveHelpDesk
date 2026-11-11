@@ -29,6 +29,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         _playSound = settings.PlaySoundForCritical;
         _screen = Screens.FirstOrDefault(c => c.Value == settings.OverlayScreen.ToString()) ?? Screens[0];
         _startWithWindows = autoStart.IsEnabled;
+        _overlayBackground = settings.OverlayBackground;
+        _overlayTextColor = settings.OverlayTextColor;
+        _overlayAccent = settings.OverlayAccent;
         _loading = false;
     }
 
@@ -49,11 +52,26 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _note = "";
 
+    [ObservableProperty]
+    private string _overlayBackground = "";
+
+    [ObservableProperty]
+    private string _overlayTextColor = "";
+
+    [ObservableProperty]
+    private string _overlayAccent = "";
+
     partial void OnOverlayEnabledChanged(bool value) => Apply(() => _settings.OverlayEnabled = value);
 
     partial void OnPlaySoundChanged(bool value) => Apply(() => _settings.PlaySoundForCritical = value);
 
     partial void OnScreenChanged(Choice value) => Apply(() => _settings.OverlayScreen = int.Parse(value.Value));
+
+    partial void OnOverlayBackgroundChanged(string value) => Apply(() => _settings.OverlayBackground = value.Trim());
+
+    partial void OnOverlayTextColorChanged(string value) => Apply(() => _settings.OverlayTextColor = value.Trim());
+
+    partial void OnOverlayAccentChanged(string value) => Apply(() => _settings.OverlayAccent = value.Trim());
 
     partial void OnStartWithWindowsChanged(bool value)
     {

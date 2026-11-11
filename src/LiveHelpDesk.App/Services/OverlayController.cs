@@ -22,7 +22,6 @@ public sealed class OverlayController
     private readonly OverlayViewModel _viewModel;
     private readonly DispatcherTimer _timer;
     private OverlayWindow? _window;
-    private int _ticks;
     private bool _wasCritical;
 
     public OverlayController(
@@ -39,6 +38,7 @@ public sealed class OverlayController
         _clock = clock;
         _viewModel = viewModel;
         _playAlertSound = playAlertSound;
+        _viewModel.UseTheme(settings);
 
         _model.Changed += (_, _) => Dispatcher.UIThread.Post(Refresh);
         _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(TickMilliseconds), DispatcherPriority.Background, (_, _) => OnTick());
@@ -76,7 +76,6 @@ public sealed class OverlayController
         else
         {
             _wasCritical = false;
-            _viewModel.Pulse = false;
             _window?.Hide();
         }
     }
@@ -88,18 +87,8 @@ public sealed class OverlayController
             return;
         }
 
-        // A snooze may have just run out, or the user may have left the presentation.
+        // A snooze may have just run out, or the user may have left the presentation; the heartbeat itself is a looping animation in the view.
         Refresh();
-
-        if (IsShown)
-        {
-            _ticks++;
-            var period = _viewModel.IsCritical ? 2 : 5; // 0.4 s for critical, 1 s for the rest
-            if (_ticks % period == 0)
-            {
-                _viewModel.Pulse = !_viewModel.Pulse;
-            }
-        }
     }
 
     private void Show()

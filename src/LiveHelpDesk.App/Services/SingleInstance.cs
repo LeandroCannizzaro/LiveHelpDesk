@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace LiveHelpDesk.App.Services;
 
 /// <summary>
@@ -6,6 +8,14 @@ namespace LiveHelpDesk.App.Services;
 /// </summary>
 public sealed class SingleInstance : IDisposable
 {
+    // Lets any process grab the foreground. The incoming instance calls this so the already-running
+    // window may come forward: without it Windows blocks the handoff and the first window only blinks.
+    private const int AsfwAny = -1;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool AllowSetForegroundWindow(int dwProcessId);
+
     private readonly Mutex _mutex;
     private readonly EventWaitHandle _show;
     private readonly CancellationTokenSource _stop = new();
@@ -35,6 +45,8 @@ public sealed class SingleInstance : IDisposable
             return new SingleInstance(mutex, show, onSecondLaunch);
         }
 
+        // Hand the foreground to the running instance before we bow out, then wake it so it comes to the front.
+        AllowSetForegroundWindow(AsfwAny);
         show.Set();
         show.Dispose();
         mutex.Dispose();

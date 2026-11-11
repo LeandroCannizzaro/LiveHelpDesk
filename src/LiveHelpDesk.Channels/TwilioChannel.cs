@@ -93,7 +93,7 @@ public sealed class TwilioChannel(TwilioKind kind, TwilioSettings settings, Http
     private string Text(Notification notification)
     {
         var text = string.IsNullOrWhiteSpace(notification.Body) ? notification.Title : $"{notification.Title}\n{notification.Body}";
-        if (notification.Url is not null)
+        if (notification.Url is not null && !EmailChannel.Mentions(text, notification.Url))
         {
             text += $"\n{notification.Url}";
         }

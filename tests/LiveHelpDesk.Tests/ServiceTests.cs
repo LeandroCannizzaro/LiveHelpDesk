@@ -62,6 +62,10 @@ internal sealed class FakeProfile(string sid) : IProfile
 
     public Task<DryRunResult> DryRunDraftAsync(string rulesJson) => _api.DryRunDraftAsync(rulesJson);
 
+    public Task<string> GetTemplatesJsonAsync() => _api.GetTemplatesJsonAsync();
+
+    public Task<RulesSaveResult> SaveTemplatesJsonAsync(string json) => _api.SaveTemplatesJsonAsync(json);
+
     public Task<IReadOnlyList<LookupItem>> GetLookupsAsync() => _api.GetLookupsAsync();
 
     public Task<ChannelSettings> GetChannelSettingsAsync() => _api.GetChannelSettingsAsync();

@@ -34,7 +34,9 @@ public sealed class GraphMailSender(
             message = new
             {
                 subject = message.Subject,
-                body = new { contentType = "Text", content = message.TextBody },
+                body = message.HtmlBody is null
+                    ? new { contentType = "Text", content = message.TextBody }
+                    : new { contentType = "HTML", content = message.HtmlBody },
                 toRecipients = recipients.Select(address => new { emailAddress = new { address } }),
             },
             saveToSentItems = saveToSentItems(),

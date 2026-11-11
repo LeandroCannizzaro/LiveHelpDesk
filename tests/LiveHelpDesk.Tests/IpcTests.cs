@@ -118,6 +118,23 @@ internal sealed class FakeApi : ILiveHelpDeskApi
 
     public string? DraftChecked { get; private set; }
 
+    public string TemplatesJson { get; set; } = LiveHelpDesk.Core.Notifications.TemplatesConfig.Serialize(new LiveHelpDesk.Core.Notifications.TemplatesFile());
+
+    public string? SavedTemplates { get; private set; }
+
+    public Task<string> GetTemplatesJsonAsync() => Task.FromResult(TemplatesJson);
+
+    public Task<RulesSaveResult> SaveTemplatesJsonAsync(string json)
+    {
+        var result = LiveHelpDesk.Core.Notifications.TemplatesConfig.Parse(json);
+        if (result.IsValid)
+        {
+            SavedTemplates = TemplatesJson = LiveHelpDesk.Core.Notifications.TemplatesConfig.Serialize(result.File!);
+        }
+
+        return Task.FromResult(new RulesSaveResult(result.IsValid, result.Errors));
+    }
+
     public Task<string> GetRulesJsonAsync() => Task.FromResult(RulesJson);
 
     public Task<RulesSaveResult> SaveRulesJsonAsync(string json)

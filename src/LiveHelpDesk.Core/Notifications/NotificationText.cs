@@ -97,7 +97,8 @@ public static class NotificationText
         };
     }
 
-    private static string? Detail(TicketEvent evt, TicketMapping mapping)
+    /// <summary>The event-specific line: sender and subject, status transition or the unattended text.</summary>
+    public static string? Detail(TicketEvent evt, TicketMapping mapping)
     {
         if (evt.Message is { } message)
         {

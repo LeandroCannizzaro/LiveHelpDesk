@@ -95,6 +95,7 @@ public sealed record ChannelTestResult(bool Ok, string? Error);
 /// <param name="LastError">Why the last sign-in attempt did not complete.</param>
 public sealed record MailAccountInfo(string? Account, bool LoginPending, string? LastError);
 
+/// <summary>The outcome of saving the rules or the notification texts.</summary>
 /// <param name="Errors">What is wrong, in plain words, when <paramref name="Saved"/> is false.</param>
 public sealed record RulesSaveResult(bool Saved, IReadOnlyList<string> Errors);
 
@@ -162,6 +163,12 @@ public interface ILiveHelpDeskApi
 
     /// <summary>Like <see cref="DryRunRulesAsync"/> but for rules not saved yet (read only). Throws if they are not valid.</summary>
     Task<DryRunResult> DryRunDraftAsync(string rulesJson);
+
+    /// <summary>The user's notification texts as the JSON file the service keeps.</summary>
+    Task<string> GetTemplatesJsonAsync();
+
+    /// <summary>Checks the notification texts and, only if they are valid, makes them the ones in force at once.</summary>
+    Task<RulesSaveResult> SaveTemplatesJsonAsync(string json);
 
     /// <summary>Names for the queues, teams and users the active tickets point at, so rules can be written by name.</summary>
     Task<IReadOnlyList<LookupItem>> GetLookupsAsync();

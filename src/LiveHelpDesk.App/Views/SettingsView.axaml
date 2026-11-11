@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LiveHelpDesk.App.ViewModels"
+             xmlns:conv="using:LiveHelpDesk.App.Converters"
              x:Class="LiveHelpDesk.App.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
   <ScrollViewer>
@@ -20,6 +21,26 @@
       </StackPanel>
       <TextBlock Opacity="0.65" TextWrapping="Wrap"
                  Text="Si può trascinare con il mouse. Non appare mentre fai una presentazione o usi un programma a schermo intero." />
+
+      <TextBlock Text="Colori della finestrella" FontWeight="SemiBold" Margin="0,12,0,0" />
+      <Grid ColumnDefinitions="150,220,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Sfondo" VerticalAlignment="Center" />
+        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding OverlayBackground}" PlaceholderText="#RRGGBB" />
+        <Border Grid.Row="0" Grid.Column="2" Width="34" Height="28" CornerRadius="6" BorderThickness="1" BorderBrush="#55000000"
+                Background="{Binding OverlayBackground, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Testo" VerticalAlignment="Center" />
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding OverlayTextColor}" PlaceholderText="#RRGGBB" />
+        <Border Grid.Row="1" Grid.Column="2" Width="34" Height="28" CornerRadius="6" BorderThickness="1" BorderBrush="#55000000"
+                Background="{Binding OverlayTextColor, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Numero (accento)" VerticalAlignment="Center" />
+        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding OverlayAccent}" PlaceholderText="#RRGGBB" />
+        <Border Grid.Row="2" Grid.Column="2" Width="34" Height="28" CornerRadius="6" BorderThickness="1" BorderBrush="#55000000"
+                Background="{Binding OverlayAccent, Converter={x:Static conv:HexColorToBrushConverter.Instance}}" />
+      </Grid>
+      <TextBlock Opacity="0.65" TextWrapping="Wrap"
+                 Text="Lascia vuoto per i colori automatici (ambra per i solleciti, rosso per gli eventi critici). Formato #RRGGBB." />
 
       <TextBlock Text="Avvio" FontWeight="SemiBold" Margin="0,12,0,0" />
       <CheckBox Content="Avvia LiveHelpDesk quando accedo a Windows (resta nell'area di notifica)" IsChecked="{Binding StartWithWindows}" />

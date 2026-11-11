@@ -28,6 +28,7 @@ public sealed class AppHost
     private MonitorProcessHost _monitor = null!;
     private EventsViewModel _events = null!;
     private RulesViewModel _rules = null!;
+    private NotificationsViewModel _notifications = null!;
     private ChannelsViewModel _channels = null!;
     private SettingsViewModel _appSettings = null!;
     private NotificationPump _pump = null!;
@@ -50,7 +51,11 @@ public sealed class AppHost
         _single = SingleInstance.TryAcquire("LiveHelpDesk.App", () => Dispatcher.UIThread.Post(() => _window?.Bring()));
         if (_single is null)
         {
-            _lifetime.Shutdown();
+            // A second instance: the first one has been asked to show itself, so this one bows out.
+            // Shutdown is posted, not called inline: Start() runs inside OnFrameworkInitializationCompleted,
+            // before Avalonia's main loop exists, and shutting the dispatcher down here makes the pending
+            // PushFrame throw "Dispatcher shut down". Posting lets the loop start and exit cleanly.
+            Dispatcher.UIThread.Post(() => _lifetime.Shutdown());
             return;
         }
 
@@ -63,11 +68,12 @@ public sealed class AppHost
         _status.Hosting = _hosting;
         _events = new EventsViewModel(() => _link.Api, OpenRowAsync, AcknowledgeAsync);
         _rules = new RulesViewModel(() => _link.Api);
+        _notifications = new NotificationsViewModel(() => _link.Api);
         _channels = new ChannelsViewModel(() => _link.Api, CopyAsync, OpenInBrowser);
         _appSettings = new SettingsViewModel(
             _settings, new AutoStart(), Environment.ProcessPath ?? "LiveHelpDesk.exe", _window.ScreenNames(),
             ShowOverlayExample, () => _overlay?.Reposition());
-        _window.Attach(_events, _status, _rules, _channels, _appSettings);
+        _window.Attach(_events, _status, _rules, _notifications, _channels, _appSettings);
         _window.PaneChanged += pane => _ = OnPaneChangedAsync(pane);
 
         _pump = new NotificationPump(_link, _attention, new ToastService(), () => DateTimeOffset.UtcNow);
@@ -130,6 +136,9 @@ public sealed class AppHost
             case Pane.Rules when !_rules.IsDirty:
                 await _rules.LoadAsync();
                 break;
+            case Pane.Notifications when !_notifications.IsDirty:
+                await _notifications.LoadAsync();
+                break;
             case Pane.Channels when !_channels.IsDirty:
                 await _channels.LoadAsync();
                 break;
@@ -147,7 +156,8 @@ public sealed class AppHost
     {
         _attention.Add(
             new AttentionItem(
-                $"example:{DateTimeOffset.UtcNow.Ticks}", "Esempio: nuovo ticket #261000000", "Così apparirà la finestrella",
+                $"example:{DateTimeOffset.UtcNow.Ticks}", "Esempio: nuovo ticket #261000000",
+                "Cliente: Mario Rossi\nOggetto: Richiesta di supporto\nPriorità: Normale\nPremi la freccia per ridurre la finestrella a una sola riga.",
                 Severity.Attention, null, DateTimeOffset.UtcNow),
             DateTimeOffset.UtcNow);
         _attention.EndSnooze();

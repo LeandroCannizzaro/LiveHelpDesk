@@ -23,7 +23,7 @@ namespace LiveHelpDesk.Tests;
 /// </summary>
 public class AppUiTests
 {
-    private static void Save(WriteableBitmap frame, string name)
+    internal static void Save(WriteableBitmap frame, string name)
     {
         if (Environment.GetEnvironmentVariable("LHD_SHOTS") is { Length: > 0 } folder)
         {
@@ -112,24 +112,22 @@ public class AppUiTests
     }
 
     [AvaloniaFact]
-    public void TheBlink_IsAClassOnThePill_DrivenByTheViewModel()
+    public void TheHeartbeat_IsAClassOnTheBadge_DrivenByTheViewModel()
     {
-        var model = new AttentionModel();
-        model.Add(Item("a", Severity.Critical), T.At(0));
-        var window = Overlay(model, out var vm);
-        var pill = window.FindControl<Border>("Pill")!;
-        Assert.DoesNotContain("pulse", pill.Classes);
+        var critical = new AttentionModel();
+        critical.Add(Item("a", Severity.Critical), T.At(0));
+        var criticalWindow = Overlay(critical, out _);
+        var criticalBadge = criticalWindow.FindControl<Border>("Badge")!;
+        Assert.Contains("critical", criticalBadge.Classes);
+        Assert.DoesNotContain("attention", criticalBadge.Classes);
+        Save(criticalWindow.CaptureRenderedFrame()!, "overlay-critical-badge");
 
-        vm.Pulse = true;
-        Dispatcher.UIThread.RunJobs();
-        Assert.Contains("pulse", pill.Classes);
-        Assert.Contains("critical", pill.Classes);
-        Assert.DoesNotContain("attention", pill.Classes);
-        Save(window.CaptureRenderedFrame()!, "overlay-critical-pulse");
-
-        vm.Pulse = false;
-        Dispatcher.UIThread.RunJobs();
-        Assert.DoesNotContain("pulse", pill.Classes);
+        var attention = new AttentionModel();
+        attention.Add(Item("b", Severity.Attention), T.At(0));
+        var attentionWindow = Overlay(attention, out _);
+        var attentionBadge = attentionWindow.FindControl<Border>("Badge")!;
+        Assert.Contains("attention", attentionBadge.Classes);
+        Assert.DoesNotContain("critical", attentionBadge.Classes);
     }
 
     [AvaloniaFact]
@@ -141,7 +139,7 @@ public class AppUiTests
 
         var buttons = window.GetVisualDescendants().OfType<Button>().Select(b => b.Content?.ToString()).ToArray();
 
-        Assert.Equal(new[] { "Apri", "Riconosci", "15 min" }, buttons.Select(b => b ?? "").ToArray());
+        Assert.Equal(new[] { "\u25B2", "Apri", "Riconosci", "15 min" }, buttons.Select(b => b ?? "").ToArray());
     }
 
     [AvaloniaFact]

@@ -35,6 +35,9 @@ public sealed class Pipeline : IDisposable
 
     public required RulesProvider Rules { get; init; }
 
+    /// <summary>The user-written notification texts.</summary>
+    public required TemplatesProvider Templates { get; init; }
+
     public required TicketMapping Mapping { get; init; }
 
     public required ChannelStore ChannelStore { get; init; }
@@ -57,6 +60,7 @@ public sealed class Pipeline : IDisposable
         var tokens = await MsalTokenProvider.CreateAsync(options, profileDirectory);
         var mapping = TicketMapping.Qgs;
         var rules = new RulesProvider(Path.Combine(profileDirectory, "rules.json"), loggers.CreateLogger<RulesProvider>());
+        var templates = new TemplatesProvider(Path.Combine(profileDirectory, "templates.json"), loggers.CreateLogger<TemplatesProvider>());
 
         // Behind a corporate proxy the service has no user settings: use the system proxy with default credentials.
         var handler = new SocketsHttpHandler { UseProxy = true, DefaultProxyCredentials = CredentialCache.DefaultCredentials };
@@ -78,7 +82,11 @@ public sealed class Pipeline : IDisposable
 
         var holder = new MeHolder();
         var source = new DynamicsTicketSource(new DataverseClient(http, tokens), DynamicsFieldMap.Qgs, () => holder.Me, settings.QueueIds);
-        var planner = new NotificationPlanner(mapping, () => new ChannelPolicy { Channels = channelStore.Current.Schedules }, id => options.IncidentUri(id));
+        var planner = new NotificationPlanner(
+            mapping,
+            () => new ChannelPolicy { Channels = channelStore.Current.Schedules },
+            id => options.IncidentUri(id),
+            () => templates.Current);
         var engine = new PollingEngine(
             source, store, store, new TicketDetector(store, mapping), planner, mapping, settings.Polling,
             () => rules.Current, () => holder.Me, loggers.CreateLogger<PollingEngine>());
@@ -93,6 +101,7 @@ public sealed class Pipeline : IDisposable
             Engine = engine,
             Health = new HealthMonitor(),
             Rules = rules,
+            Templates = templates,
             Mapping = mapping,
             ChannelStore = channelStore,
             Channels = channels,

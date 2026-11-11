@@ -1,0 +1,160 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LiveHelpDesk.App.ViewModels"
+             xmlns:views="using:LiveHelpDesk.App.Views"
+             xmlns:svc="using:LiveHelpDesk.App.Services"
+             xmlns:ae="using:AvaloniaEdit"
+             x:Class="LiveHelpDesk.App.Views.NotificationsView"
+             x:DataType="vm:NotificationsViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,14,0,4" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Border.editor">
+      <Setter Property="BorderBrush" Value="#40808080" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="6,4" />
+    </Style>
+    <Style Selector="Border.editor:focus-within">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}" />
+    </Style>
+    <Style Selector="ae|TextEditor">
+      <Setter Property="FontFamily" Value="Segoe UI" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*" Margin="16">
+    <!-- toolbar -->
+    <StackPanel Grid.Row="0" Spacing="8">
+      <TextBlock Text="Testi delle notifiche" FontSize="20" FontWeight="SemiBold" />
+      <TextBlock Classes="hint"
+                 Text="Un testo sostituisce quello standard per le regole e i canali scelti. Le regole e i canali senza un testo continuano a usare quello standard." />
+      <WrapPanel>
+        <Button Content="Nuovo testo" Command="{Binding AddTemplateCommand}" Margin="0,0,6,6" />
+        <Button Content="Duplica" Command="{Binding DuplicateTemplateCommand}" IsEnabled="{Binding HasSelection}" Margin="0,0,6,6" />
+        <Button Content="Elimina" Command="{Binding RemoveTemplateCommand}" IsEnabled="{Binding HasSelection}" Margin="0,0,18,6" />
+        <Button Content="Salva" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsBusy}" Classes="accent" Margin="0,0,6,6" />
+        <Button Content="Annulla le modifiche" Command="{Binding DiscardCommand}" IsEnabled="{Binding IsDirty}" Margin="0,0,6,6" />
+      </WrapPanel>
+      <TextBlock Text="Ci sono modifiche non salvate." Foreground="#D97706" IsVisible="{Binding IsDirty}" />
+      <TextBlock Text="{Binding Status}" Opacity="0.85" TextWrapping="Wrap"
+                 IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+
+    <!-- errors -->
+    <ItemsControl Grid.Row="1" ItemsSource="{Binding Errors}" IsVisible="{Binding HasErrors}" Margin="0,8,0,0">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="x:String">
+          <TextBlock Text="{Binding}" Foreground="#DC2626" TextWrapping="Wrap" />
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <!-- list + editor -->
+    <Grid Grid.Row="2" ColumnDefinitions="260,*" Margin="0,10,0,0" ColumnSpacing="14">
+      <ListBox Grid.Column="0" ItemsSource="{Binding Templates}" SelectedItem="{Binding Selected}" Background="Transparent">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:TemplateViewModel">
+            <StackPanel Margin="0,2">
+              <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+              <TextBlock Text="{Binding Coverage}" Opacity="0.7" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <TextBlock Grid.Column="1" Classes="hint" IsVisible="{Binding !HasSelection}"
+                 Text="Nessun testo selezionato. Con «Nuovo testo» se ne crea uno." />
+
+      <ScrollViewer Grid.Column="1" IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,14,14">
+          <TextBlock Classes="section" Text="Nome" Margin="0,0,0,4" />
+          <TextBox Text="{Binding Selected.Name, FallbackValue=''}" MaxWidth="480" HorizontalAlignment="Left" MinWidth="320" />
+
+          <TextBlock Classes="section" Text="Per le regole" />
+          <ItemsControl ItemsSource="{Binding Selected.RuleChoices, FallbackValue={x:Null}}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:SelectableItem">
+                <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}" Margin="0,0,14,0" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="hint" Foreground="#D97706" Text="{Binding Selected.Warning, FallbackValue=''}"
+                     IsVisible="{Binding Selected.HasWarning, FallbackValue=False}" />
+
+          <TextBlock Classes="section" Text="Sui canali" />
+          <ItemsControl ItemsSource="{Binding Selected.ChannelChoices, FallbackValue={x:Null}}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:SelectableItem">
+                <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}" Margin="0,0,14,0" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="hint" Foreground="#DC2626" Text="{Binding Conflicts}" IsVisible="{Binding HasConflicts}" />
+
+          <TextBlock Classes="section" Text="Titolo" />
+          <Border Classes="editor">
+            <ae:TextEditor x:Name="TitleEditor" Height="24" ShowLineNumbers="False"
+                           HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" />
+          </Border>
+          <TextBlock Classes="hint" Text="Vuoto: si usa il titolo standard. Il titolo è sempre testo semplice." />
+
+          <TextBlock Classes="section" Text="Testo" />
+          <WrapPanel Margin="0,0,0,4">
+            <Button Content="Grassetto" FontWeight="Bold" Click="OnBold" Margin="0,0,4,4" ToolTip.Tip="**testo**" />
+            <Button Content="Corsivo" FontStyle="Italic" Click="OnItalic" Margin="0,0,4,4" ToolTip.Tip="_testo_" />
+            <Button Content="Barrato" Click="OnStrike" Margin="0,0,4,4" ToolTip.Tip="~~testo~~" />
+            <Button Content="Elenco" Click="OnList" Margin="0,0,4,4" ToolTip.Tip="- voce" />
+            <Button Content="Link al ticket" Click="OnLink" Margin="0,0,14,4" ToolTip.Tip="[testo]({{link}})" />
+            <Button x:Name="InsertFieldButton" Content="Inserisci campo ▾" Margin="0,0,4,4"
+                    ToolTip.Tip="Oppure scrivere {{ nel testo, o premere Ctrl+Spazio" />
+          </WrapPanel>
+          <Border Classes="editor">
+            <ae:TextEditor x:Name="BodyEditor" MinHeight="180" MaxHeight="360" WordWrap="True" ShowLineNumbers="False"
+                           HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" />
+          </Border>
+          <TextBlock Classes="hint"
+                     Text="Vuoto: si usa il testo standard. Formattazione Markdown: **grassetto**, _corsivo_, ~~barrato~~, «- » per gli elenchi, [testo](indirizzo) per i link. I campi si scrivono tra doppie graffe: {{numero}}." />
+
+          <!-- preview -->
+          <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,18,0,6">
+            <TextBlock Text="Anteprima con dati di esempio su" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding PreviewChannels}" SelectedItem="{Binding PreviewChannel}" MinWidth="160">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="svc:Choice">
+                  <TextBlock Text="{Binding Label}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+          <Border Padding="12" CornerRadius="8" Background="#14808080">
+            <StackPanel Spacing="8">
+              <SelectableTextBlock Text="{Binding PreviewTitle}" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <views:MarkdownPreview Markdown="{Binding PreviewBody}" IsVisible="{Binding IsRichPreview}" />
+              <SelectableTextBlock Text="{Binding PreviewBody}" TextWrapping="Wrap" IsVisible="{Binding IsPlainPreview}" />
+            </StackPanel>
+          </Border>
+          <TextBlock Classes="hint" Text="{Binding PreviewInfo}" Margin="0,6,0,0"
+                     IsVisible="{Binding PreviewInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>

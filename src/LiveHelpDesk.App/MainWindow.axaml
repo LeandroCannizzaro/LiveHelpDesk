@@ -24,6 +24,7 @@
           <ToggleButton x:Name="NavStatus" Classes="nav" Content="Servizio" />
           <TextBlock Text="CONFIGURAZIONE" FontSize="11" Opacity="0.6" Margin="12,16,0,2" />
           <ToggleButton x:Name="NavRules" Classes="nav" Content="Regole" />
+          <ToggleButton x:Name="NavNotifications" Classes="nav" Content="Notifiche" />
           <ToggleButton x:Name="NavChannels" Classes="nav" Content="Canali" />
           <ToggleButton x:Name="NavSettings" Classes="nav" Content="Impostazioni" />
         </StackPanel>
@@ -46,6 +47,7 @@
       <views:EventsView x:Name="EventsPane" IsVisible="False" />
       <views:StatusView x:Name="StatusPane" IsVisible="False" />
       <views:RulesView x:Name="RulesPane" IsVisible="False" />
+      <views:NotificationsView x:Name="NotificationsPane" IsVisible="False" />
       <views:ChannelsView x:Name="ChannelsPane" IsVisible="False" />
       <views:SettingsView x:Name="SettingsPane" IsVisible="False" />
     </Grid>

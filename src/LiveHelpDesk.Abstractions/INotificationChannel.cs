@@ -1,7 +1,8 @@
 namespace LiveHelpDesk.Abstractions;
 
 /// <param name="Url">Deep link to the record, when there is one.</param>
-public sealed record Notification(string Title, string Body, Severity Severity, Uri? Url = null);
+/// <param name="HtmlBody">The same text formatted as HTML, for channels that can show it (e-mail); <see cref="Body"/> stays the plain version.</param>
+public sealed record Notification(string Title, string Body, Severity Severity, Uri? Url = null, string? HtmlBody = null);
 
 public sealed record SendResult(bool Success, string? Error = null)
 {
