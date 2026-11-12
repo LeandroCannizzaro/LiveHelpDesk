@@ -9,7 +9,7 @@ namespace LiveHelpDesk.App.Views;
 public partial class SettingsView : UserControl
 {
     // The colour each picker shows while its setting is blank ("automatic"): the overlay's own defaults.
-    private static readonly Color AutomaticBackground = Color.Parse("#F59E0B");
+    private static readonly Color AutomaticBackground = Color.Parse("#F9C97A");
     private static readonly Color AutomaticText = Color.Parse("#1F1300");
     private static readonly Color AutomaticAccent = Color.Parse("#5C3D00");
 

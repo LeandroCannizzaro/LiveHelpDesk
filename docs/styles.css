@@ -95,6 +95,9 @@ pre code { background: none; color: inherit; padding: 0; }
 .hero h1 { color: #fff; font-size: 2.8rem; margin: 0 0 14px; max-width: 18ch; }
 .hero p.lead { font-size: 1.25rem; color: #cbd5e1; max-width: 62ch; margin: 0 0 28px; }
 .cta { display: flex; gap: 14px; flex-wrap: wrap; }
+.hero .download-meta { margin: 14px 0 0; font-size: .92rem; color: #94a3b8; max-width: 70ch; }
+.hero .download-meta a { color: #bae6fd; }
+.hero .download-meta b { color: #e2e8f0; }
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 12px 22px; border-radius: 10px; font-weight: 600;

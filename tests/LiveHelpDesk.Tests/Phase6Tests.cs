@@ -39,7 +39,7 @@ public class RuleEditorTests
     }
 
     [Fact]
-    public void AllAnyAndNotConditions_AreDrawnInTheirThreeLists_AndWrittenBackIdentically()
+    public void AllConditions_AreRows_WhileAlternativesAndExclusions_BecomeTheExpression()
     {
         var rule = Parse(
             """
@@ -51,25 +51,54 @@ public class RuleEditorTests
             """);
 
         var model = new RuleViewModel(rule, Fields());
+        var saved = model.ToRule();
 
         Assert.False(model.IsAdvanced);
         Assert.Equal(2, model.AllRows.Count);
-        Assert.Equal(2, model.AnyRows.Count);
-        Assert.Single(model.NotRows);
         Assert.Equal("Alta", model.AllRows[0].ValueChoice!.Label);
+        Assert.Equal("""(titolo contiene "errore" o titolo contiene "bloccante") e non in_sospeso = sì""", model.ExpressionDocument.Text);
+        Assert.True(model.IsExpressionValid);
         Assert.Equal("Critico", model.Severity.Label);
         Assert.True(model.EscalateEnabled);
-        Assert.Equal(Json(rule), Json(model.ToRule()));
+        Assert.Equal(3, saved.When!.All!.Count);
+        Assert.Equal(model.ExpressionDocument.Text, saved.When.All[2].Expression);
+
+        // Same verdicts as the original condition, and reopening gives the same form.
+        var context = new EvaluationContext(T.At(0), TicketMapping.Qgs);
+        foreach (var (title, onHold, priority) in new[] { ("errore grave", false, 1), ("errore grave", true, 1), ("tutto ok", false, 1), ("bloccante", false, 2) })
+        {
+            var evt = new TicketEvent("k", TicketEventType.TicketCreated, T.At(0), Ticket: T.Ticket(title: title, onHold: onHold, priority: priority));
+            Assert.Equal(RuleEngine.Matches(rule.When, evt, context), RuleEngine.Matches(saved.When, evt, context));
+        }
+
+        Assert.Equal(Json(saved), Json(new RuleViewModel(saved, Fields()).ToRule()));
     }
 
     [Fact]
-    public void ConditionsTooElaborateForTheForm_AreKeptUntouched_WhileTheRestStaysEditable()
+    public void NestedConditions_AreWrittenAsAnExpression_AndKeepTheirMeaning()
     {
         var rule = Parse(
             """
             { "id": "r", "name": "Complessa", "events": ["TicketCreated"], "actions": { "channels": ["toast"] },
               "when": { "any": [ { "all": [ { "field": "priority", "op": "eq", "value": 1 }, { "field": "title", "op": "contains", "value": "x" } ] },
                                  { "field": "owner", "op": "eq", "value": "$me" } ] } }
+            """);
+
+        var model = new RuleViewModel(rule, Fields());
+
+        Assert.False(model.IsAdvanced);
+        Assert.Empty(model.AllRows);
+        Assert.Equal("""(priorita = 1 e titolo contiene "x") o proprietario = $me""", model.ExpressionDocument.Text);
+        Assert.Equal(model.ExpressionDocument.Text, model.ToRule().When!.Expression);
+    }
+
+    [Fact]
+    public void ConditionsAnExpressionCannotSay_AreKeptUntouched_WhileTheRestStaysEditable()
+    {
+        var rule = Parse(
+            """
+            { "id": "r", "name": "Complessa", "events": ["TicketCreated"], "actions": { "channels": ["toast"] },
+              "when": { "any": [ { "field": "title", "op": "contains", "value": "x" }, { "field": "ageMinutes", "op": "gt", "value": "trenta" } ] } }
             """);
 
         var model = new RuleViewModel(rule, Fields());
@@ -81,6 +110,48 @@ public class RuleEditorTests
         Assert.Equal("Complessa (rinominata)", saved.Name);
         Assert.Equal(["toast", "overlay"], saved.Actions.Channels);
         Assert.Same(rule.When, saved.When);
+    }
+
+    [Fact]
+    public void TheExpression_IsSavedInAndWithTheRows_AndAMistakeIsReportedAtOnce()
+    {
+        var model = new RuleViewModel(new Rule { Id = "r", Name = "n", Events = [TicketEventType.TicketCreated], Actions = new RuleActions { Channels = ["toast"] } }, Fields());
+        model.AddAllCommand.Execute(null);
+        model.AllRows[0].ValueChoice = model.AllRows[0].Choices.First(c => c.Label == "Alta");
+
+        model.ExpressionDocument.Text = "coda = \"Assistenza L1\" o titolo contiene";
+        Assert.True(model.HasExpressionError);
+        Assert.Contains("colonna", model.ExpressionError);
+        Assert.False(RulesConfig.Parse(Json(model.ToRule())).IsValid);
+
+        model.ExpressionDocument.Text = "coda = \"Assistenza L1\" o titolo contiene \"urgente\"";
+        Assert.False(model.HasExpressionError);
+        Assert.True(model.IsExpressionValid);
+        var saved = model.ToRule();
+        Assert.True(RulesConfig.Parse(Json(saved)).IsValid);
+        Assert.Equal("priority", saved.When!.All![0].Field);
+        Assert.Equal(model.ExpressionDocument.Text, saved.When.All[1].Expression);
+
+        model.AllRows.Clear();
+        Assert.Equal(model.ExpressionDocument.Text, model.ToRule().When!.Expression);
+        model.ExpressionDocument.Text = "  ";
+        Assert.Null(model.ToRule().When);
+    }
+
+    [Fact]
+    public void AllTheFieldsOfTheNotificationTexts_CanBeUsedInRules_WithTheirExpressionNames()
+    {
+        var names = Fields().Select(f => f.Name).ToHashSet();
+
+        foreach (var name in new[] { "numero", "titolo", "priorita", "stato", "stato_ticket", "livello", "stato_comunicazioni", "in_sospeso", "sollecito",
+                     "cliente", "proprietario", "coda", "utente_l2", "creato_da", "modificato_da", "applicativo", "tipologia", "businessunit",
+                     "classificazione", "prioritariaqualificata", "mittente", "oggetto", "tipo_messaggio" })
+        {
+            Assert.Contains(name, names);
+        }
+
+        Assert.Equal("Alta", Field("priority").Choices[0].Label);
+        Assert.Contains(Field("eventType").Choices, c => c.Label == "Nuovo ticket");
     }
 
     [Fact]
@@ -105,7 +176,7 @@ public class RuleEditorTests
         text.Value = "fattura";
 
         Assert.Equal(1L, (long)priority.ToCondition().Value!);
-        Assert.Equal(false, (bool)onHold.ToCondition().Value!);
+        Assert.False((bool)onHold.ToCondition().Value!);
         Assert.Equal([1L, 2L], ((JsonArray)several.ToCondition().Value!).Select(v => (long)v!).ToArray());
         Assert.Equal("gt", age.ToCondition().Op);
         Assert.Equal(60L, (long)age.ToCondition().Value!);
@@ -147,11 +218,11 @@ public class RuleEditorTests
     [Fact]
     public void AFieldTheFormDoesNotKnow_IsKeptWorking()
     {
-        var rule = Parse("""{ "id": "r", "events": ["TicketCreated"], "actions": { "channels": ["toast"] }, "when": { "field": "commStatus", "op": "eq", "value": 717600002 } }""");
+        var rule = Parse("""{ "id": "r", "events": ["TicketCreated"], "actions": { "channels": ["toast"] }, "when": { "field": "extra.commessa", "op": "eq", "value": 717600002 } }""");
 
         var model = new RuleViewModel(rule, Fields());
 
-        Assert.Equal("Campo: commStatus", model.AllRows[0].Field.Label);
+        Assert.Equal("Campo: extra.commessa", model.AllRows[0].Field.Label);
         Assert.Equal(Json(rule), Json(model.ToRule()));
     }
 

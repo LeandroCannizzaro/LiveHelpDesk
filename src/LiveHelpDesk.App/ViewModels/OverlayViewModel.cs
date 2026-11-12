@@ -27,7 +27,7 @@ public sealed partial class OverlayViewModel(Func<Task> open, Func<Task> acknowl
 {
     // Unanswered for this long (attention; critical takes half) before each step up.
     private static readonly TimeSpan[] Steps = [TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(3), TimeSpan.FromMinutes(8)];
-    private static readonly ImmutableSolidColorBrush AttentionBackground = new(Color.Parse("#F59E0B"));
+    private static readonly ImmutableSolidColorBrush AttentionBackground = new(Color.Parse("#F9C97A"));
     private static readonly ImmutableSolidColorBrush AttentionForeground = new(Color.Parse("#1F1300"));
     private static readonly ImmutableSolidColorBrush CriticalBackground = new(Color.Parse("#DC2626"));
     private static readonly ImmutableSolidColorBrush CriticalForeground = new(Colors.White);

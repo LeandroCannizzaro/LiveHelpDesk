@@ -32,7 +32,8 @@ public static class TrayLooks
 
     public static Color ColorOf(TrayLook look) => look switch
     {
-        TrayLook.Ok => Color.Parse("#16A34A"),
+        // Same blue as the app icon shown in the window's title bar and taskbar.
+        TrayLook.Ok => Color.Parse("#2563EB"),
         TrayLook.Attention => Color.Parse("#F59E0B"),
         TrayLook.Alert => Color.Parse("#DC2626"),
         _ => Color.Parse("#9CA3AF"),
@@ -83,20 +84,27 @@ public sealed class TrayController
 {
     private readonly TrayIcon _icon;
     private readonly Dictionary<TrayLook, WindowIcon> _icons = [];
+    private readonly NativeMenuItem _alertsItem;
     private TrayLook? _shown;
 
-    public TrayController(Action open, Action acknowledgeAll, Action exit)
+    public TrayController(Action open, Action toggleAlerts, Action openSite, Action about, Action exit)
     {
         var menu = new NativeMenu();
         var openItem = new NativeMenuItem("Apri LiveHelpDesk");
         openItem.Click += (_, _) => open();
-        var ackItem = new NativeMenuItem("Visti tutti");
-        ackItem.Click += (_, _) => acknowledgeAll();
+        _alertsItem = new NativeMenuItem("Disattiva avvisi");
+        _alertsItem.Click += (_, _) => toggleAlerts();
+        var siteItem = new NativeMenuItem("Sito Help Desk");
+        siteItem.Click += (_, _) => openSite();
+        var aboutItem = new NativeMenuItem("About");
+        aboutItem.Click += (_, _) => about();
         var exitItem = new NativeMenuItem("Esci");
         exitItem.Click += (_, _) => exit();
         menu.Items.Add(openItem);
-        menu.Items.Add(ackItem);
+        menu.Items.Add(_alertsItem);
+        menu.Items.Add(siteItem);
         menu.Items.Add(new NativeMenuItemSeparator());
+        menu.Items.Add(aboutItem);
         menu.Items.Add(exitItem);
 
         _icon = new TrayIcon { Menu = menu, ToolTipText = "LiveHelpDesk", IsVisible = true };
@@ -104,6 +112,9 @@ public sealed class TrayController
     }
 
     public TrayIcon Icon => _icon;
+
+    /// <summary>The alerts item is a two-state switch: it offers the opposite of the current state, like the side bar's button.</summary>
+    public void SetAlertsActive(bool active) => _alertsItem.Header = active ? "Disattiva avvisi" : "Attiva avvisi";
 
     public void Update(TrayLook look, string tooltip)
     {

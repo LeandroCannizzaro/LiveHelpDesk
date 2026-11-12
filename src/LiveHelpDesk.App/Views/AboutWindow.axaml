@@ -1,0 +1,60 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LiveHelpDesk.App.ViewModels"
+        x:Class="LiveHelpDesk.App.Views.AboutWindow"
+        x:DataType="vm:UpdatesViewModel"
+        Title="Informazioni su LiveHelpDesk"
+        Icon="/Assets/app.png"
+        Width="420"
+        SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel>
+    <Border Height="140" ClipToBounds="True">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+          <GradientStop Color="#4E6EF7" Offset="0" />
+          <GradientStop Color="#8B2FE0" Offset="1" />
+        </LinearGradientBrush>
+      </Border.Background>
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+        <Border Width="64" Height="64" CornerRadius="16" Background="#26FFFFFF" HorizontalAlignment="Center">
+          <Image Source="/Assets/app.png" Width="48" Height="48" />
+        </Border>
+        <TextBlock Text="LiveHelpDesk" FontSize="22" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" />
+      </StackPanel>
+    </Border>
+
+    <StackPanel Margin="28,22" Spacing="16">
+      <TextBlock Text="{Binding CurrentVersion, StringFormat='Versione {0}'}" HorizontalAlignment="Center" Opacity="0.7" />
+
+      <StackPanel Spacing="2" HorizontalAlignment="Center">
+        <TextBlock Text="Qgs s.r.l." FontWeight="SemiBold" HorizontalAlignment="Center" />
+        <Button x:Name="CompanySiteButton" Content="www.qgs.eu" Background="Transparent" Padding="0" HorizontalAlignment="Center"
+                ToolTip.Tip="Apre il sito dell'azienda produttrice" />
+      </StackPanel>
+
+      <TextBlock Text="Autore: Leandro Cannizzaro, con il supporto del suo team AI"
+                 HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Opacity="0.85" />
+
+      <Button x:Name="ManualButton" Content="📖 Manuale utente online" HorizontalAlignment="Center"
+              ToolTip.Tip="Apre il manuale utente nel browser" />
+
+      <Separator Margin="0,4" />
+
+      <StackPanel Spacing="8">
+        <TextBlock Text="Aggiornamenti" FontWeight="SemiBold" HorizontalAlignment="Center" />
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+          <Button Content="Controlla aggiornamenti" Command="{Binding CheckCommand}" />
+          <Button Content="Aggiorna e riavvia" Classes="accent" Command="{Binding InstallCommand}" IsVisible="{Binding CanInstall}" />
+        </StackPanel>
+        <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" IsVisible="{Binding IsBusy}" Width="320" HorizontalAlignment="Center" />
+        <TextBlock Text="{Binding Status}" Opacity="0.8" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="340" HorizontalAlignment="Center"
+                   IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+
+      <Button x:Name="CloseButton" Content="Chiudi" HorizontalAlignment="Center" IsDefault="True" IsCancel="True" Margin="0,6,0,0" />
+    </StackPanel>
+  </StackPanel>
+</Window>

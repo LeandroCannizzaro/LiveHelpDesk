@@ -12,7 +12,7 @@
     <Copyright>Copyright (c) Leandro Cannizzaro</Copyright>
     <RepositoryUrl>https://github.com/LeandroCannizzaro/LiveHelpDesk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <VersionPrefix>0.2.0</VersionPrefix>
+    <VersionPrefix>0.3.0</VersionPrefix>
     <NeutralLanguage>it</NeutralLanguage>
   </PropertyGroup>
 

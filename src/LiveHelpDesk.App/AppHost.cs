@@ -105,9 +105,13 @@ public sealed class AppHost
 
         _tray = new TrayController(
             () => _window.Bring(),
-            () => _ = AcknowledgeAllAsync(),
+            _window.ToggleAlerts,
+            () => OpenInBrowser(_window.Home),
+            _window.ShowAbout,
             Exit);
         TrayIcon.SetIcons(Application.Current!, [_tray.Icon]);
+        _window.AlertsStateChanged += state => _tray.SetAlertsActive(state == Views.AlertsState.Active);
+        _window.RefreshAlertsButton();
 
         _attention.Changed += (_, _) => Dispatcher.UIThread.Post(RefreshChrome);
         _link.StateChanged += state => Dispatcher.UIThread.Post(() => _ = OnLinkStateAsync(state));

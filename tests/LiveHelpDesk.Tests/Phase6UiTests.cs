@@ -59,7 +59,7 @@ public class Phase6UiTests
     }
 
     [AvaloniaFact]
-    public async Task ARuleWithConditions_ShowsOneRowPerCondition()
+    public async Task ARuleWithConditions_ShowsOneRowPerCondition_AndTheRestAsAnExpression()
     {
         var api = new FakeApi
         {
@@ -77,13 +77,62 @@ public class Phase6UiTests
         var window = Show(new RulesView { DataContext = vm }, 1100, 1100);
 
         var combos = window.GetVisualDescendants().OfType<ComboBox>().ToList();
-        Assert.True(combos.Count >= 10); // five rows with two or three drop-downs each, plus urgency and detail
+        Assert.True(combos.Count >= 6); // two rows with two or three drop-downs each, plus urgency and detail
         Assert.Contains("Alta", combos.Select(c => c.SelectedItem?.ToString()));
         Assert.Contains("Assistenza L1", combos.Select(c => c.SelectedItem?.ToString()));
         Assert.Contains("Devono valere tutte:", Texts(window));
-        Assert.Contains("Basta che ne valga una:", Texts(window));
-        Assert.Contains("Non deve valere nessuna:", Texts(window));
+        Assert.Contains("E inoltre deve valere l'espressione:", Texts(window));
+        Assert.Contains("✓ Espressione corretta", Texts(window));
+        Assert.DoesNotContain("Basta che ne valga una:", Texts(window));
+
+        var editor = window.GetVisualDescendants().OfType<RuleExpressionEditor>().Single();
+        Assert.Equal("""(titolo contiene "BFA" o mittente contiene "@bfa.it") e non in_sospeso = sì""", editor.Document!.Text);
         Save(window.CaptureRenderedFrame()!, "rules-conditions");
+    }
+
+    [AvaloniaFact]
+    public async Task AMistakeInTheExpression_IsShownUnderTheEditor()
+    {
+        var vm = new RulesViewModel(() => new FakeApi());
+        await vm.LoadAsync();
+        var window = Show(new RulesView { DataContext = vm }, 1100, 1100);
+
+        vm.Selected!.ExpressionDocument.Text = "priorita = \"Alta\" e pippo = 1";
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Contains(Texts(window), t => t.Contains("campo sconosciuto «pippo»"));
+        Save(window.CaptureRenderedFrame()!, "rules-expression-error");
+    }
+
+    [AvaloniaFact]
+    public async Task TypingInTheExpression_SuggestsFields_ThenTheValuesTheFieldAdmits()
+    {
+        var vm = new RulesViewModel(() => new FakeApi());
+        await vm.LoadAsync();
+        var window = Show(new RulesView { DataContext = vm }, 1100, 1100);
+        var editor = window.GetVisualDescendants().OfType<RuleExpressionEditor>().Single();
+        var area = editor.GetVisualDescendants().OfType<AvaloniaEdit.Editing.TextArea>().Single();
+        area.Focus();
+
+        IEnumerable<string> Suggestions() =>
+            window.GetVisualDescendants().Concat(TopLevel.GetTopLevel(area)!.GetVisualDescendants())
+                .Concat(Avalonia.Controls.Primitives.OverlayLayer.GetOverlayLayer(area)?.GetVisualDescendants() ?? [])
+                .OfType<AvaloniaEdit.CodeCompletion.CompletionList>()
+                .SelectMany(l => l.CompletionData.Select(d => d.Text))
+                .Distinct();
+
+        area.PerformTextInput("c");
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("coda ", Suggestions());
+        Save(window.CaptureRenderedFrame()!, "rules-expression-fields");
+
+        vm.Selected!.ExpressionDocument.Text = "";
+        area.Caret.Offset = 0;
+        area.PerformTextInput("coda =");
+        area.PerformTextInput(" ");
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("\"Assistenza L1\"", Suggestions());
+        Save(window.CaptureRenderedFrame()!, "rules-expression-values");
     }
 
     [AvaloniaFact]
@@ -195,7 +244,7 @@ public class Phase6UiTests
         // Showing the pickers must not turn "automatic" into a fixed colour.
         Assert.Equal("", vm.OverlayBackground);
         Assert.Equal("#112233", vm.OverlayTextColor);
-        Assert.Equal(Avalonia.Media.Color.Parse("#F59E0B"), pickers["BackgroundPicker"].Color);
+        Assert.Equal(Avalonia.Media.Color.Parse("#F9C97A"), pickers["BackgroundPicker"].Color);
         Assert.Equal(Avalonia.Media.Color.Parse("#112233"), pickers["TextPicker"].Color);
 
         pickers["BackgroundPicker"].Color = Avalonia.Media.Color.Parse("#336699");
@@ -206,7 +255,7 @@ public class Phase6UiTests
         vm.ResetColorCommand.Execute("background");
         Dispatcher.UIThread.RunJobs();
         Assert.Equal("", vm.OverlayBackground);
-        Assert.Equal(Avalonia.Media.Color.Parse("#F59E0B"), pickers["BackgroundPicker"].Color);
+        Assert.Equal(Avalonia.Media.Color.Parse("#F9C97A"), pickers["BackgroundPicker"].Color);
         Save(window.CaptureRenderedFrame()!, "settings-colours");
         Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(@"Software\LiveHelpDeskTests", throwOnMissingSubKey: false);
     }

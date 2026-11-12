@@ -1,5 +1,6 @@
 using LiveHelpDesk.Abstractions;
 using LiveHelpDesk.Core;
+using LiveHelpDesk.Core.Rules;
 using LiveHelpDesk.Ipc;
 
 namespace LiveHelpDesk.App.Services;
@@ -22,6 +23,16 @@ public enum FieldKind
 public sealed record FieldInfo(string Key, string Label, FieldKind Kind, IReadOnlyList<Choice> Choices, bool? NumericOverride = null)
 {
     public override string ToString() => Label;
+
+    /// <summary>How a custom expression writes the field (<c>priorita</c>).</summary>
+    public string Name { get; init; } = Key;
+
+    public string Description { get; init; } = "";
+
+    public string Group { get; init; } = "";
+
+    /// <summary>True when an expression can compare the field by name ("Alta") as well as by code.</summary>
+    public bool HasNames { get; init; }
 
     /// <summary>Fields whose values are numbers in the rules file.</summary>
     public bool IsNumeric => NumericOverride ?? (Kind == FieldKind.Number || Key.ToLowerInvariant() is "priority" or "status" or "level" or "state" or "commstatus");
@@ -81,36 +92,49 @@ public static class RuleCatalog
     public static string Label(IReadOnlyList<Choice> choices, string value) =>
         choices.FirstOrDefault(c => string.Equals(c.Value, value, StringComparison.OrdinalIgnoreCase))?.Label ?? value;
 
-    /// <summary>The fields a condition can look at. Queues, owners and users are offered by name when the service could look them up.</summary>
+    /// <summary>
+    /// The fields a condition can look at (all those of <see cref="RuleFields"/>), with the values they admit.
+    /// Queues, owners and users are offered by name when the service could look them up.
+    /// </summary>
     public static IReadOnlyList<FieldInfo> Fields(TicketMapping mapping, IReadOnlyList<LookupItem> lookups)
     {
         Choice[] Named(params string[] kinds) =>
             [.. lookups.Where(l => kinds.Contains(l.Kind)).Select(l => new Choice(l.Id, l.Name)).OrderBy(c => c.Label, StringComparer.CurrentCultureIgnoreCase)];
 
+        IReadOnlyList<Choice> ChoicesOf(string key) => key.ToLowerInvariant() switch
+        {
+            "priority" => [.. mapping.PriorityLabels.OrderBy(p => p.Key).Select(p => new Choice(p.Key.ToString(), p.Value))],
+            "status" => [.. mapping.StatusLabels.OrderBy(p => p.Key).Select(p => new Choice(p.Key.ToString(), p.Value))],
+            "level" => [new("0", "L0"), new("1", "L1"), new("2", "L2")],
+            "state" => [new(mapping.ActiveState.ToString(), "Attivo"), new(mapping.ResolvedState.ToString(), "Risolto"), new(mapping.CancelledState.ToString(), "Annullato")],
+            "owner" => [new("$me", "Io"), .. Named("user", "team", "queue")],
+            "queue" => Named("queue", "team"),
+            "level2user" => [new("$me", "Io"), .. Named("user")],
+            "message.kind" => [new("Email", "E-mail"), new("Note", "Nota"), new("Comment", "Commento"), new("Reply", "Risposta")],
+            "eventtype" => [.. Events.Where(e => !e.Hidden)],
+            _ => [],
+        };
+
         return
         [
-            new("priority", "Priorità", FieldKind.Choice, [.. mapping.PriorityLabels.OrderBy(p => p.Key).Select(p => new Choice(p.Key.ToString(), p.Value))]),
-            new("status", "Stato o livello", FieldKind.Choice, [.. mapping.StatusLabels.OrderBy(p => p.Key).Select(p => new Choice(p.Key.ToString(), p.Value))]),
-            new("level", "Livello di supporto", FieldKind.Choice, [new("0", "L0"), new("1", "L1"), new("2", "L2")]),
-            new("state", "Stato generale", FieldKind.Choice, [new("0", "Attivo"), new("1", "Risolto"), new("2", "Annullato")]),
-            new("owner", "Assegnato a", FieldKind.Lookup, [new("$me", "Io"), .. Named("user", "team", "queue")]),
-            new("queue", "Coda", FieldKind.Lookup, Named("queue", "team")),
-            new("level2user", "Utente di livello 2", FieldKind.Lookup, Named("user")),
-            new("number", "Numero del ticket", FieldKind.Text, []),
-            new("title", "Titolo del ticket", FieldKind.Text, []),
-            new("message.from", "Mittente del messaggio", FieldKind.Text, []),
-            new("message.subject", "Oggetto del messaggio", FieldKind.Text, []),
-            new("message.kind", "Tipo di messaggio", FieldKind.Choice, [new("Email", "E-mail"), new("Note", "Nota"), new("Comment", "Commento"), new("Reply", "Risposta")]),
-            new("ageMinutes", "Età del ticket (minuti)", FieldKind.Number, []),
-            new("onHold", "In sospeso", FieldKind.YesNo, YesNo),
-            new("reminder", "Con sollecito", FieldKind.YesNo, YesNo),
-            new("subtype", "Dettaglio dell'evento (codice)", FieldKind.Text, []),
-            new("extra.applicativo", "Applicativo (codice)", FieldKind.Text, []),
-            new("extra.tipologia", "Tipologia (codice)", FieldKind.Text, []),
-            new("extra.businessunit", "Business unit (codice)", FieldKind.Text, []),
-            new("extra.classificazione", "Classificazione (codice)", FieldKind.Text, []),
+            .. RuleFields.All.Select(f => new FieldInfo(f.Key, f.Label, KindOf(f.Kind), f.Kind == RuleFieldKind.YesNo ? YesNo : ChoicesOf(f.Key))
+            {
+                Name = f.Name,
+                Description = f.Description,
+                Group = f.Group,
+                HasNames = f.HasNames,
+            }),
         ];
     }
+
+    private static FieldKind KindOf(RuleFieldKind kind) => kind switch
+    {
+        RuleFieldKind.Number => FieldKind.Number,
+        RuleFieldKind.Choice => FieldKind.Choice,
+        RuleFieldKind.YesNo => FieldKind.YesNo,
+        RuleFieldKind.Lookup => FieldKind.Lookup,
+        _ => FieldKind.Text,
+    };
 
     /// <summary>A field the editor has no name for (typed by hand in the JSON): kept working, shown by its raw name.</summary>
     public static FieldInfo Custom(string key, bool numeric = false) => new(key, $"Campo: {key}", FieldKind.Text, [], numeric);

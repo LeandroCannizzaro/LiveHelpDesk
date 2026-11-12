@@ -32,9 +32,11 @@
       <h1>Non perdere più un ticket di assistenza</h1>
       <p class="lead">LiveHelpDesk tiene d'occhio i tuoi ticket su Dynamics 365 e ti avvisa appena succede qualcosa che conta — con una notifica sul desktop, una finestrella che lampeggia, oppure via e-mail, Teams, WhatsApp e SMS quando non sei davanti allo schermo.</p>
       <div class="cta">
-        <a class="btn primary" href="#installazione">▶ Inizia da qui</a>
+        <a class="btn primary" id="download-msi" href="https://github.com/LeandroCannizzaro/LiveHelpDesk/releases/latest">⬇ Scarica l'ultima versione</a>
+        <a class="btn ghost" href="#installazione">▶ Guida all'installazione</a>
         <a class="btn ghost" href="#come-funziona">Come funziona</a>
       </div>
+      <p class="download-meta" id="download-meta">Installer per Windows (<code>.msi</code>): doppio clic e segui la procedura. Oppure scegli l'<a id="download-zip" href="https://github.com/LeandroCannizzaro/LiveHelpDesk/releases/latest">archivio portatile .zip</a> o guarda <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk/releases">tutte le versioni</a>.</p>
       <div class="tags">
         <span>Windows 10 / 11</span>
         <span>Dynamics 365</span>
@@ -97,9 +99,10 @@
         <p>LiveHelpDesk è un piccolo programma per Windows pensato per chi lavora con i ticket di assistenza su <b>Microsoft Dynamics 365</b>. Il suo compito è uno solo, ma importante: <b>guardare al posto tuo</b> cosa succede sui ticket e avvisarti al momento giusto, così non devi ricaricare in continuazione la pagina per controllare se è arrivato qualcosa di nuovo.</p>
         <p>È composto da due parti che lavorano insieme:</p>
         <ul>
-          <li><b>L'applicazione</b> che vedi: una finestra con dentro il sito di Dynamics e alcune schede per configurare gli avvisi. Resta comoda nell'area di notifica (vicino all'orologio) anche quando chiudi la finestra.</li>
-          <li><b>Il monitoraggio</b> che non vedi: controlla Dynamics in sottofondo e manda le notifiche, anche mentre fai altro.</li>
+          <li><b>L'applicazione</b> che vedi: una finestra con dentro il sito di Dynamics e alcune schede per configurare gli avvisi. Resta comoda nell'area di notifica (vicino all'orologio) anche quando chiudi la finestra, ed è lei a mostrare sul desktop la finestrella lampeggiante e le notifiche di Windows.</li>
+          <li><b>Il monitoraggio</b> che non vedi: controlla Dynamics in sottofondo, decide in base alle tue regole chi avvisare e invia e-mail e messaggi Teams, anche mentre fai altro.</li>
         </ul>
+        <p>Le due parti possono girare insieme o separatamente: è il motivo per cui, con l'app chiusa, gli avvisi sul desktop non compaiono (vedi <a href="#app-chiusa">Quando l'app non è attiva</a>).</p>
         <div class="tip"><div>💡</div><div><b>In una frase</b>Pensa a un collega instancabile che tiene d'occhio la coda dei ticket e ti dà una gomitata solo quando c'è davvero qualcosa che richiede la tua attenzione.</div></div>
       </article>
 
@@ -127,10 +130,10 @@
       <article id="installazione" class="section">
         <div class="eyebrow">Due modi</div>
         <h2>4. Installazione</h2>
-        <p>Puoi installare LiveHelpDesk in due modi, a seconda di cosa preferisci. Entrambi arrivano dalla pagina delle <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk/releases">versioni rilasciate</a>.</p>
+        <p>Puoi installare LiveHelpDesk in due modi, a seconda di cosa preferisci. Il modo più rapido è il pulsante <b>⬇ Scarica l'ultima versione</b> in cima a questa pagina, che scarica direttamente l'installer <code>.msi</code> più recente; tutte le versioni sono comunque nella pagina delle <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk/releases">versioni rilasciate</a>.</p>
 
         <h3>A) Con l'installer (file <code>.msi</code>) — consigliato</h3>
-        <p>Scarica il file <code>LiveHelpDesk-x.y.z-x64.msi</code> e fai doppio clic. Segui la procedura: il programma viene installato per tutti gli utenti del computer e compare nel menu Start come «LiveHelpDesk». Gli aggiornamenti successivi si installano sopra, senza perdere le tue impostazioni.</p>
+        <p>Scarica il file <code>LiveHelpDesk-x.y.z-x64.msi</code> e fai doppio clic. Segui la procedura: il programma viene installato per tutti gli utenti del computer e compare nel menu Start come «LiveHelpDesk». Serve la conferma da amministratore di Windows. Gli aggiornamenti successivi si installano sopra, senza perdere le tue impostazioni.</p>
 
         <h3>B) Con l'archivio portatile (file <code>.zip</code>)</h3>
         <p>Utile se preferisci non usare l'installer o devi distribuire il programma da una cartella di rete condivisa. Scarica <code>LiveHelpDesk-x.y.z-win-x64.zip</code>, estrailo in una cartella e avvia l'installazione dall'interno:</p>
@@ -152,37 +155,52 @@
         <h2>5. Primo avvio e accesso a Dynamics</h2>
         <p>Apri LiveHelpDesk dal menu Start. La prima volta devi collegarlo al tuo account Dynamics; lo fai una sola volta.</p>
         <div class="step"><div class="n">1</div><div class="b">Vai sulla scheda <b>Servizio</b> (nella colonna a sinistra).</div></div>
-        <div class="step"><div class="n">2</div><div class="b">Nel riquadro <b>Accesso a Dynamics</b> premi <b>Accedi a Dynamics</b>. Compare un <b>codice</b>.</div></div>
-        <div class="step"><div class="n">3</div><div class="b">Premi <b>Apri la pagina</b> (o vai su <code>microsoft.com/devicelogin</code>), incolla il codice e accedi con il tuo account aziendale — password, oppure Windows Hello / impronta / PIN se li usi.</div></div>
-        <div class="step"><div class="n">4</div><div class="b">Finito l'accesso, LiveHelpDesk inizia a controllare i ticket. Il semaforo in alto diventa <span class="badge att">verde</span> quando è tutto a posto.</div></div>
+        <div class="step"><div class="n">2</div><div class="b">Nel riquadro <b>Accesso a Dynamics</b> premi <b>Accedi a Dynamics</b>. Compare un <b>codice</b> e si apre da sola, nel tuo browser, la pagina di accesso Microsoft.</div></div>
+        <div class="step"><div class="n">3</div><div class="b">Nella pagina (se non si è aperta premi <b>Apri la pagina</b>, oppure vai su <code>microsoft.com/devicelogin</code>) inserisci il codice — <b>Copia il codice</b> lo mette negli appunti — e accedi con il tuo account aziendale: password, oppure Windows Hello / impronta / PIN se li usi. Il codice vale per pochi minuti: l'orario di scadenza è scritto sotto il codice; se scade, premi di nuovo <b>Accedi a Dynamics</b>.</div></div>
+        <div class="step"><div class="n">4</div><div class="b">Finito l'accesso, LiveHelpDesk inizia a controllare i ticket. Il pallino accanto allo stato diventa <b>verde</b> con la scritta «Tutto in ordine» e il tuo nome quando è tutto a posto.</div></div>
         <div class="note"><div>🔐</div><div>L'accesso lo gestisce il monitoraggio, non la finestra: <b>l'app non vede mai la tua password né il codice di accesso</b>. Tutto resta sul tuo computer.</div></div>
+        <div class="tip"><div>🧊</div><div><b>Il primo controllo non fa rumore</b>Al primo giro LiveHelpDesk prende nota dei ticket che esistono già, senza avvisarti di ognuno: da quel momento in poi segnala solo le novità. Allo stesso modo, un ticket è considerato «senza risposta» solo per attività avvenute dopo l'avvio del monitoraggio.</div></div>
+        <p>Se in seguito l'accesso scade (per esempio dopo un cambio password), il pallino diventa rosso con «Serve l'accesso a Dynamics», l'icona vicino all'orologio diventa rossa e, con le regole predefinite, ricevi l'avviso «LiveHelpDesk: accesso a Dynamics scaduto». Basta ripetere i passi qui sopra.</p>
       </article>
 
       <article id="finestra" class="section">
         <div class="eyebrow">Orientarsi</div>
         <h2>6. La finestra principale</h2>
-        <p>A sinistra c'è un menu con le varie schede. Ecco a cosa servono:</p>
+        <p>A sinistra c'è la <b>barra laterale</b>. In alto c'è il grande pulsante <b>Avvisi</b> (verde 🔔 «Avvisi attivi», rosso 🔕 «Avvisi in pausa» o «Avvisi sospesi per condivisione schermo»: vedi <a href="#pausa">Mettere in pausa gli avvisi</a>), sotto le schede. Ecco a cosa servono:</p>
         <div class="grid2">
           <div>
-            <h3>Dynamics</h3>
-            <p>Il sito di Dynamics direttamente dentro l'app, con i pulsanti indietro / avanti / ricarica e il pulsante <b>casa</b> (⌂) che riporta alla dashboard dell'assistenza. Qui gestisci i ticket come faresti nel browser.</p>
-            <h3>Eventi</h3>
-            <p>L'elenco di ciò che è successo di recente sui ticket: puoi aprire il ticket o segnare l'evento come «visto».</p>
-            <h3>Servizio</h3>
-            <p>Lo stato del monitoraggio, l'accesso a Dynamics e lo stato di ogni canale. È anche il punto da cui si avvia, ferma o installa il monitoraggio.</p>
+            <h3>🌐 Dynamics</h3>
+            <p>Il sito di Dynamics direttamente dentro l'app, con i pulsanti indietro / avanti / ricarica, la barra dell'indirizzo e il pulsante <b>casa</b> (⌂) che riporta alla dashboard dell'assistenza. Qui gestisci i ticket come faresti nel browser; i link che aprirebbero una nuova finestra si aprono qui dentro. Se il PC è collegato all'account aziendale, l'accesso avviene da solo.</p>
+            <h3>📥 Eventi</h3>
+            <p>L'elenco di ciò che è successo di recente sui ticket: puoi aprire il ticket o segnare l'evento come «visto». Il pallino rosso sull'icona indica quanti avvisi aspettano ancora una risposta.</p>
+            <h3>🖥 Servizio</h3>
+            <p>Lo stato del monitoraggio, l'accesso a Dynamics e lo stato di ogni canale, con il pulsante <b>Prova</b> per ciascuno. È anche il punto da cui si avvia, ferma o installa il monitoraggio.</p>
           </div>
           <div>
-            <h3>Regole</h3>
+            <h3>📐 Regole</h3>
             <p>Il cuore della configurazione: decidi <i>quando</i> farti avvisare e <i>come</i>.</p>
-            <h3>Notifiche</h3>
+            <h3>💬 Notifiche</h3>
             <p>Scrivi, se vuoi, il testo degli avvisi al posto di quello standard, regola per regola e canale per canale.</p>
-            <h3>Canali</h3>
-            <p>Dove colleghi e-mail, Teams, WhatsApp e SMS e imposti gli orari di silenzio.</p>
-            <h3>Impostazioni</h3>
-            <p>La finestrella lampeggiante, il suono, lo schermo su cui mostrarla e l'avvio automatico con Windows.</p>
+            <h3>📡 Canali</h3>
+            <p>Dove colleghi e-mail e Teams (e, se attivati, SMS e WhatsApp) e imposti gli orari di silenzio.</p>
+            <h3>⚙ Impostazioni</h3>
+            <p>La finestrella lampeggiante, il suono, la sospensione automatica, i colori, l'intervallo di controllo, l'avvio con Windows e gli aggiornamenti.</p>
           </div>
         </div>
-        <div class="tip"><div>📌</div><div>Chiudere la finestra <b>non chiude il programma</b>: resta attivo nell'area di notifica, vicino all'orologio. Da lì puoi riaprirlo o uscire del tutto.</div></div>
+        <p>In fondo alla barra trovi lo <b>stato del monitoraggio</b> in una riga («in funzione», «serve l'accesso a Dynamics», «servizio non in esecuzione»…), il pulsante <b>⬆ Versione x.y.z</b> quando c'è un aggiornamento e <b>ℹ Informazioni</b>, che mostra la versione installata, il link a questo manuale e i pulsanti per gli aggiornamenti. Con il pulsante <b>☰</b> in alto la barra si riduce alle sole icone: passando con il mouse su un'icona compare la sua spiegazione (e sul ☰ lo stato del monitoraggio).</p>
+
+        <h3>L'icona nell'area di notifica</h3>
+        <p>Chiudere la finestra <b>non chiude il programma</b>: resta attivo nell'area di notifica, vicino all'orologio, con un'icona a forma di campanella. Il colore dell'icona ti dice com'è la situazione senza aprire nulla:</p>
+        <table class="channels">
+          <tr><th>Colore</th><th>Significato</th></tr>
+          <tr><td>🔵 Blu</td><td>Tutto in ordine, niente da gestire.</td></tr>
+          <tr><td>🟠 Arancione</td><td>Ci sono avvisi che aspettano una risposta.</td></tr>
+          <tr><td>🔴 Rosso</td><td>Ci sono avvisi <b>critici</b> in attesa, oppure il monitoraggio non può lavorare (serve l'accesso a Dynamics, o il monitoraggio non è in esecuzione).</td></tr>
+          <tr><td>⚪ Grigio</td><td>Connessione al monitoraggio in corso.</td></tr>
+        </table>
+        <p>Passando con il mouse sull'icona compare quanti avvisi sono «da gestire» o lo stato del monitoraggio. Un clic apre la finestra. Il menu (clic destro) offre: <b>Apri LiveHelpDesk</b>; <b>Disattiva avvisi</b> / <b>Attiva avvisi</b>, come il pulsante <b>Avvisi</b> della barra laterale; <b>Sito Help Desk</b>, che apre il sito dell'help desk nel tuo browser; <b>About</b>, con le informazioni sul programma; <b>Esci</b>, per chiuderlo del tutto.</p>
+        <div class="warn"><div>🚪</div><div><b>«Esci» spegne anche gli avvisi sul desktop</b>Dopo «Esci» non compaiono più né la finestrella né le notifiche di Windows, e se il monitoraggio gira come processo in background si ferma anche lui. Leggi <a href="#app-chiusa">Quando l'app non è attiva</a> prima di chiuderla.</div></div>
+        <p>LiveHelpDesk si apre una sola volta: se lo avvii di nuovo mentre è già aperto, viene semplicemente portata in primo piano la finestra esistente.</p>
       </article>
 
       <article id="avvisi" class="section">
@@ -190,8 +208,8 @@
         <h2>7. Come arrivano gli avvisi</h2>
         <p>Quando una regola scatta, LiveHelpDesk ti avvisa sui canali che hai scelto per quella regola. I due canali «sul posto» sono sempre disponibili e non vanno configurati:</p>
         <ul>
-          <li><b>Notifica di Windows</b> — il classico riquadro che appare in basso a destra. Cliccandolo puoi aprire il ticket.</li>
-          <li><b>Finestrella lampeggiante</b> — un piccolo riquadro sempre in vista che pulsa quando c'è qualcosa da gestire. Puoi spostarlo dove vuoi e sceglierne lo schermo. Si fa da parte quando stai facendo una presentazione o usi un programma a schermo intero, per non disturbare.</li>
+          <li><b>Notifica di Windows</b> — il classico riquadro che appare in basso a destra, con il titolo dell'avviso, il testo e due pulsanti: <b>Apri</b> (apre il ticket nella scheda Dynamics dell'app) e <b>Vista</b> (segna l'avviso come visto senza aprire nulla). Un clic sul riquadro stesso equivale ad <i>Apri</i>. Le notifiche <b>critiche</b> restano sullo schermo finché non le gestisci, invece di sparire dopo pochi secondi; le altre finiscono nel Centro notifiche di Windows, da dove puoi ancora cliccarle.</li>
+          <li><b>Finestrella lampeggiante</b> — un piccolo riquadro sempre in primo piano, in alto al centro dello schermo, che pulsa quando c'è qualcosa da gestire. Puoi trascinarlo dove vuoi e sceglierne lo schermo (anche tutti gli schermi insieme). Non ruba mai il cursore della tastiera mentre scrivi.</li>
         </ul>
         <p>Ogni avviso ha un <b>livello di urgenza</b>, che aiuta a capire a colpo d'occhio quanto è importante:</p>
         <p>
@@ -199,7 +217,19 @@
           <span class="badge att">Attenzione</span> &nbsp;
           <span class="badge crit">Critico</span>
         </p>
-        <p>Per gli eventi critici puoi anche attivare un <b>suono</b> di avviso (nelle Impostazioni).</p>
+        <p>La finestrella è <b>ambra</b> per gli avvisi normali e <b>rossa</b> quando tra quelli in attesa ce n'è almeno uno critico (i colori si possono cambiare nelle Impostazioni). Per gli eventi critici puoi anche attivare un <b>suono</b> di avviso.</p>
+
+        <h3>La finestrella in dettaglio</h3>
+        <p>La finestrella mostra sempre l'avviso <b>più urgente</b> (a parità di urgenza, il più recente), il <b>numero</b> di avvisi in attesa e, se ce ne sono altri, la scritta «+N da gestire». I suoi pulsanti:</p>
+        <table class="channels">
+          <tr><th>Pulsante</th><th>Cosa fa</th></tr>
+          <tr><td><b>Apri</b></td><td>Apre il ticket dell'avviso mostrato nella scheda Dynamics e lo segna come visto. Se l'avviso non riguarda un ticket preciso (per esempio un problema del monitoraggio) apre la scheda <i>Eventi</i>.</td></tr>
+          <tr><td><b>Vista</b></td><td>Segna come visti <b>tutti</b> gli avvisi in attesa nella finestrella, che si chiude.</td></tr>
+          <tr><td><b>15 min</b></td><td>Nasconde la finestrella per 15 minuti senza segnare nulla come visto. Se nel frattempo arriva un avviso <b>critico</b>, la finestrella ricompare subito.</td></tr>
+          <tr><td><b>▲ / ▼</b></td><td>Riduce la finestrella a una sola riga o la riapre con il testo completo.</td></tr>
+        </table>
+        <p>La finestrella tiene al massimo 50 avvisi: se ne arrivano di più, lascia andare i più vecchi tra i meno urgenti. Gli avvisi restano comunque tutti nella scheda <a href="#eventi">Eventi</a>.</p>
+
         <h3>Se nessuno risponde, la finestrella insiste</h3>
         <p>Il numero nella finestrella batte come un cuore. Se nessuno preme <i>Apri</i>, <i>Vista</i> o <i>15 min</i>, la finestrella si fa notare un po' di più a ogni passo, senza mai diventare fastidiosa:</p>
         <table class="channels">
@@ -209,55 +239,127 @@
           <tr><td>3 minuti</td><td>Il bordo della finestrella si accende e si spegne e il testo completo si riapre, se l'avevi ridotto a una riga.</td></tr>
           <tr><td>8 minuti</td><td>Ogni 20 secondi la finestrella dà una piccola scossa. Per gli eventi critici suona anche un promemoria, una volta sola (se il suono è attivo).</td></tr>
         </table>
-        <p>Per gli eventi critici i tempi si dimezzano. Qualunque risposta (o la fine del rinvio di 15 minuti) fa ripartire tutto dal battito tranquillo.</p>
+        <p>Per gli eventi critici i tempi si dimezzano (30 secondi, 1 minuto e mezzo, 4 minuti). Qualunque risposta (o la fine del rinvio di 15 minuti) fa ripartire tutto dal battito tranquillo.</p>
+
+        <h3 id="app-chiusa">Quando l'app non è attiva: niente finestrella né notifiche di Windows</h3>
+        <p>La notifica di Windows e la finestrella lampeggiante le mostra <b>l'applicazione</b> (la finestra con l'icona vicino all'orologio), non il monitoraggio. Quindi, <b>se l'applicazione non è in esecuzione, sul desktop non compare nulla</b>: né la finestrella né la notifica di Windows. Succede quando:</p>
+        <ul>
+          <li>hai chiuso il programma con <b>Esci</b> dal menu dell'icona (chiudere solo la finestra con la ✕ <u>non</u> basta a spegnerlo: resta nell'area di notifica e continua ad avvisarti);</li>
+          <li>il PC si è appena acceso e non hai ancora effettuato l'accesso a Windows, oppure hai effettuato l'accesso ma LiveHelpDesk non è ancora partito (attiva <i>Avvia LiveHelpDesk quando accedo a Windows</i> nelle <a href="#impostazioni">Impostazioni</a> per non pensarci);</li>
+          <li>sei disconnesso da Windows o stai usando un altro account utente.</li>
+        </ul>
+        <p>Cosa succede agli avvisi in quel periodo dipende da <a href="#monitoraggio">come gira il monitoraggio</a>:</p>
+        <table class="channels">
+          <tr><th></th><th>Monitoraggio come processo in background</th><th>Monitoraggio come servizio di Windows</th></tr>
+          <tr><td><b>Controllo dei ticket</b></td><td>Si ferma insieme all'app: con <i>Esci</i> si chiude anche il processo.</td><td>Continua: il servizio non dipende dall'app.</td></tr>
+          <tr><td><b>E-mail, Teams, SMS, WhatsApp</b></td><td>Non partono, perché nessuno controlla i ticket.</td><td>Partono normalmente, secondo le regole.</td></tr>
+          <tr><td><b>Notifica di Windows e finestrella</b></td><td>Nessuna. Alla riapertura, il monitoraggio recupera i cambiamenti delle ultime ore (fino a 6) e manda gli avvisi relativi; per un fermo più lungo riparte da zero e ti avvisa con «LiveHelpDesk: possibili eventi persi».</td><td>Nessuna mentre l'app è chiusa: restano in coda nel servizio e vengono mostrati <b>tutti insieme alla successiva apertura dell'app</b>.</td></tr>
+        </table>
+        <div class="tip"><div>✅</div><div><b>Per essere avvisato anche lontano dal PC</b>Se ti serve un avviso anche quando l'app è chiusa o non sei alla scrivania, aggiungi alla regola un canale esterno (<a href="#canali">e-mail o Teams</a>) e fai girare il monitoraggio come <b>servizio di Windows</b>: così i messaggi partono anche senza l'app aperta. In più, l'<a href="#regole">inoltro «se nessuno risponde»</a> ti raggiunge sugli altri canali quando la finestrella resta ignorata.</div></div>
+        <div class="note"><div>🧠</div><div>Quello che è nella finestrella vive solo finché l'app è aperta: se esci, gli avvisi non ancora gestiti spariscono dalla finestrella ma restano nell'elenco della scheda <a href="#eventi">Eventi</a>, da cui puoi aprirli o segnarli come visti.</div></div>
+
+        <h3 id="pausa">Mettere in pausa gli avvisi</h3>
+        <p>Il grande pulsante in cima alla barra laterale (e la voce <b>Disattiva avvisi</b> / <b>Attiva avvisi</b> nel menu dell'icona) accende e spegne gli avvisi <b>sul desktop</b>, cioè finestrella e notifiche di Windows:</p>
+        <ul>
+          <li><b>🔔 Avvisi attivi</b> (verde) — tutto normale.</li>
+          <li><b>🔕 Avvisi in pausa</b> (rosso) — li hai spenti tu. Non compare nulla; quello che arriva viene <b>conservato</b> e lo ritrovi nella finestrella appena riattivi gli avvisi (senza le notifiche di Windows, che nel frattempo non sono state mostrate). La scelta resta anche dopo un riavvio, ed è la stessa casella <i>Avvisi a video attivi</i> delle Impostazioni.</li>
+          <li><b>🔕 Avvisi sospesi per condivisione schermo</b> (rosso) — LiveHelpDesk si è accorto che stai condividendo lo schermo e ha sospeso gli avvisi da solo (vedi sotto).</li>
+        </ul>
+        <p>La pausa riguarda solo il desktop: e-mail, Teams e gli altri canali esterni continuano a funzionare secondo le regole.</p>
+
+        <h3>Sospensione automatica: presentazioni, condivisioni e VPN</h3>
+        <p>Per non mostrare ticket e nomi di clienti a chi guarda il tuo schermo, LiveHelpDesk trattiene gli avvisi sul desktop in queste situazioni (si regolano in <a href="#impostazioni">Impostazioni → Sospensione automatica</a>):</p>
+        <ul>
+          <li><b>Presentazioni e programmi a schermo intero</b> — quando Windows segnala che sei in modalità presentazione o che un programma (un video, PowerPoint, un gioco) occupa tutto lo schermo. Attivo di serie.</li>
+          <li><b>Condivisione dello schermo</b> — quando condividi lo schermo in Teams, in una riunione dal browser o con un programma di registrazione. Il pulsante diventa «Avvisi sospesi per condivisione schermo». Se vuoi comunque gli avvisi durante quella condivisione, premi il pulsante: LiveHelpDesk chiede <i>«Lo schermo è condiviso, sei sicuro che vuoi riattivare gli avvisi?»</i>; se confermi restano attivi fino alla fine di quella condivisione, e alla condivisione successiva vengono di nuovo sospesi. Attivo di serie, insieme alle presentazioni.</li>
+          <li><b>Connessione VPN</b> — quando è attiva una VPN (per esempio sei collegato da una rete esterna). Spento di serie.</li>
+        </ul>
+        <p>Durante la sospensione non appaiono né la finestrella né le notifiche di Windows, ma <b>non si perde nulla</b>: gli avvisi arrivati vengono raccolti e mostrati nella finestrella appena finisci la presentazione o la condivisione, o ti scolleghi dalla VPN.</p>
+        <div class="note"><div>🪟</div><div>Anche Windows ha un suo «Non disturbare» (o «Assistente notifiche»): quando è attivo, Windows stesso può nascondere le notifiche nel Centro notifiche senza mostrarle. Se le notifiche di Windows non compaiono ma la finestrella sì, controlla quell'impostazione di Windows.</div></div>
       </article>
 
       <article id="regole" class="section">
         <div class="eyebrow">Il cuore del prodotto</div>
         <h2>8. Le regole di notifica</h2>
         <p>Una regola si legge come una frase: <b>«Quando</b> succede questo, <b>ma solo se</b> valgono certe condizioni, <b>allora avvisami</b> così con questa urgenza<b>»</b>. Le costruisci con menu a tendina e caselle, senza scrivere nulla di tecnico.</p>
+        <p>A sinistra c'è l'elenco delle regole: la casella accanto a ogni nome la <b>accende o spegne</b> senza cancellarla. Con <b>Nuova regola</b>, <b>Duplica</b> ed <b>Elimina</b> gestisci l'elenco; a destra modifichi la regola selezionata, a partire dal suo <b>Nome</b>.</p>
+
+        <h3>Le regole di partenza</h3>
+        <p>Alla prima installazione trovi già queste regole, tutte con notifica di Windows e finestrella:</p>
+        <table class="channels">
+          <tr><th>Regola</th><th>Quando</th><th>Urgenza</th></tr>
+          <tr><td>Nuovi ticket</td><td>Nuovo ticket</td><td>Attenzione</td></tr>
+          <tr><td>Messaggi e risposte dei clienti</td><td>Nuovo messaggio del cliente, Il cliente ha risposto</td><td>Attenzione</td></tr>
+          <tr><td>Ticket senza risposta</td><td>Ticket senza risposta</td><td>Critico</td></tr>
+          <tr><td>Problemi del monitoraggio</td><td>Accesso scaduto o negato, Dynamics non raggiungibile, errori di controllo, possibili eventi persi, canale che non funziona, e i relativi «ripristinato»</td><td>Critico</td></tr>
+        </table>
+        <p>Puoi tornare a queste regole in qualsiasi momento con <b>Regole predefinite</b>.</p>
 
         <h3>Quando — il fatto che fa scattare la regola</h3>
-        <p>Scegli uno o più fatti tra quelli che LiveHelpDesk sa riconoscere, per esempio:</p>
-        <ul>
-          <li>Nuovo ticket</li>
-          <li>Nuovo messaggio del cliente / Il cliente ha risposto</li>
-          <li>Risposta inviata da noi</li>
-          <li>Ticket assegnato o riassegnato</li>
-          <li>Cambio di coda, di stato/livello o di priorità</li>
-          <li>Sollecito</li>
-          <li>Ticket senza risposta (rimasto fermo troppo a lungo)</li>
-          <li>Problemi del monitoraggio (per sapere se qualcosa non va con lo stesso LiveHelpDesk)</li>
-        </ul>
+        <p>Spunta uno o più fatti tra quelli che LiveHelpDesk sa riconoscere; la regola scatta per <b>uno qualsiasi</b> di quelli spuntati:</p>
+        <table class="channels">
+          <tr><th>Fatto</th><th>Quando succede</th></tr>
+          <tr><td>Nuovo ticket</td><td>Compare un ticket che prima non c'era.</td></tr>
+          <tr><td>Nuovo messaggio del cliente</td><td>Arriva sul ticket un messaggio (e-mail, nota, commento o risposta). Il campo <i>Messaggio ricevuto</i> distingue quelli del cliente da quelli inviati da noi.</td></tr>
+          <tr><td>Il cliente ha risposto</td><td>Lo stato delle comunicazioni del ticket indica una risposta del cliente.</td></tr>
+          <tr><td>Risposta inviata da noi</td><td>Parte una risposta dal ticket.</td></tr>
+          <tr><td>Ticket assegnato / riassegnato</td><td>Il ticket viene preso in carico, passa a un'altra persona o resta senza assegnatario.</td></tr>
+          <tr><td>Cambio di coda</td><td>Il ticket passa a un'altra coda o team.</td></tr>
+          <tr><td>Cambio dell'utente di livello 2</td><td>Cambia l'utente di secondo livello assegnato.</td></tr>
+          <tr><td>Cambio di stato o livello</td><td>Il ticket cambia stato o livello, viene risolto, chiuso, annullato, unito, riaperto, oppure non è più visibile.</td></tr>
+          <tr><td>Cambio di priorità</td><td>La priorità aumenta o diminuisce.</td></tr>
+          <tr><td>Sollecito</td><td>Sul ticket viene segnato un sollecito.</td></tr>
+          <tr><td>Ticket senza risposta</td><td>Un ticket attivo e non in sospeso aspetta da <b>30 minuti</b> (valore predefinito) senza che nessuno abbia risposto: dall'ultimo messaggio del cliente o, per i ticket nuovi, dall'apertura. Scatta una volta per ogni attesa; se il cliente riscrive e di nuovo nessuno risponde, scatta ancora.</td></tr>
+          <tr><td>Problemi del monitoraggio</td><td>Qualcosa non va con LiveHelpDesk stesso: accesso a Dynamics scaduto o negato, Dynamics non raggiungibile per più di 5 minuti, Dynamics che limita le richieste per più di 15 minuti, errori nel controllo, possibili eventi persi dopo un lungo fermo, un canale di notifica che smette di funzionare. Se il problema dura, l'avviso si ripete ogni 6 ore; quando si risolve arriva «monitoraggio ripristinato» o «canale di notifica ripristinato».</td></tr>
+        </table>
         <div class="note"><div>✉️</div><div>Quando arriva o parte un'e-mail, Dynamics aggiorna anche il campo «Comunicazioni» del ticket: LiveHelpDesk vede quindi lo stesso fatto due volte (per esempio <i>Nuovo messaggio del cliente</i> e <i>Il cliente ha risposto</i>). Se una regola ascolta entrambi, avvisa <b>una volta sola</b>, per l'e-mail; una regola che ascolta solo <i>Il cliente ha risposto</i> continua ad avvisare normalmente.</div></div>
 
         <h3>Ma solo se — le condizioni (facoltative)</h3>
-        <p>Qui restringi la regola ai soli ticket che ti interessano. Puoi combinare tre gruppi di condizioni:</p>
+        <p>Qui restringi la regola ai soli ticket che ti interessano. <b>Senza condizioni, la regola vale per qualsiasi ticket</b> legato al fatto scelto.</p>
+        <p><b>Devono valere tutte</b> — con <b>+ Aggiungi</b> inserisci una riga per ogni condizione: scegli il campo, il confronto e il valore; la ✕ toglie la riga. Tutte le righe devono essere vere insieme, per esempio <i>Priorità è Alta</i> <u>e</u> <i>Assegnato a è Io</i>. I campi disponibili:</p>
+        <table class="channels">
+          <tr><th>Argomento</th><th>Campi</th></tr>
+          <tr><td>Ticket</td><td>Priorità, Stato o livello, Stato generale (Attivo, Risolto, Annullato), Livello di supporto (L0, L1, L2), Numero del ticket, Titolo del ticket, Stato comunicazioni, In sospeso, Con sollecito, Età del ticket (minuti)</td></tr>
+          <tr><td>Classificazione</td><td>I campi aggiuntivi del ticket in Dynamics (applicativo, tipologia, business unit, classificazione, prioritaria qualificata), confrontabili per nome o per codice</td></tr>
+          <tr><td>Persone</td><td>Cliente, Assegnato a, Coda, Utente di livello 2, Creato da, Modificato da</td></tr>
+          <tr><td>Evento</td><td>Tipo di evento, Dettaglio dell'evento, Passaggio (da→a), Tipo di messaggio (E-mail, Nota, Commento, Risposta), Messaggio ricevuto (Sì = dal cliente, No = inviato da noi), Mittente del messaggio, Oggetto del messaggio</td></tr>
+        </table>
+        <p>I confronti offerti dipendono dal tipo di campo:</p>
         <ul>
-          <li><b>Devono valere tutte</b> — ad esempio <i>Priorità è Alta</i> <u>e</u> <i>Assegnato a: Io</i>.</li>
-          <li><b>Basta che ne valga una</b> — ad esempio coda «Primo livello» <u>oppure</u> «Urgenze».</li>
-          <li><b>Non deve valere nessuna</b> — ad esempio escludi i ticket «In sospeso».</li>
+          <li><b>Testi</b> (titolo, cliente, mittente…): contiene, inizia con, è esattamente, non è, è uno tra / non è nessuno tra (valori separati da virgola), corrisponde all'espressione, è vuoto, non è vuoto.</li>
+          <li><b>Elenchi</b> (priorità, stato, livello…): è, non è, è uno tra, non è nessuno tra — il valore si sceglie dal menu.</li>
+          <li><b>Persone e code</b> (assegnato a, coda, utente L2): è, non è, non è indicato / non assegnato, è indicato / assegnato. Il valore <b>Io</b> indica sempre te, chiunque sia l'utente collegato.</li>
+          <li><b>Numeri</b> (età del ticket): è maggiore di, è minore di, è almeno, è al massimo, è uguale a.</li>
+          <li><b>Sì / No</b> (in sospeso, con sollecito, messaggio ricevuto): è Sì o è No.</li>
         </ul>
-        <p>I campi su cui puoi ragionare sono quelli del ticket in parole comuni: priorità, stato o livello, livello di supporto, assegnatario, coda, numero e titolo, mittente e oggetto del messaggio, età del ticket, «in sospeso», «con sollecito» e altri. Per ogni campo scegli un confronto (è, non è, contiene, è maggiore di, è uno tra…) e il valore.</p>
-        <div class="note"><div>🧭</div><div>Senza condizioni, la regola vale per <b>qualsiasi</b> ticket legato al fatto scelto. Aggiungi condizioni solo per essere più selettivo.</div></div>
+        <p><b>E inoltre deve valere l'espressione</b> — per i casi in cui servono «oppure» o esclusioni, puoi scrivere una condizione come una frase, che vale insieme alle righe qui sopra. Per esempio:</p>
+        <p><code>priorita = "Alta" o (coda = "Urgenze" e non in_sospeso)</code></p>
+        <p>Mentre scrivi (o premendo <b>Ctrl+Spazio</b>) l'editor suggerisce i campi, i confronti e i valori ammessi, e sotto indica <span style="color:#16a34a">✓ Espressione corretta</span> oppure l'errore da sistemare. Le parole da usare:</p>
+        <ul>
+          <li><b>Collegamenti:</b> <code>e</code>, <code>o</code>, <code>non</code> e le parentesi <code>( )</code>.</li>
+          <li><b>Confronti:</b> <code>=</code>, <code>!=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>contiene</code>, <code>iniziaCon</code>, <code>regex</code>, <code>tra (a, b)</code>, <code>non tra (a, b)</code>.</li>
+          <li><b>Valori:</b> testi tra virgolette (<code>"Alta"</code>), numeri, <code>sì</code> / <code>no</code>, <code>vuoto</code>, <code>$me</code> (io).</li>
+        </ul>
+        <p>I nomi dei campi nell'espressione sono quelli brevi, come <code>priorita</code>, <code>stato</code>, <code>livello</code>, <code>coda</code>, <code>proprietario</code>, <code>cliente</code>, <code>in_sospeso</code>, <code>sollecito</code>, <code>eta_minuti</code>, <code>mittente</code>, <code>oggetto</code>: li trovi tutti nei suggerimenti.</p>
+        <div class="note"><div>🧭</div><div>Aggiungi condizioni solo per essere più selettivo. Se una regola contiene condizioni scritte a mano che il modulo non sa mostrare, la pagina lo dice: quelle si modificano dal testo (vedi <i>Modifica come testo</i>), il resto si può cambiare normalmente.</div></div>
 
         <h3>Allora avvisa tramite — e con quale urgenza</h3>
-        <p>Spunti i canali su cui vuoi l'avviso (notifica di Windows, finestrella, e-mail, Teams, SMS, WhatsApp) e scegli l'<b>urgenza</b> (Informazione, Attenzione, Critico). Imposti anche il <b>dettaglio</b>:</p>
+        <p>Spunti i canali su cui vuoi l'avviso (Notifica di Windows, Finestrella lampeggiante, E-mail, Teams; SMS e WhatsApp compaiono solo se sono già in uso) e scegli l'<b>urgenza</b> (Informazione, Attenzione, Critico). L'urgenza decide il colore della finestrella, il suono, se la notifica di Windows resta a video e se l'avviso passa durante gli <a href="#canali">orari di silenzio</a> dei canali. Imposti anche il <b>dettaglio</b>:</p>
         <ul>
-          <li><b>Completo</b> — l'avviso include numero, titolo e informazioni del ticket.</li>
-          <li><b>Minimo</b> — solo numero e priorità. Utile per i canali che escono dall'azienda (SMS, WhatsApp): così non portano fuori il titolo del ticket né il testo dei messaggi.</li>
+          <li><b>Completo</b> — l'avviso include numero, titolo del ticket, priorità e stato, più il dettaglio dell'evento (per esempio mittente e oggetto del messaggio, o il passaggio di stato).</li>
+          <li><b>Minimo (solo numero e priorità)</b> — il testo si limita a «#numero · Priorità …». Utile per i canali che escono dall'azienda (SMS, WhatsApp): così non portano fuori il titolo del ticket né il testo dei messaggi.</li>
         </ul>
         <p>Se per una regola e un canale hai scritto un <a href="#notifiche">testo personalizzato</a>, vale quel testo: il dettaglio non si applica.</p>
 
         <h3>Se nessuno risponde — l'inoltro (escalation)</h3>
-        <p>Per le cose importanti puoi dire: «se dopo <i>N</i> minuti nessuno ha ancora guardato, avvisami anche su questi altri canali». Per esempio: prima una notifica sul desktop, e se resta ignorata per 15 minuti arriva anche un messaggio WhatsApp.</p>
+        <p>Per le cose importanti spunta <b>Se nessuno risponde, avvisa anche tramite altri canali</b>, indica <b>dopo quanti minuti</b> e su quali canali. Per esempio: prima una notifica sul desktop, e se dopo 15 minuti nessuno ha ancora premuto <i>Apri</i> o <i>Vista</i> (nella finestrella, nella notifica di Windows o nella scheda Eventi) arriva anche un'e-mail o un messaggio Teams. Se nel frattempo qualcuno ha segnato l'avviso come visto, l'inoltro viene annullato. I canali già scelti per l'avviso normale non ricevono un secondo messaggio.</p>
 
         <h3>Provare e salvare</h3>
         <ul>
-          <li><b>Prova su ticket di oggi</b> — mostra quali ticket verrebbero colpiti dalle regole, <u>senza inviare nulla</u>. Perfetto per capire se una regola è troppo larga o troppo stretta.</li>
-          <li><b>Regole predefinite</b> — riparte dalle regole di base consigliate.</li>
-          <li><b>Salva</b> / <b>Annulla le modifiche</b> — le modifiche diventano attive solo dopo il salvataggio. Un avviso arancione ti ricorda se hai cambiamenti non salvati.</li>
-          <li><b>Modifica come testo</b> — per chi ha bisogno di condizioni molto elaborate, c'è la possibilità di modificare le regole in forma testuale. Non è necessario per l'uso normale.</li>
+          <li><b>Prova su ticket di oggi</b> — applica le regole (anche quelle non ancora salvate) a tutti i ticket attivi, come se ognuno fosse appena arrivato, e mostra per ogni regola quanti ticket colpirebbe con qualche esempio. <u>Non invia nulla</u>. Perfetto per capire se una regola è troppo larga o troppo stretta.</li>
+          <li><b>Regole predefinite</b> — rimette nel modulo le regole di base consigliate (diventano attive solo dopo <i>Salva</i>).</li>
+          <li><b>Salva</b> / <b>Annulla le modifiche</b> — le modifiche diventano attive solo dopo il salvataggio, e valgono da subito senza riavviare nulla. Un avviso arancione ti ricorda se hai cambiamenti non salvati; eventuali errori sono elencati in rosso e impediscono il salvataggio.</li>
+          <li><b>Modifica come testo (JSON)</b> — mostra le regole come testo, per chi ha bisogno di condizioni molto elaborate; <i>Applica al modulo</i> riporta il testo nel modulo. Non è necessario per l'uso normale.</li>
         </ul>
       </article>
 
@@ -313,36 +415,47 @@
       <article id="canali" class="section">
         <div class="eyebrow">Avvisi fuori dal PC</div>
         <h2>10. I canali di notifica</h2>
-        <p>I canali servono quando non sei davanti allo schermo. Le notifiche di Windows e la finestrella lampeggiante <b>non</b> vanno configurate qui: funzionano da sole. In questa scheda colleghi invece i canali esterni.</p>
+        <p>I canali servono quando non sei davanti allo schermo, o quando l'app è chiusa. Le notifiche di Windows e la finestrella lampeggiante <b>non</b> vanno configurate qui: funzionano da sole. In questa scheda colleghi invece i canali esterni, che sono inviati dal monitoraggio e quindi partono anche se l'app non è aperta (con il monitoraggio come servizio di Windows). Ogni canale ha una casella in alto per accenderlo o spegnerlo.</p>
         <table class="channels">
           <tr><th>Canale</th><th>Cosa ti serve</th></tr>
           <tr>
             <td><b>E-mail</b></td>
-            <td>Due modi. Con <b>Outlook / Microsoft 365</b> accedi una volta con il tuo account e le e-mail partono dal tuo indirizzo, senza salvare password. In alternativa un <b>server SMTP</b> classico (indirizzo del server, utente, password, mittente).</td>
+            <td>In <b>Come inviare</b> scegli tra due modi, poi indica i <b>Destinatari</b> (uno per riga).
+              <ul>
+                <li><b>Outlook / Microsoft 365</b> — premi <i>Accedi a Outlook</i>, inserisci il codice nella pagina che si apre e accedi con il tuo account aziendale: le e-mail partono dal tuo indirizzo, senza salvare password. Senza destinatari, scrivi a te stesso. Puoi tenere una copia in «Posta inviata». I campi <i>Tenant</i> e <i>ID applicazione</i> si lasciano vuoti, salvo indicazioni del tuo amministratore. <i>Esci</i> scollega l'account: le e-mail restano in coda finché non accedi di nuovo.</li>
+                <li><b>Server SMTP</b> — server e porta, sicurezza (STARTTLS sulla porta 587, SSL/TLS sulla 465, oppure nessuna solo su reti fidate), utente e password (vuoti se il server non li chiede) e indirizzo del mittente. Con Microsoft 365 questo modo non è più consentito.</li>
+              </ul>
+            </td>
           </tr>
           <tr>
             <td><b>Teams</b></td>
-            <td>Un «webhook» del canale Teams dove vuoi ricevere gli avvisi. Lo crei in Teams dal menu <i>Workflows</i> del canale («Pubblica in un canale quando si riceve una richiesta webhook»).</td>
+            <td>L'<b>indirizzo (webhook)</b> del canale Teams dove vuoi ricevere gli avvisi. Lo crei in Teams dal menu <i>Workflows</i> del canale («Pubblica in un canale quando si riceve una richiesta webhook»). Il <b>formato</b> è «Scheda di Teams»; «JSON generico» serve solo per collegare altri sistemi che ricevono dati. L'indirizzo è una chiave: chi lo conosce può scrivere nel canale, perciò viene nascosto e cifrato.</td>
           </tr>
           <tr>
             <td><b>SMS</b></td>
-            <td>Un account <b>Twilio</b> (le tue chiavi), un numero mittente e uno o più numeri destinatari in formato internazionale (+39…).</td>
+            <td>Un account <b>Twilio</b> (Account SID e Auth Token), un numero mittente e uno o più numeri destinatari, uno per riga, in formato internazionale (+39…).</td>
           </tr>
           <tr>
             <td><b>WhatsApp</b></td>
-            <td>Sempre tramite <b>Twilio</b>, con in più un «modello di messaggio» approvato (richiesto da WhatsApp per iniziare una conversazione).</td>
+            <td>Sempre tramite <b>Twilio</b>, con in più il «modello di messaggio» approvato da Meta (Content SID, che inizia con HX…), richiesto da WhatsApp perché un'azienda possa iniziare una conversazione.</td>
           </tr>
         </table>
+        <div class="note"><div>📵</div><div><b>SMS e WhatsApp</b> al momento non sono offerti per i nuovi utilizzi: la loro scheda, e la loro casella nelle regole, compaiono solo se il canale è già stato attivato (per esempio dall'amministratore tramite file di configurazione).</div></div>
 
         <h3>Non disturbare e limiti</h3>
-        <p>Ogni canale ha le sue regole di cortesia:</p>
+        <p>Sotto ogni canale trovi le sue regole di cortesia:</p>
         <ul>
-          <li><b>Non disturbare dalle … alle …</b> — niente messaggi nella fascia oraria indicata (per esempio di notte), con la possibilità di lasciar passare comunque gli <b>eventi critici</b>.</li>
-          <li><b>Al massimo N messaggi all'ora</b> — se arriva una raffica di eventi, vengono raggruppati in un unico riassunto invece di tempestarti di messaggi.</li>
+          <li><b>Non disturbare dalle … alle …</b> — nessun messaggio nella fascia oraria indicata (formato <code>22:00</code>), tutti i giorni; la fascia può scavalcare la mezzanotte (per esempio dalle 22:00 alle 07:00). Con <b>tranne gli eventi critici</b> (spuntato di serie) gli avvisi con urgenza Critico passano comunque.</li>
+          <li><b>Al massimo N messaggi all'ora</b> — se arriva una raffica di eventi, oltre il limite i messaggi vengono raggruppati in un unico riassunto («N notifiche da LiveHelpDesk», con i primi 10 titoli) invece di tempestarti. Valori di partenza: e-mail 30, Teams 60, SMS e WhatsApp 10.</li>
         </ul>
+        <div class="warn"><div>🌙</div><div><b>Gli avvisi silenziati non arrivano dopo</b>Un avviso che cade nella fascia di silenzio di un canale <b>non viene inviato su quel canale</b>, nemmeno alla fine della fascia: resta però visibile nella scheda Eventi e sugli altri canali della regola. Se non vuoi perdere nulla, usa <i>tranne gli eventi critici</i> e dai urgenza Critico alle regole importanti.</div></div>
+        <p>Se ci sono orari scritti a mano nel file di configurazione che la pagina non sa mostrare, compare una nota e quegli orari restano come sono.</p>
 
-        <h3>Provare un canale</h3>
-        <p>Il pulsante <b>Invia un messaggio di prova</b> manda subito un messaggio di esempio, così verifichi che la configurazione sia corretta prima di contare su quel canale.</p>
+        <h3>Salvare e provare un canale</h3>
+        <p>Le modifiche valgono solo dopo <b>Salva</b> (in alto); <b>Annulla le modifiche</b> torna all'ultima versione salvata. Il pulsante <b>Invia un messaggio di prova</b> manda subito un messaggio di esempio con le impostazioni <b>salvate</b>, così verifichi che la configurazione sia corretta prima di contare su quel canale. Lo stato di ogni canale (ultimo invio, messaggi nell'ultima ora, messaggi in coda, ultimo errore) è visibile anche nella scheda <b>Servizio</b>, con un pulsante <b>Prova</b>.</p>
+
+        <h3>Se un canale non funziona</h3>
+        <p>Se un invio non riesce (rete assente, server che non risponde…), LiveHelpDesk <b>riprova da solo</b> con attese crescenti: dopo 30 secondi, poi 1, 2, 4 minuti e così via fino a una volta ogni 30 minuti, per un massimo di 8 tentativi. Se un canale fallisce 5 volte di fila viene lasciato riposare per qualche minuto (da 2 fino a 15) e, con le regole predefinite, ricevi l'avviso «LiveHelpDesk: un canale di notifica non funziona»; quando riprende arriva «canale di notifica ripristinato». Nella scheda Servizio il canale risulta «non risponde» con l'errore.</p>
         <div class="note"><div>🔒</div><div>Password, token e chiavi vengono <b>cifrati</b> e non sono mai mostrati di nuovo né inviati all'app. Restano protetti sul tuo computer.</div></div>
       </article>
 
@@ -356,47 +469,81 @@
           <tr><td><b>Quando è attivo</b></td><td>Mentre l'app è aperta (parte da solo se scegli così).</td><td>Sempre, anche prima di accedere a Windows: parte con il PC.</td></tr>
           <tr><td><b>Avvia / Ferma</b></td><td>Avvia o chiude il processo.</td><td>Avvia o ferma il servizio.</td></tr>
         </table>
-        <p>I pulsanti nella scheda Servizio:</p>
+        <p>I pulsanti nella scheda Servizio, riquadro <b>Come gira il monitoraggio</b> (le due righe sopra i pulsanti dicono in che stato sono il servizio di Windows e il processo):</p>
         <ul>
-          <li><b>Avvia / Ferma</b> — accendono o spengono il monitoraggio. Finché il servizio non è installato comandano il processo in background; una volta installato il servizio, comandano il servizio.</li>
+          <li><b>Avvia / Ferma</b> — accendono o spengono il monitoraggio. Finché il servizio non è installato si chiamano <i>Avvia il processo</i> / <i>Ferma il processo</i>; una volta installato il servizio diventano <i>Avvia il servizio</i> / <i>Ferma il servizio</i>.</li>
           <li><b>Installa il servizio / Disinstalla il servizio</b> — attivano o rimuovono la modalità «sempre attivo». Windows chiede la conferma di amministratore.</li>
-          <li><b>Se il servizio non c'è, avvia il processo all'apertura dell'app</b> — comodo per avere il monitoraggio senza installare nulla.</li>
+          <li><b>Se il servizio non c'è, avvia il processo all'apertura dell'app</b> — attivo di serie: comodo per avere il monitoraggio senza installare nulla.</li>
         </ul>
-        <div class="tip"><div>✅</div><div><b>Quale scegliere?</b> Se ti basta essere avvisato mentre usi il PC, il <b>processo in background</b> è perfetto e non chiede permessi. Se vuoi essere coperto anche quando il PC è acceso ma nessuno ha ancora effettuato l'accesso, installa il <b>servizio di Windows</b>.</div></div>
+        <p>Il processo in background è sorvegliato dall'app: se si ferma da solo viene riavviato automaticamente (dopo 2, 5 e 15 secondi); se continua a fermarsi, la scheda lo segnala con «non riesce a partire» e l'errore. Quando esci dall'app con <i>Esci</i>, il processo avviato dall'app si chiude con lei; il servizio di Windows invece non viene toccato.</p>
+        <div class="tip"><div>✅</div><div><b>Quale scegliere?</b> Se ti basta essere avvisato mentre usi il PC con l'app aperta, il <b>processo in background</b> è perfetto e non chiede permessi. Se vuoi che il controllo dei ticket ed e-mail/Teams continuino anche quando l'app è chiusa, o quando il PC è acceso ma nessuno ha ancora effettuato l'accesso, installa il <b>servizio di Windows</b>. Ricorda che finestrella e notifiche di Windows compaiono solo con l'app aperta, in entrambi i casi (vedi <a href="#app-chiusa">Quando l'app non è attiva</a>).</div></div>
         <div class="warn"><div>🔁</div><div><b>Se cambi modalità</b> l'accesso a Dynamics e i canali sono legati a chi esegue il monitoraggio. Passando dal processo al servizio (o viceversa) potrebbe essere necessario rifare l'accesso a Dynamics e reinserire i dati dei canali: è normale e si fa una volta.</div></div>
+
+        <h3>Lo stato del monitoraggio</h3>
+        <p>In cima alla scheda Servizio un pallino colorato riassume la situazione:</p>
+        <table class="channels">
+          <tr><th>Pallino</th><th>Scritta</th><th>Cosa fare</th></tr>
+          <tr><td>🟢 Verde</td><td>Tutto in ordine · <i>il tuo nome</i></td><td>Niente: il monitoraggio lavora.</td></tr>
+          <tr><td>🟠 Arancione</td><td>Avvio del monitoraggio… / In attesa dell'accesso… / Problemi temporanei nel monitoraggio</td><td>Di solito si risolve da solo; se dura, guarda il messaggio in rosso sotto.</td></tr>
+          <tr><td>🔴 Rosso</td><td>Serve l'accesso a Dynamics</td><td>Rifai l'<a href="#primo-avvio">accesso a Dynamics</a>.</td></tr>
+          <tr><td>🔴 Rosso</td><td>Il servizio LiveHelpDesk non è in esecuzione</td><td>Avvialo con i pulsanti del riquadro <i>Come gira il monitoraggio</i>. L'app riprova a collegarsi da sola.</td></tr>
+        </table>
+        <p>Sotto trovi l'orario dell'<b>ultimo controllo</b>, quanti <b>ticket attivi</b> sta seguendo e quante <b>notifiche sono in coda</b>, più l'ultimo errore se c'è.</p>
+
+        <h3>Ogni quanto controlla, e cosa succede se si ferma</h3>
+        <ul>
+          <li>Il monitoraggio chiede le novità a Dynamics ogni <b>30 secondi</b> (si cambia in <a href="#impostazioni">Impostazioni</a>, da 10 secondi a un'ora). Subito dopo un accesso controlla immediatamente.</li>
+          <li>Se Dynamics non risponde, riprova da solo con attese crescenti (fino a 5 minuti). Le interruzioni brevi non vengono segnalate: l'avviso arriva solo se Dynamics resta irraggiungibile per più di 5 minuti (15 se Dynamics limita le richieste), e poi di nuovo ogni 6 ore se il problema continua.</li>
+          <li>Se il monitoraggio è rimasto fermo (PC spento, app chiusa con il processo in background), alla ripartenza recupera i cambiamenti avvenuti nel frattempo e avvisa normalmente, purché il fermo non superi le <b>6 ore</b>. Oltre, per non sommergerti di vecchi avvisi, riparte da zero e manda l'avviso «LiveHelpDesk: possibili eventi persi»: in quel caso dai un'occhiata alla coda in Dynamics.</li>
+        </ul>
       </article>
 
       <article id="impostazioni" class="section">
         <div class="eyebrow">Preferenze</div>
         <h2>12. Impostazioni</h2>
+        <h3>Finestrella lampeggiante</h3>
         <ul>
-          <li><b>Finestrella lampeggiante</b> — attivala o disattivala, scegli lo <b>schermo</b> su cui mostrarla, trascinala dove preferisci e usa <i>Rimetti al centro</i> se la perdi di vista. <i>Mostra un esempio</i> ti fa vedere come appare. Con <b>Tutti gli schermi</b> compare su ogni monitor: quando ne chiudi una (con <i>Vista</i>, <i>Apri</i> o <i>15 min</i>) si chiudono tutte.</li>
-          <li><b>Colori della finestrella</b> — scegli sfondo, testo e numero con il selettore di colore o scrivendo il codice; <i>Automatico</i> torna ai colori predefiniti.</li>
-          <li><b>Suona un avviso per gli eventi critici</b> — un suono solo per le cose davvero importanti.</li>
-          <li><b>Controllo dei nuovi eventi</b> — ogni quanti secondi LiveHelpDesk cerca novità su Dynamics (da 10 a 3600; predefinito 30). Premi <i>Applica</i>: il nuovo intervallo vale subito.</li>
-          <li><b>Avvia LiveHelpDesk quando accedo a Windows</b> — il programma parte da solo e resta nell'area di notifica, pronto ad avvisarti.</li>
-          <li><b>Ripristina predefiniti</b> — dopo una conferma riporta tutte le opzioni della pagina ai valori iniziali, tranne l'avvio con Windows.</li>
+          <li><b>Avvisi a video attivi (finestrella e notifiche di Windows)</b> — l'interruttore generale degli avvisi sul desktop; è lo stesso del pulsante <a href="#pausa">Avvisi</a> della barra laterale.</li>
+          <li><b>Suona un avviso per gli eventi critici</b> — un suono quando compare un avviso critico, e un solo promemoria se resta senza risposta. Attivo di serie.</li>
+          <li><b>Schermo</b> — su quale monitor mostrare la finestrella: il principale, uno specifico, oppure <b>Tutti gli schermi</b> (ne compare una su ogni monitor; quando ne chiudi una con <i>Vista</i>, <i>Apri</i> o <i>15 min</i> si chiudono tutte). Se il monitor scelto viene scollegato, la finestrella passa al principale.</li>
+          <li><b>Mostra un esempio</b> fa comparire una finestrella di prova, così vedi dove appare; trascinala con il mouse dove preferisci: la posizione viene ricordata. <b>Rimetti al centro</b> la riporta in alto al centro se la perdi di vista.</li>
         </ul>
-        <p>La barra laterale si può ridurre alle sole icone con il pulsante <b>☰</b> in alto: passando con il mouse su un'icona compare la sua spiegazione. Quando esce una nuova versione, la finestrella te lo segnala una volta e nella barra compare il pulsante per aggiornare.</p>
+        <h3>Sospensione automatica</h3>
+        <ul>
+          <li><b>Sospendi gli avvisi durante presentazioni e condivisioni dello schermo</b> — attivo di serie.</li>
+          <li><b>Sospendi gli avvisi quando sei connesso a una VPN</b> — spento di serie.</li>
+        </ul>
+        <p>Come funzionano è spiegato in <a href="#avvisi">Come arrivano gli avvisi</a>: nulla va perso, gli avvisi ricompaiono nella finestrella alla fine della sospensione.</p>
+        <h3>Colori della finestrella</h3>
+        <p>Scegli <b>Sfondo</b>, <b>Testo</b> e <b>Numero (accento)</b> con il selettore di colore o scrivendo il codice <code>#RRGGBB</code>. <b>Automatico</b> torna ai colori predefiniti: ambra per gli avvisi normali, rosso per quelli critici.</p>
+        <h3>Controllo dei nuovi eventi</h3>
+        <p>Ogni quanti secondi LiveHelpDesk cerca novità su Dynamics (da 10 a 3600; predefinito 30). Premi <b>Applica</b>: il nuovo intervallo vale subito. Un intervallo più breve ti avvisa prima ma interroga Dynamics più spesso. L'impostazione è del monitoraggio, quindi si può cambiare solo quando è in funzione.</p>
+        <h3>Avvio</h3>
+        <p><b>Avvia LiveHelpDesk quando accedo a Windows</b> — il programma parte da solo, senza aprire la finestra, e resta nell'area di notifica pronto ad avvisarti. Vale solo per il tuo account Windows e non richiede permessi di amministratore. È il modo più semplice per non restare mai senza finestrella e notifiche di Windows.</p>
+        <h3>Valori predefiniti</h3>
+        <p><b>Ripristina predefiniti</b> — dopo una conferma (<i>Sì, ripristina</i>) riporta finestrella, colori, sospensione e intervallo ai valori iniziali, tranne l'avvio con Windows.</p>
+        <h3>Aggiornamenti</h3>
+        <p>Mostra la <b>versione installata</b> e i pulsanti <b>Controlla aggiornamenti</b>, <b>Aggiorna e riavvia</b> (quando c'è una versione nuova) e <b>Note di rilascio</b>. LiveHelpDesk controlla da solo poco dopo l'avvio e poi ogni 6 ore; quando esce una nuova versione, la finestrella te lo segnala una volta (premi <i>Apri</i> per arrivare qui) e nella barra laterale compare il pulsante <b>⬆ Versione x.y.z</b>. Il file scaricato viene verificato prima dell'installazione; l'aggiornamento non tocca impostazioni, regole e canali. L'aggiornamento automatico è disponibile per le copie installate con l'installer <code>.msi</code> o con <code>install.cmd</code>; per le altre, scarica la nuova versione da questa pagina.</p>
       </article>
 
       <article id="eventi" class="section">
         <div class="eyebrow">Lo storico</div>
         <h2>13. Eventi recenti</h2>
-        <p>La scheda <b>Eventi</b> raccoglie ciò che è successo di recente sui ticket: per ciascuno vedi l'orario, il tipo di evento e il ticket coinvolto. Da qui puoi:</p>
+        <p>La scheda <b>Eventi</b> raccoglie gli ultimi 100 fatti rilevati sui ticket, dal più recente: per ciascuno vedi data e ora, il tipo di evento (per esempio «Nuovo ticket», «Nuova e-mail», «Il cliente ha risposto», «Senza risposta», «Accesso scaduto»), il numero e il titolo del ticket. Compaiono <b>tutti</b> gli eventi rilevati, anche quelli per cui nessuna regola ha mandato un avviso, e anche quelli arrivati mentre la finestrella era sospesa o l'app chiusa. Da qui puoi:</p>
         <ul>
-          <li><b>Apri</b> — porta direttamente al ticket su Dynamics.</li>
-          <li><b>Vista</b> — segna l'evento come «visto», così smette di risultare da gestire (e si ferma anche l'eventuale inoltro «se nessuno risponde»).</li>
+          <li><b>Apri</b> — porta direttamente al ticket nella scheda Dynamics e segna l'evento come visto.</li>
+          <li><b>Vista</b> — segna l'evento come «visto» (compare «✓ visto»): toglie l'avviso dalla finestrella e ferma l'eventuale inoltro «se nessuno risponde».</li>
         </ul>
         <p>In alto, <b>✓ Visti tutti</b> segna come visti tutti gli eventi dell'elenco e <b>Pulisci</b> svuota l'elenco a video: da quel momento compaiono solo gli eventi nuovi. Pulire non cancella nulla dallo storico e non segna gli eventi come visti; l'elenco si ricompone quando riavvii il programma.</p>
+        <p>L'elenco si aggiorna da solo quando arriva qualcosa di nuovo; il pallino rosso sull'icona <b>📥 Eventi</b> della barra laterale indica quanti avvisi aspettano ancora una risposta nella finestrella.</p>
       </article>
 
       <article id="privacy" class="section">
         <div class="eyebrow">Fiducia</div>
         <h2>14. Privacy e sicurezza</h2>
         <ul>
-          <li><b>I dati restano sul tuo PC.</b> Configurazione, regole, canali e cronologia sono salvati localmente, non su server esterni.</li>
-          <li><b>Le credenziali sono protette.</b> L'accesso a Dynamics è gestito dal monitoraggio; l'app non vede mai password o token. Le chiavi dei canali vengono cifrate e non più mostrate.</li>
+          <li><b>I dati restano sul tuo PC.</b> Configurazione, regole, canali e cronologia sono salvati localmente, non su server esterni: i dati del monitoraggio in <code>C:\ProgramData\LiveHelpDesk</code> (una cartella separata per ogni utente Windows), le preferenze dell'app, il profilo del browser interno e i registri in <code>%LocalAppData%\LiveHelpDesk</code>.</li>
+          <li><b>Le credenziali sono protette.</b> L'accesso a Dynamics è gestito dal monitoraggio; l'app non vede mai password o token. Le chiavi dei canali vengono cifrate con la protezione di Windows legata all'account che esegue il monitoraggio, e non sono più mostrate.</li>
           <li><b>Puoi limitare cosa esce dall'azienda.</b> Con il dettaglio «Minimo» gli avvisi verso SMS e WhatsApp non contengono il titolo del ticket né il testo dei messaggi.</li>
           <li><b>Comunichi solo con chi decidi tu.</b> Dynamics per leggere i ticket, e i servizi dei canali che scegli di attivare (il tuo server di posta, Teams, Twilio).</li>
         </ul>
@@ -408,12 +555,32 @@
 
         <details>
           <summary>Ho chiuso la finestra e il programma è sparito. L'ho spento?</summary>
-          <p>No. LiveHelpDesk resta attivo nell'area di notifica vicino all'orologio. Fai clic sulla sua icona per riaprire la finestra, oppure usa il menu dell'icona per uscire del tutto.</p>
+          <p>No. LiveHelpDesk resta attivo nell'area di notifica vicino all'orologio (se non vedi l'icona, cercala sotto la freccia ˄). Fai clic sulla sua icona per riaprire la finestra, oppure usa il menu dell'icona per uscire del tutto.</p>
+        </details>
+
+        <details>
+          <summary>Con l'app chiusa ricevo ancora gli avvisi?</summary>
+          <p>Sul desktop no: finestrella e notifiche di Windows le mostra solo l'app aperta. E-mail e Teams sì, ma solo se il monitoraggio gira come <b>servizio di Windows</b>; con il processo in background anche il controllo dei ticket si ferma. Tutti i dettagli in <a href="#app-chiusa">Quando l'app non è attiva</a>. Il consiglio è attivare <i>Avvia LiveHelpDesk quando accedo a Windows</i> e chiudere solo la finestra, mai con <i>Esci</i>.</p>
+        </details>
+
+        <details>
+          <summary>Ho riaperto l'app e mi sono arrivate tante notifiche insieme.</summary>
+          <p>È normale se il monitoraggio gira come servizio di Windows: mentre l'app era chiusa ha continuato a controllare i ticket e ha tenuto da parte gli avvisi per il desktop, che vengono mostrati appena l'app riparte. Puoi segnarli tutti come visti con <i>Vista</i> nella finestrella o con <i>✓ Visti tutti</i> nella scheda Eventi.</p>
         </details>
 
         <details>
           <summary>Non ricevo avvisi.</summary>
-          <p>Controlla, nella scheda <b>Servizio</b>, che il semaforo sia verde e che il monitoraggio risulti attivo. Verifica di aver effettuato l'accesso a Dynamics. Infine, in <b>Regole</b>, usa <i>Prova su ticket di oggi</i> per vedere se le tue regole colpiscono davvero i ticket che ti aspetti.</p>
+          <p>Controlla, nella scheda <b>Servizio</b>, che il pallino sia verde e che il monitoraggio risulti attivo, e di aver effettuato l'accesso a Dynamics. Guarda poi il pulsante <b>Avvisi</b> in cima alla barra laterale: se è rosso gli avvisi sul desktop sono in pausa o sospesi per una condivisione dello schermo. Verifica che la regola sia accesa (casella accanto al nome nella scheda Regole) e che abbia spuntato i canali giusti. Infine, in <b>Regole</b>, usa <i>Prova su ticket di oggi</i> per vedere se le tue regole colpiscono davvero i ticket che ti aspetti. Ricorda anche che i ticket già esistenti al primo avvio non generano avvisi.</p>
+        </details>
+
+        <details>
+          <summary>Durante una riunione Teams non vedo la finestrella.</summary>
+          <p>È voluto: mentre condividi lo schermo (o fai una presentazione) gli avvisi sul desktop vengono sospesi, per non mostrare i ticket a chi guarda. Arrivano nella finestrella appena finisci. Se ti servono comunque, premi il pulsante <b>Avvisi sospesi per condivisione schermo</b> e conferma; per non sospenderli mai, togli la spunta in <i>Impostazioni → Sospensione automatica</i>.</p>
+        </details>
+
+        <details>
+          <summary>Vedo la finestrella ma non le notifiche di Windows.</summary>
+          <p>Controlla che la regola abbia spuntato anche <b>Notifica di Windows</b>, e che in Windows non sia attivo «Non disturbare» / «Assistente notifiche» e che le notifiche di LiveHelpDesk siano consentite in <i>Impostazioni di Windows → Sistema → Notifiche</i>.</p>
         </details>
 
         <details>
@@ -433,7 +600,7 @@
 
         <details>
           <summary>Voglio essere avvisato di notte solo per le cose gravi.</summary>
-          <p>Nella scheda <b>Canali</b>, per il canale che usi (es. WhatsApp), attiva <i>Non disturbare</i> nella fascia notturna e spunta <i>tranne gli eventi critici</i>. Così di notte ricevi solo gli avvisi critici.</p>
+          <p>Nella scheda <b>Canali</b>, per il canale che usi (es. e-mail o Teams), attiva <i>Non disturbare</i> nella fascia notturna (per esempio dalle 22:00 alle 07:00) e lascia spuntato <i>tranne gli eventi critici</i>. Così di notte ricevi solo gli avvisi delle regole con urgenza <b>Critico</b>; gli altri, su quel canale, non vengono inviati nemmeno la mattina dopo, ma restano nella scheda Eventi.</p>
         </details>
 
         <details>
@@ -449,6 +616,31 @@
     <p>LiveHelpDesk — monitoraggio proattivo dei ticket di assistenza su Dynamics 365.<br />
     Progetto su <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk">GitHub</a>. © Leandro Cannizzaro.</p>
   </footer>
+
+  <script>
+    // update.json is published next to this page by the Pages workflow: it points at the latest release's packages.
+    // Without it (or offline) the buttons keep their fallback: the "latest release" page on GitHub.
+    (function () {
+      fetch('update.json', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (m) {
+          if (!m || !m.version || !m.msi || !m.msi.url) { return; }
+          var mb = function (bytes) { return bytes ? ' · ' + Math.round(bytes / 1048576) + ' MB' : ''; };
+          var msi = document.getElementById('download-msi');
+          msi.href = m.msi.url;
+          msi.textContent = '⬇ Scarica LiveHelpDesk ' + m.version;
+          var zip = document.getElementById('download-zip');
+          if (m.zip && m.zip.url) { zip.href = m.zip.url; }
+          var meta = document.getElementById('download-meta');
+          meta.insertAdjacentHTML('afterbegin',
+            '<b>Versione ' + m.version + '</b>' + mb(m.msi.size) + ' — ');
+          if (m.notesUrl) {
+            meta.insertAdjacentHTML('beforeend', ' <a href="' + m.notesUrl + '">Novità di questa versione</a>.');
+          }
+        })
+        .catch(function () { });
+    })();
+  </script>
 
 </body>
 </html>

@@ -55,7 +55,8 @@ public partial class MainWindow : Window
 
         SideBar.PaneRequested += ShowPane;
         SideBar.CollapsedChanged += collapsed => SidebarCollapsedChanged?.Invoke(collapsed);
-        SideBar.OverlayToggleRequested += () => _ = ToggleAlertsAsync();
+        SideBar.OverlayToggleRequested += ToggleAlerts;
+        SideBar.AboutRequested += ShowAbout;
 
         Opened += (_, _) => Web.Navigate(_home);
         Closing += (_, e) =>
@@ -112,11 +113,21 @@ public partial class MainWindow : Window
             return;
         }
 
-        SideBar.SetAlerts(
-            _shareGuard?.IsPaused == true ? AlertsState.PausedForShare
+        var state = _shareGuard?.IsPaused == true ? AlertsState.PausedForShare
             : _settingsVm.OverlayEnabled ? AlertsState.Active
-            : AlertsState.Paused);
+            : AlertsState.Paused;
+        SideBar.SetAlerts(state);
+        AlertsStateChanged?.Invoke(state);
     }
+
+    /// <summary>Raised whenever the "Avvisi" button changes state, so the tray menu can follow it.</summary>
+    public event Action<AlertsState>? AlertsStateChanged;
+
+    /// <summary>The Dynamics dashboard the browser pane starts from: the help desk site.</summary>
+    public Uri Home => _home;
+
+    /// <summary>Same as pressing the side bar's "Avvisi" button.</summary>
+    public void ToggleAlerts() => _ = ToggleAlertsAsync();
 
     private async Task ToggleAlertsAsync()
     {
@@ -135,13 +146,27 @@ public partial class MainWindow : Window
 
         var enabled = await _shareGuard.ToggleAsync(
             vm.OverlayEnabled,
-            () => ConfirmDialog.AskAsync(this, "Lo schermo è condiviso, sei sicuro che vuoi riattivare gli avvisi?"));
+            () =>
+            {
+                // From the tray the window may be hidden, and a dialog needs a visible owner.
+                Bring();
+                return ConfirmDialog.AskAsync(this, "Lo schermo è condiviso, sei sicuro che vuoi riattivare gli avvisi?");
+            });
         if (enabled is { } value)
         {
             vm.OverlayEnabled = value;
         }
 
         RefreshAlertsButton();
+    }
+
+    public void ShowAbout()
+    {
+        if (_settingsVm?.Updates is { } updates)
+        {
+            Bring();
+            _ = AboutWindow.ShowAsync(this, updates);
+        }
     }
 
     /// <summary>Raised when the user expands or collapses the side bar, so the choice can be remembered.</summary>

@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LiveHelpDesk.App.ViewModels"
              xmlns:svc="using:LiveHelpDesk.App.Services"
+             xmlns:views="using:LiveHelpDesk.App.Views"
              x:Class="LiveHelpDesk.App.Views.RulesView"
              x:DataType="vm:RulesViewModel">
   <UserControl.Styles>
@@ -106,7 +107,7 @@
                 </ItemsControl>
 
                 <TextBlock Classes="section" Text="Ma solo se" />
-                <TextBlock Classes="hint" Text="Questa regola ha condizioni troppo elaborate per il modulo: modificarle dal testo (JSON). Il resto si può cambiare qui."
+                <TextBlock Classes="hint" Text="Questa regola ha condizioni che il modulo non sa mostrare: modificarle dal testo (JSON). Il resto si può cambiare qui."
                            IsVisible="{Binding IsAdvanced}" />
                 <StackPanel Spacing="4" IsVisible="{Binding !IsAdvanced}">
                   <TextBlock Classes="hint" Text="Senza condizioni la regola vale per qualsiasi ticket." />
@@ -127,37 +128,14 @@
                   </ItemsControl>
                   <Button Content="+ Aggiungi" Command="{Binding AddAllCommand}" HorizontalAlignment="Left" />
 
-                  <TextBlock Text="Basta che ne valga una:" FontWeight="SemiBold" Margin="0,10,0,0" />
-                  <ItemsControl ItemsSource="{Binding AnyRows}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:ConditionRow">
-                        <Grid ColumnDefinitions="200,230,*,Auto" ColumnSpacing="6" Margin="0,2">
-                          <ComboBox Grid.Column="0" ItemsSource="{Binding Fields}" SelectedItem="{Binding Field}" HorizontalAlignment="Stretch" />
-                          <ComboBox Grid.Column="1" ItemsSource="{Binding Operators}" SelectedItem="{Binding Operator}" HorizontalAlignment="Stretch" />
-                          <ComboBox Grid.Column="2" ItemsSource="{Binding Choices}" SelectedItem="{Binding ValueChoice}" IsVisible="{Binding ShowChoices}" HorizontalAlignment="Stretch" />
-                          <TextBox Grid.Column="2" Text="{Binding Value}" IsVisible="{Binding ShowText}" />
-                          <Button Grid.Column="3" Content="✕" Command="{Binding RemoveCommand}" ToolTip.Tip="Togli la condizione" />
-                        </Grid>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                  <Button Content="+ Aggiungi" Command="{Binding AddAnyCommand}" HorizontalAlignment="Left" />
-
-                  <TextBlock Text="Non deve valere nessuna:" FontWeight="SemiBold" Margin="0,10,0,0" />
-                  <ItemsControl ItemsSource="{Binding NotRows}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:ConditionRow">
-                        <Grid ColumnDefinitions="200,230,*,Auto" ColumnSpacing="6" Margin="0,2">
-                          <ComboBox Grid.Column="0" ItemsSource="{Binding Fields}" SelectedItem="{Binding Field}" HorizontalAlignment="Stretch" />
-                          <ComboBox Grid.Column="1" ItemsSource="{Binding Operators}" SelectedItem="{Binding Operator}" HorizontalAlignment="Stretch" />
-                          <ComboBox Grid.Column="2" ItemsSource="{Binding Choices}" SelectedItem="{Binding ValueChoice}" IsVisible="{Binding ShowChoices}" HorizontalAlignment="Stretch" />
-                          <TextBox Grid.Column="2" Text="{Binding Value}" IsVisible="{Binding ShowText}" />
-                          <Button Grid.Column="3" Content="✕" Command="{Binding RemoveCommand}" ToolTip.Tip="Togli la condizione" />
-                        </Grid>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                  <Button Content="+ Aggiungi" Command="{Binding AddNotCommand}" HorizontalAlignment="Left" />
+                  <TextBlock Text="E inoltre deve valere l'espressione:" FontWeight="SemiBold" Margin="0,10,0,0" />
+                  <TextBlock Classes="hint"
+                             Text="Facoltativa: vale in «e» con le condizioni qui sopra, come se fosse tra parentesi. Si scrive come una frase, ad esempio: priorita = &quot;Alta&quot; o (coda = &quot;Urgenze&quot; e non in_sospeso). Scrivendo, o con Ctrl+Spazio, vengono suggeriti i campi, i confronti e i valori ammessi." />
+                  <views:RuleExpressionEditor Document="{Binding ExpressionDocument}" Fields="{Binding Fields}" Margin="0,4,0,0" />
+                  <TextBlock Text="{Binding ExpressionError}" Foreground="#DC2626" TextWrapping="Wrap" IsVisible="{Binding HasExpressionError}" />
+                  <TextBlock Text="✓ Espressione corretta" Foreground="#16A34A" IsVisible="{Binding IsExpressionValid}" />
+                  <TextBlock Classes="hint" FontSize="12"
+                             Text="Parole chiave: e, o, non, parentesi ( ). Confronti: =, !=, &gt;, &gt;=, &lt;, &lt;=, contiene, iniziaCon, regex, tra (a, b), non tra (a, b). Valori: &quot;testo&quot;, numeri, sì / no, vuoto, $me (io)." />
                 </StackPanel>
 
                 <TextBlock Classes="section" Text="Allora avvisa tramite" />

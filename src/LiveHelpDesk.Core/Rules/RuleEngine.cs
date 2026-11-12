@@ -84,26 +84,45 @@ public static class RuleEngine
             return false;
         }
 
+        // A custom expression is one more part that must hold, as if it were in brackets.
+        if (condition.Expression is { } expression && !RuleExpression.Evaluate(expression, evt, context))
+        {
+            return false;
+        }
+
         return condition.Field is null || Leaf(condition, evt, context);
     }
 
-    private static bool Leaf(RuleCondition condition, TicketEvent evt, EvaluationContext context)
-    {
-        var actual = RuleFields.GetText(condition.Field!, evt, context);
-        var operands = Operands(condition.Value, context);
-        var first = operands.Count > 0 ? operands[0] : null;
+    private static bool Leaf(RuleCondition condition, TicketEvent evt, EvaluationContext context) =>
+        Test(condition.Field!, condition.Op ?? "", Operands(condition.Value), evt, context);
 
-        return (condition.Op ?? "").ToLowerInvariant() switch
+    /// <summary>
+    /// One comparison of a field with operands. Fields that have names (priority, queue, owner...) match either by
+    /// code or by name ("Alta", "Supporto L1"); text operators look at the name when there is one.
+    /// Called by the compiled custom expressions too.
+    /// </summary>
+    public static bool Test(string field, string op, IReadOnlyList<string?> operands, TicketEvent evt, EvaluationContext context)
+    {
+        var actual = RuleFields.GetText(field, evt, context);
+        var name = RuleFields.GetName(field, evt, context);
+        var shown = name ?? actual;
+        var values = operands.Select(o => o is not null && o.Equals("$me", StringComparison.OrdinalIgnoreCase) ? context.MeId?.ToString("D") : o).ToList();
+        var first = values.Count > 0 ? values[0] : null;
+
+        bool Is(string? expected) =>
+            (actual is not null && Equal(actual, expected)) || (name is not null && Equal(name, expected));
+
+        return op.ToLowerInvariant() switch
         {
             "isnull" => string.IsNullOrEmpty(actual),
             "notnull" => !string.IsNullOrEmpty(actual),
-            "eq" => actual is not null && Equal(actual, first),
-            "ne" => actual is null || !Equal(actual, first),
-            "in" => actual is not null && operands.Any(o => Equal(actual, o)),
-            "notin" => actual is null || !operands.Any(o => Equal(actual, o)),
-            "contains" => actual is not null && first is not null && actual.Contains(first, StringComparison.OrdinalIgnoreCase),
-            "startswith" => actual is not null && first is not null && actual.StartsWith(first, StringComparison.OrdinalIgnoreCase),
-            "regex" => actual is not null && first is not null && IsMatch(actual, first),
+            "eq" => Is(first),
+            "ne" => !Is(first),
+            "in" => values.Any(Is),
+            "notin" => !values.Any(Is),
+            "contains" => shown is not null && first is not null && shown.Contains(first, StringComparison.OrdinalIgnoreCase),
+            "startswith" => shown is not null && first is not null && shown.StartsWith(first, StringComparison.OrdinalIgnoreCase),
+            "regex" => shown is not null && first is not null && IsMatch(shown, first),
             "gt" => Compare(actual, first) is > 0,
             "gte" => Compare(actual, first) is >= 0,
             "lt" => Compare(actual, first) is < 0,
@@ -142,13 +161,13 @@ public static class RuleEngine
         }
     }
 
-    private static List<string?> Operands(JsonNode? value, EvaluationContext context)
+    private static List<string?> Operands(JsonNode? value)
     {
         var items = value is JsonArray array ? array.ToList() : [value];
-        return items.Select(item => Operand(item, context)).ToList();
+        return items.Select(Operand).ToList();
     }
 
-    private static string? Operand(JsonNode? node, EvaluationContext context)
+    private static string? Operand(JsonNode? node)
     {
         if (node is not JsonValue json)
         {
@@ -157,7 +176,7 @@ public static class RuleEngine
 
         return json.GetValueKind() switch
         {
-            JsonValueKind.String => json.GetValue<string>() is "$me" ? context.MeId?.ToString("D") : json.GetValue<string>(),
+            JsonValueKind.String => json.GetValue<string>(),
             JsonValueKind.Number => json.ToJsonString(),
             JsonValueKind.True => "true",
             JsonValueKind.False => "false",

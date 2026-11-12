@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Text.Json.Nodes;
+using AvaloniaEdit.Document;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveHelpDesk.Abstractions;
@@ -167,7 +168,7 @@ public sealed partial class ConditionRow : ObservableObject
     private void ExtraChoice(Choice choice)
     {
         // A value outside the offered list is added so the drop-down can show it.
-        Field = new FieldInfo(Field.Key, Field.Label, Field.Kind, [.. Field.Choices, choice]);
+        Field = Field with { Choices = [.. Field.Choices, choice] };
         ValueChoice = choice;
     }
 
@@ -175,7 +176,7 @@ public sealed partial class ConditionRow : ObservableObject
         node is JsonValue value && value.TryGetValue<string>(out var text) ? text : node?.ToJsonString() ?? "";
 }
 
-/// <summary>One rule, in editable form. Conditions the editor cannot draw (deep nesting) stay as they are and are edited as JSON.</summary>
+/// <summary>One rule, in editable form: "must hold" rows plus a free expression. Conditions an expression cannot say stay as they are and are edited as JSON.</summary>
 public sealed partial class RuleViewModel : ObservableObject
 {
     private readonly Rule _original;
@@ -199,7 +200,14 @@ public sealed partial class RuleViewModel : ObservableObject
         ChannelChoices = [.. RuleCatalog.Offered(RuleCatalog.Channels, HasChannel).Select(c => new SelectableItem(c, HasChannel(c.Value)))];
         EscalateChannelChoices = [.. RuleCatalog.Offered(RuleCatalog.Channels, HasEscalation).Select(c => new SelectableItem(c, HasEscalation(c.Value)))];
 
-        IsAdvanced = !TryReadCondition(rule.When);
+        IsAdvanced = !TryReadCondition(rule.When, out var expression);
+        ExpressionDocument = new TextDocument(expression);
+        CheckExpression();
+        ExpressionDocument.TextChanged += (_, _) =>
+        {
+            CheckExpression();
+            Raise();
+        };
 
         foreach (var item in EventChoices.Concat(ChannelChoices).Concat(EscalateChannelChoices))
         {
@@ -207,8 +215,6 @@ public sealed partial class RuleViewModel : ObservableObject
         }
 
         Watch(AllRows);
-        Watch(AnyRows);
-        Watch(NotRows);
     }
 
     /// <summary>Raised whenever anything about the rule is changed by the user.</summary>
@@ -272,11 +278,18 @@ public sealed partial class RuleViewModel : ObservableObject
     /// <summary>Conditions that must all hold.</summary>
     public ObservableCollection<ConditionRow> AllRows { get; } = [];
 
-    /// <summary>At least one of these must hold.</summary>
-    public ObservableCollection<ConditionRow> AnyRows { get; } = [];
+    /// <summary>The custom expression, which must hold too (as if in brackets, in "e" with the rows).</summary>
+    public TextDocument ExpressionDocument { get; }
 
-    /// <summary>None of these may hold.</summary>
-    public ObservableCollection<ConditionRow> NotRows { get; } = [];
+    /// <summary>What is wrong with the expression as typed, or null when it is empty or valid.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasExpressionError))]
+    private string? _expressionError;
+
+    [ObservableProperty]
+    private bool _isExpressionValid;
+
+    public bool HasExpressionError => ExpressionError is not null;
 
     /// <summary>True when the condition is too elaborate for the form and is kept untouched.</summary>
     public bool IsAdvanced { get; }
@@ -289,16 +302,22 @@ public sealed partial class RuleViewModel : ObservableObject
         string.IsNullOrWhiteSpace(Name) ? "(senza nome)" : Name;
 
     [RelayCommand]
-    private void AddAll() => AllRows.Add(NewRow(AllRows));
+    private void AddAll() => AllRows.Add(new ConditionRow(Fields, row => AllRows.Remove(row)));
 
-    [RelayCommand]
-    private void AddAny() => AnyRows.Add(NewRow(AnyRows));
+    private void CheckExpression()
+    {
+        var text = ExpressionDocument.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            ExpressionError = null;
+            IsExpressionValid = false;
+            return;
+        }
 
-    [RelayCommand]
-    private void AddNot() => NotRows.Add(NewRow(NotRows));
-
-    private ConditionRow NewRow(ObservableCollection<ConditionRow> into) =>
-        new(Fields, row => into.Remove(row));
+        var error = RuleExpression.Parse(text).Error;
+        ExpressionError = error is null ? null : $"Errore, {error.Describe(text)}";
+        IsExpressionValid = error is null;
+    }
 
     /// <summary>The rule as the file wants it.</summary>
     public Rule ToRule()
@@ -347,74 +366,104 @@ public sealed partial class RuleViewModel : ObservableObject
         OnPropertyChanged(nameof(Id));
     }
 
+    /// <summary>The rows and the expression, all in "e": a single part stands alone, several go in an "all" group.</summary>
     private RuleCondition? BuildCondition()
     {
         var all = AllRows.Select(r => r.ToCondition()).ToList();
-        var any = AnyRows.Select(r => r.ToCondition()).ToList();
-        var none = NotRows.Select(r => r.ToCondition()).ToList();
-
-        if (all.Count == 1 && any.Count == 0 && none.Count == 0)
+        var expression = ExpressionDocument.Text.Trim();
+        if (expression.Length > 0)
         {
-            return all[0];
+            all.Add(new RuleCondition { Expression = expression });
         }
 
-        if (all.Count + any.Count + none.Count == 0)
+        return all.Count switch
         {
-            return null;
-        }
-
-        return new RuleCondition
-        {
-            All = all.Count > 0 ? all : null,
-            Any = any.Count > 0 ? any : null,
-            Not = none.Count switch
-            {
-                0 => null,
-                1 => none[0],
-                _ => new RuleCondition { Any = none },
-            },
+            0 => null,
+            1 => all[0],
+            _ => new RuleCondition { All = all },
         };
     }
 
-    /// <summary>Fills the three lists from the rule's condition; false when it has a shape the form cannot show.</summary>
-    private bool TryReadCondition(RuleCondition? when)
+    /// <summary>
+    /// Fills the rows from the rule's condition. What is not a plain "must hold" line (alternatives, exclusions, groups)
+    /// is written into the expression; false when the condition has something an expression cannot say.
+    /// </summary>
+    private bool TryReadCondition(RuleCondition? when, out string expression)
     {
+        expression = "";
         if (when is null)
         {
             return true;
         }
 
-        static bool IsLeaf(RuleCondition c) => c.Field is not null && c.All is null && c.Any is null && c.Not is null;
+        static bool IsLeaf(RuleCondition c) =>
+            c.Field is not null && c.All is null && c.Any is null && c.Not is null && c.Expression is null;
+
+        var leaves = new List<RuleCondition>();
+        var parts = new List<string>();
 
         if (IsLeaf(when))
         {
-            AllRows.Add(ConditionRow.From(when, Fields, row => AllRows.Remove(row)));
-            return true;
+            leaves.Add(when);
         }
-
-        if (when.Field is not null
-            || (when.All?.All(IsLeaf) == false)
-            || (when.Any?.All(IsLeaf) == false)
-            || (when.Not is { } not && !(IsLeaf(not) || (not.Any?.All(IsLeaf) == true && not.All is null && not.Not is null && not.Field is null))))
+        else if (when.Field is not null)
         {
-            return false;
+            if (RuleExpression.Format(when) is not { } whole)
+            {
+                return false;
+            }
+
+            parts.Add(whole);
+        }
+        else
+        {
+            foreach (var child in when.All ?? [])
+            {
+                if (IsLeaf(child))
+                {
+                    leaves.Add(child);
+                }
+                else if (child is { Field: null, All: null, Any: null, Not: null, Expression: { } text })
+                {
+                    parts.Add(text); // kept as typed, mistakes included, so they can be mended in the editor
+                }
+                else if (RuleExpression.Format(child) is { } formatted)
+                {
+                    parts.Add(formatted);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            foreach (var group in new[] { when.Any is null ? null : new RuleCondition { Any = when.Any }, when.Not is null ? null : new RuleCondition { Not = when.Not } })
+            {
+                if (group is null)
+                {
+                    continue;
+                }
+
+                if (RuleExpression.Format(group) is not { } formatted)
+                {
+                    return false;
+                }
+
+                parts.Add(formatted);
+            }
+
+            if (when.Expression is { } own)
+            {
+                parts.Add(own);
+            }
         }
 
-        foreach (var leaf in when.All ?? [])
+        foreach (var leaf in leaves)
         {
             AllRows.Add(ConditionRow.From(leaf, Fields, row => AllRows.Remove(row)));
         }
 
-        foreach (var leaf in when.Any ?? [])
-        {
-            AnyRows.Add(ConditionRow.From(leaf, Fields, row => AnyRows.Remove(row)));
-        }
-
-        foreach (var leaf in when.Not is null ? [] : IsLeaf(when.Not) ? [when.Not] : when.Not.Any ?? [])
-        {
-            NotRows.Add(ConditionRow.From(leaf, Fields, row => NotRows.Remove(row)));
-        }
-
+        expression = parts.Count == 1 ? parts[0] : RuleExpression.Join(parts);
         return true;
     }
 }

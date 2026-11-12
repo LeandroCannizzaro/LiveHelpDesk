@@ -83,8 +83,8 @@ public class AppUiTests
 
         var (r, g, b, a) = PixelAt(frame, 280, 18);
         Assert.InRange(r, 0xE8, 0xFF);
-        Assert.InRange(g, 0x90, 0xB0);
-        Assert.InRange(b, 0x00, 0x30);
+        Assert.InRange(g, 0xB8, 0xDA);
+        Assert.InRange(b, 0x60, 0x90);
         Assert.Equal(255, a);
         Assert.Contains("Nuovo ticket #261019389", Texts(window));
         Assert.Contains("data fattura", Texts(window));
@@ -294,7 +294,7 @@ public class AppUiTests
 
     [AvaloniaTheory]
     [InlineData(TrayLook.Idle, 0x9C, 0xA3, 0xAF)]
-    [InlineData(TrayLook.Ok, 0x16, 0xA3, 0x4A)]
+    [InlineData(TrayLook.Ok, 0x25, 0x63, 0xEB)]
     [InlineData(TrayLook.Attention, 0xF5, 0x9E, 0x0B)]
     [InlineData(TrayLook.Alert, 0xDC, 0x26, 0x26)]
     public void EachTrayIcon_HasItsColour(TrayLook look, int r, int g, int b)

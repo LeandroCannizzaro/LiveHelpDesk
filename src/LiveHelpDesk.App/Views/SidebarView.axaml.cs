@@ -42,6 +42,7 @@ public partial class SidebarView : UserControl
 
         UpdateButton.Click += (_, _) => PaneRequested?.Invoke(Pane.Settings);
         OverlayToggle.Click += (_, _) => OverlayToggleRequested?.Invoke();
+        AboutButton.Click += (_, _) => AboutRequested?.Invoke();
         SidebarToggle.Click += (_, _) =>
         {
             SetCollapsed(!IsCollapsed);
@@ -58,6 +59,8 @@ public partial class SidebarView : UserControl
 
     public event Action? OverlayToggleRequested;
 
+    public event Action? AboutRequested;
+
     /// <summary>Raised when the user expands or collapses the bar, so the choice can be remembered.</summary>
     public event Action<bool>? CollapsedChanged;
 
@@ -73,6 +76,7 @@ public partial class SidebarView : UserControl
 
         // Expanded, the label already says it all.
         ToolTip.SetServiceEnabled(OverlayToggle, collapsed);
+        ToolTip.SetServiceEnabled(AboutButton, collapsed);
 
         UpdateToggleTip();
     }

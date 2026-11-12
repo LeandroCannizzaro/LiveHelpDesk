@@ -133,7 +133,15 @@ public static class RulesConfig
         var isLeaf = node.Field is not null || node.Op is not null;
         var isGroup = node.All is not null || node.Any is not null || node.Not is not null;
 
-        if (!isLeaf && !isGroup)
+        if (node.Expression is not null)
+        {
+            var parsed = RuleExpression.Parse(node.Expression);
+            if (parsed.Error is { } error)
+            {
+                errors.Add($"{label}: espressione personalizzata non valida, {error.Describe(node.Expression)}");
+            }
+        }
+        else if (!isLeaf && !isGroup)
         {
             errors.Add($"{label}: condizione vuota.");
             return;

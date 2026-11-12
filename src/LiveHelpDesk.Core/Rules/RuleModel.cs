@@ -51,7 +51,8 @@ public sealed class RuleActions
 
 /// <summary>
 /// One node of the condition tree. A leaf has <see cref="Field"/> + <see cref="Op"/> (+ <see cref="Value"/>);
-/// a group has <see cref="All"/>, <see cref="Any"/> or <see cref="Not"/>. Parts that are set must all hold.
+/// a group has <see cref="All"/>, <see cref="Any"/> or <see cref="Not"/>; <see cref="Expression"/> is a condition
+/// written as free text. Parts that are set must all hold.
 /// </summary>
 public sealed class RuleCondition
 {
@@ -67,6 +68,9 @@ public sealed class RuleCondition
     public List<RuleCondition>? Any { get; set; }
 
     public RuleCondition? Not { get; set; }
+
+    /// <summary>A custom expression, e.g. <c>priorita = "Alta" o coda = "Urgenze"</c> (see <see cref="RuleExpression"/>).</summary>
+    public string? Expression { get; set; }
 }
 
 /// <param name="MeId">Dataverse user id of the signed-in user (from WhoAmI), for "$me".</param>
