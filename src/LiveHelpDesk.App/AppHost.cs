@@ -36,6 +36,7 @@ public sealed class AppHost
     private SettingsViewModel _appSettings = null!;
     private UpdatesViewModel _updates = null!;
     private NotificationPump _pump = null!;
+    private ScreenShareGuard _shareGuard = null!;
     private OverlayController _overlay = null!;
     private TrayController _tray = null!;
     private ProfileState? _profile;
@@ -64,6 +65,7 @@ public sealed class AppHost
         }
 
         _settings = UiSettings.Load();
+        _shareGuard = new ScreenShareGuard(_settings, new WindowsScreenShareDetector());
         ToastService.Listen(action => Dispatcher.UIThread.Post(() => _ = HandleToastAsync(action)));
 
         _window = new MainWindow();
@@ -80,7 +82,7 @@ public sealed class AppHost
         _updates = CreateUpdates();
         _appSettings.Updates = _updates;
         _appSettings.Service = () => _link.Api;
-        _window.Attach(_events, _status, _rules, _notifications, _channels, _appSettings);
+        _window.Attach(_events, _status, _rules, _notifications, _channels, _appSettings, _shareGuard);
         _window.SetSidebarCollapsed(_settings.SidebarCollapsed);
         _window.SidebarCollapsedChanged += collapsed =>
         {
@@ -91,7 +93,7 @@ public sealed class AppHost
 
         // One policy shared by the overlay and the toast pump: hold uncontrolled, on-screen notifications back
         // during a presentation / screen share, or while a VPN is up — each governed by its own user switch.
-        var suppression = new SuppressionPolicy(_settings, new WindowsDoNotDisturb(), new WindowsVpnDetector());
+        var suppression = new SuppressionPolicy(_settings, new WindowsDoNotDisturb(), new WindowsVpnDetector(), _shareGuard);
         _pump = new NotificationPump(_link, _attention, new ToastService(), () => DateTimeOffset.UtcNow, suppression);
         var overlayModel = new OverlayViewModel(OpenHeadlineAsync, AcknowledgeAllAsync, duration =>
         {
@@ -112,6 +114,10 @@ public sealed class AppHost
         _link.Changed += (_, e) => Dispatcher.UIThread.Post(() => _ = OnServiceChangedAsync(e.Kind));
 
         _overlay.Start();
+
+        // A share starting or ending hides or brings back the pill at once, and the button says why alerts are paused.
+        _shareGuard.Changed += () => Dispatcher.UIThread.Post(() => _overlay.Refresh());
+        new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => _shareGuard.Update()).Start();
         RefreshChrome();
         _link.Start();
 

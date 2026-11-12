@@ -244,6 +244,21 @@ public class NotificationPumpTests
         Assert.Equal(1, attention.Count); // but the ticket is kept and surfaces once it is safe again
     }
 
+    [Fact]
+    public void PausedAlerts_HoldBackWindowsToasts_EvenWithoutAPresentation()
+    {
+        var policy = new SuppressionPolicy(new UiSettings { OverlayEnabled = false }, new NeverBusy(), new NoVpn());
+        var toasts = new RecordingToasts();
+        var attention = new AttentionModel();
+        var pump = new NotificationPump(new ServiceLink("unused"), attention, toasts, () => T.At(1), policy);
+
+        pump.Deliver(new NotificationInfo(1, "k", "toast", "t", "b", Severity.Attention, null));
+
+        Assert.True(policy.IsBusy());
+        Assert.Empty(toasts.Shown); // the "Avvisi in pausa" button stops Windows toasts too
+        Assert.Equal(1, attention.Count); // kept, shown once the alerts are switched back on
+    }
+
     private sealed class AlwaysBusy : IDoNotDisturb
     {
         public bool IsBusy() => true;
@@ -379,6 +394,138 @@ public class SmallAppPartsTests
         var policy = new SuppressionPolicy(settings, new FakeBusy(presenting), new FakeVpn(vpnUp));
 
         Assert.Equal(expected, policy.IsBusy());
+    }
+
+    [Theory]
+    [InlineData(0, 0, false)] // never captured
+    [InlineData(1, 0, true)] // started, no stop yet: capturing
+    [InlineData(1, 2, false)] // stopped after it started
+    [InlineData(2, 1, true)] // restarted after an older stop
+    [InlineData(1, 1, false)]
+    public void AScreenCapture_IsLiveOnlyWhenStartedAndNotYetStopped(long startOffsetMinutes, long stopOffsetMinutes, bool live)
+    {
+        var now = new DateTime(2026, 11, 12, 9, 0, 0, DateTimeKind.Utc);
+        var origin = now.AddHours(-1);
+        long Ticks(long minutes) => minutes == 0 ? 0 : origin.AddMinutes(minutes).ToFileTimeUtc();
+
+        Assert.Equal(live, WindowsScreenShareDetector.IsCapturing(Ticks(startOffsetMinutes), Ticks(stopOffsetMinutes), now));
+    }
+
+    [Fact]
+    public void ACaptureThatNeverReportedItsStop_IsIgnoredWhenVeryOld()
+    {
+        var now = new DateTime(2026, 11, 12, 9, 0, 0, DateTimeKind.Utc);
+
+        Assert.True(WindowsScreenShareDetector.IsCapturing(now.AddHours(-2).ToFileTimeUtc(), 0, now));
+        Assert.False(WindowsScreenShareDetector.IsCapturing(now.AddDays(-3).ToFileTimeUtc(), 0, now));
+    }
+
+    private sealed class SwitchableBusy : IDoNotDisturb
+    {
+        public bool Busy { get; set; }
+
+        public bool IsBusy() => Busy;
+    }
+
+    [Fact]
+    public void AShareStarting_PausesTheAlerts_AndEndingItBringsThemBack()
+    {
+        var share = new SwitchableBusy();
+        var guard = new ScreenShareGuard(new UiSettings(), share);
+        var changes = 0;
+        guard.Changed += () => changes++;
+        Assert.False(guard.IsPaused);
+
+        share.Busy = true;
+        Assert.True(guard.IsPaused);
+        Assert.False(guard.IsReactivated);
+
+        share.Busy = false;
+        Assert.False(guard.IsPaused);
+        Assert.Equal(2, changes);
+    }
+
+    [Fact]
+    public void TheSharingSwitch_TurnedOff_NeverPauses()
+    {
+        var guard = new ScreenShareGuard(new UiSettings { SuppressWhenPresenting = false }, new SwitchableBusy { Busy = true });
+
+        Assert.False(guard.IsPaused);
+        Assert.False(guard.IsSharing);
+    }
+
+    [Fact]
+    public async Task Reactivating_NeedsAConfirmation_AndLastsUntilTheShareEnds()
+    {
+        var share = new SwitchableBusy { Busy = true };
+        var guard = new ScreenShareGuard(new UiSettings(), share);
+        var asked = 0;
+
+        Assert.Null(await guard.ToggleAsync(true, () => { asked++; return Task.FromResult(false); })); // "no": stays paused
+        Assert.True(guard.IsPaused);
+
+        Assert.True(await guard.ToggleAsync(true, () => { asked++; return Task.FromResult(true); })); // "yes"
+        Assert.True(guard.IsReactivated);
+        Assert.False(guard.IsPaused);
+        Assert.Equal(2, asked);
+
+        // Still the same share: no second question needed to keep it on.
+        Assert.False(guard.IsPaused);
+
+        // A new share starts paused again, and asks again.
+        share.Busy = false;
+        Assert.False(guard.IsReactivated);
+        share.Busy = true;
+        Assert.True(guard.IsPaused);
+    }
+
+    [Fact]
+    public async Task PressingTheButton_WhileReactivated_PausesAgainWithoutChangingTheSavedChoice()
+    {
+        var guard = new ScreenShareGuard(new UiSettings(), new SwitchableBusy { Busy = true });
+        await guard.ToggleAsync(true, () => Task.FromResult(true));
+
+        var result = await guard.ToggleAsync(true, () => throw new InvalidOperationException("no question expected"));
+
+        Assert.Null(result);
+        Assert.True(guard.IsPaused);
+    }
+
+    [Fact]
+    public async Task WhenNotSharing_TheButtonJustFlipsTheSavedChoice()
+    {
+        var guard = new ScreenShareGuard(new UiSettings(), new SwitchableBusy());
+
+        Assert.False(await guard.ToggleAsync(true, () => throw new InvalidOperationException("no question expected")));
+        Assert.True(await guard.ToggleAsync(false, () => throw new InvalidOperationException("no question expected")));
+    }
+
+    [Fact]
+    public async Task APausedByTheUser_ThenSharing_ReactivatingTurnsTheSavedChoiceOn()
+    {
+        var guard = new ScreenShareGuard(new UiSettings { OverlayEnabled = false }, new SwitchableBusy { Busy = true });
+
+        Assert.True(await guard.ToggleAsync(false, () => Task.FromResult(true)));
+    }
+
+    [Fact]
+    public void TheSuppressionPolicy_FollowsTheShareGuard_AndAReactivationBeatsPresentationMode()
+    {
+        var share = new SwitchableBusy();
+        var settings = new UiSettings();
+        var guard = new ScreenShareGuard(settings, share);
+        var policy = new SuppressionPolicy(settings, new FakeBusy(true), new FakeVpn(false), guard); // presentation mode always on
+
+        Assert.True(policy.IsBusy());
+
+        share.Busy = true;
+        Assert.True(policy.IsBusy()); // paused by the share
+
+        guard.Reactivate();
+        Assert.False(policy.IsBusy()); // the user said yes: even presentation mode steps aside for this share
+
+        share.Busy = false;
+        Assert.True(policy.IsBusy()); // share over: back to the normal rules
     }
 
     private sealed class FakeBusy(bool busy) : IDoNotDisturb

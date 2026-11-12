@@ -8,7 +8,7 @@
       <TextBlock Text="Impostazioni" FontSize="20" FontWeight="SemiBold" />
 
       <TextBlock Text="Finestrella lampeggiante" FontWeight="SemiBold" Margin="0,8,0,0" />
-      <CheckBox Content="Mostra la finestrella in alto quando c'è qualcosa da gestire" IsChecked="{Binding OverlayEnabled}" />
+      <CheckBox Content="Avvisi a video attivi (finestrella e notifiche di Windows)" IsChecked="{Binding OverlayEnabled}" />
       <CheckBox Content="Suona un avviso per gli eventi critici" IsChecked="{Binding PlaySound}" />
       <StackPanel Orientation="Horizontal" Spacing="10">
         <TextBlock Text="Schermo" VerticalAlignment="Center" />

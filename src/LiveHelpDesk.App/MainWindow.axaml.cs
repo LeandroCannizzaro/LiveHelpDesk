@@ -2,7 +2,9 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using LiveHelpDesk.App.Services;
 using LiveHelpDesk.App.ViewModels;
+using LiveHelpDesk.App.Views;
 using LiveHelpDesk.Core;
 
 namespace LiveHelpDesk.App;
@@ -34,6 +36,7 @@ public partial class MainWindow : Window
     private Uri _home = DefaultHome;
     private bool _userNavigated;
     private SettingsViewModel? _settingsVm;
+    private ScreenShareGuard? _shareGuard;
 
     public MainWindow()
     {
@@ -52,15 +55,7 @@ public partial class MainWindow : Window
 
         SideBar.PaneRequested += ShowPane;
         SideBar.CollapsedChanged += collapsed => SidebarCollapsedChanged?.Invoke(collapsed);
-        SideBar.OverlayToggleRequested += () =>
-        {
-            if (_settingsVm is { } vm)
-            {
-                // Flows through SettingsViewModel so the change is saved and the overlay refreshes at once,
-                // keeping the Settings checkbox in sync with this button.
-                vm.OverlayEnabled = !vm.OverlayEnabled;
-            }
-        };
+        SideBar.OverlayToggleRequested += () => _ = ToggleAlertsAsync();
 
         Opened += (_, _) => Web.Navigate(_home);
         Closing += (_, e) =>
@@ -83,7 +78,7 @@ public partial class MainWindow : Window
 
     public void Attach(
         EventsViewModel events, StatusViewModel status, RulesViewModel rules, NotificationsViewModel notifications,
-        ChannelsViewModel channels, SettingsViewModel settings)
+        ChannelsViewModel channels, SettingsViewModel settings, ScreenShareGuard? shareGuard = null)
     {
         EventsPane.DataContext = events;
         StatusPane.DataContext = status;
@@ -93,14 +88,60 @@ public partial class MainWindow : Window
         SettingsPane.DataContext = settings;
 
         _settingsVm = settings;
+        _shareGuard = shareGuard;
         settings.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(SettingsViewModel.OverlayEnabled))
             {
-                SideBar.SetOverlayActive(settings.OverlayEnabled);
+                RefreshAlertsButton();
             }
         };
-        SideBar.SetOverlayActive(settings.OverlayEnabled);
+        if (shareGuard is not null)
+        {
+            shareGuard.Changed += () => Dispatcher.UIThread.Post(RefreshAlertsButton);
+        }
+
+        RefreshAlertsButton();
+    }
+
+    /// <summary>Shows on the button whether alerts are on, paused by the user, or paused because the screen is shared.</summary>
+    public void RefreshAlertsButton()
+    {
+        if (_settingsVm is null)
+        {
+            return;
+        }
+
+        SideBar.SetAlerts(
+            _shareGuard?.IsPaused == true ? AlertsState.PausedForShare
+            : _settingsVm.OverlayEnabled ? AlertsState.Active
+            : AlertsState.Paused);
+    }
+
+    private async Task ToggleAlertsAsync()
+    {
+        if (_settingsVm is not { } vm)
+        {
+            return;
+        }
+
+        // Flows through SettingsViewModel so the change is saved and the overlay refreshes at once,
+        // keeping the Settings checkbox in sync with this button.
+        if (_shareGuard is null)
+        {
+            vm.OverlayEnabled = !vm.OverlayEnabled;
+            return;
+        }
+
+        var enabled = await _shareGuard.ToggleAsync(
+            vm.OverlayEnabled,
+            () => ConfirmDialog.AskAsync(this, "Lo schermo è condiviso, sei sicuro che vuoi riattivare gli avvisi?"));
+        if (enabled is { } value)
+        {
+            vm.OverlayEnabled = value;
+        }
+
+        RefreshAlertsButton();
     }
 
     /// <summary>Raised when the user expands or collapses the side bar, so the choice can be remembered.</summary>

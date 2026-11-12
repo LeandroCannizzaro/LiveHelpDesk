@@ -3,6 +3,18 @@ using Avalonia.Controls.Primitives;
 
 namespace LiveHelpDesk.App.Views;
 
+/// <summary>What the "Avvisi" button shows.</summary>
+public enum AlertsState
+{
+    Active,
+
+    /// <summary>Paused by the user.</summary>
+    Paused,
+
+    /// <summary>Held back automatically because the screen is shared.</summary>
+    PausedForShare,
+}
+
 /// <summary>
 /// The main window's side bar: the on-screen alerts switch, the panes, the update notice and the service state.
 /// Expanded it shows icons with short labels; collapsed only the icons, whose tooltips say what they do.
@@ -73,15 +85,26 @@ public partial class SidebarView : UserControl
         }
     }
 
-    /// <summary>The prominent switch that blocks or re-enables the on-screen overlay: green when active, red when paused.</summary>
-    public void SetOverlayActive(bool active)
+    /// <summary>The prominent switch that blocks or re-enables the on-screen alerts (overlay and Windows toasts): green when active, red when paused.</summary>
+    public void SetOverlayActive(bool active) => SetAlerts(active ? AlertsState.Active : AlertsState.Paused);
+
+    public void SetAlerts(AlertsState state)
     {
+        var active = state == AlertsState.Active;
         OverlayToggleIcon.Text = active ? "🔔" : "🔕";
-        OverlayToggleLabel.Text = active ? "Avvisi attivi" : "Avvisi in pausa";
+        OverlayToggleLabel.Text = state switch
+        {
+            AlertsState.Active => "Avvisi attivi",
+            AlertsState.PausedForShare => "Avvisi sospesi per condivisione schermo",
+            _ => "Avvisi in pausa",
+        };
         OverlayToggle.Classes.Set("paused", !active);
-        ToolTip.SetTip(OverlayToggle, active
-            ? "Avvisi a video attivi. Clic per bloccare la finestrella (utile durante presentazioni o condivisioni)."
-            : "Avvisi a video in pausa. Clic per riattivare la finestrella.");
+        ToolTip.SetTip(OverlayToggle, state switch
+        {
+            AlertsState.Active => "Avvisi a video attivi. Clic per bloccare finestrella e notifiche di Windows.",
+            AlertsState.PausedForShare => "Lo schermo è condiviso: gli avvisi restano sospesi fino al termine della condivisione. Clic per riattivarli.",
+            _ => "Avvisi a video in pausa. Clic per riattivare finestrella e notifiche di Windows.",
+        });
     }
 
     /// <summary>The service state under the panes, and the number of events waiting on the Eventi badge.</summary>

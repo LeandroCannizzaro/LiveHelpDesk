@@ -242,6 +242,14 @@ public class Phase6UiTests
         Assert.True(LabelShown("Avvisi in pausa"));
         Assert.Contains("paused", bar.OverlayToggle.Classes);
 
+        bar.SetAlerts(AlertsState.PausedForShare);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(LabelShown("Avvisi sospesi per condivisione schermo"));
+        Assert.Contains("paused", bar.OverlayToggle.Classes);
+        Assert.True(bar.OverlayToggle.DesiredSize.Width <= SidebarView.ExpandedWidth);
+        bar.SetOverlayActive(false);
+        Dispatcher.UIThread.RunJobs();
+
         bool? remembered = null;
         bar.CollapsedChanged += collapsed => remembered = collapsed;
         bar.SidebarToggle.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
