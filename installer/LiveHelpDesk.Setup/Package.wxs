@@ -22,6 +22,7 @@
     <!-- The icon of the Start menu shortcut and of "App e funzionalità" / Programs and Features. -->
     <Icon Id="AppIcon.ico" SourceFile="$(IconSource)" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="INSTALLCOUNTER" Value="1" Secure="yes" />
 
     <!-- Asks the running app to close (a message, never a kill) so its files can be replaced. -->
     <util:CloseApplication Id="CloseApp" Target="LiveHelpDesk.exe" CloseMessage="yes" RebootPrompt="no" />
@@ -37,16 +38,18 @@
       <ComponentRef Id="ServiceControl" />
     </Feature>
 
-    <!-- The app and the service folder (service\), exactly as published. LiveHelpDesk.exe is separate: the shortcut points to it. -->
+    <!-- The exe and counter script are explicit files below; the rest of the app and service are harvested. -->
     <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
       <Files Include="$(AppSource)\**">
         <Exclude Files="$(AppSource)\LiveHelpDesk.exe" />
+        <Exclude Files="$(AppSource)\count-installation.ps1" />
       </Files>
     </ComponentGroup>
 
     <DirectoryRef Id="INSTALLFOLDER">
       <Component Id="AppExe">
         <File Id="AppExe" Source="$(AppSource)\LiveHelpDesk.exe" KeyPath="yes" />
+        <File Id="InstallCounterScript" Source="$(InstallCounterSource)" />
       </Component>
 
       <!-- If the app registered the Windows service, stop it before its files are replaced or removed, and remove it on uninstall. -->
@@ -67,8 +70,16 @@
 
     <!-- After an upgrade, bring the service back if there is one (on a first install there is none: the failure is harmless). -->
     <CustomAction Id="StartServiceIfPresent" Directory="INSTALLFOLDER" ExeCommand="&quot;[System64Folder]sc.exe&quot; start LiveHelpDesk" Execute="deferred" Impersonate="no" Return="ignore" />
+    <CustomAction Id="SetInstallCounterCommand" Property="WixQuietExecCmdLine"
+                  Value="&quot;[System64Folder]WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;[#InstallCounterScript]&quot;" />
+    <CustomAction Id="CountCompletedInstallation" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec"
+                  Execute="immediate" Return="ignore" />
     <InstallExecuteSequence>
       <Custom Action="StartServiceIfPresent" Before="InstallFinalize" Condition="NOT REMOVE" />
+      <Custom Action="SetInstallCounterCommand" After="InstallFinalize"
+              Condition="NOT Installed AND NOT REMOVE AND NOT UPGRADINGPRODUCTCODE AND INSTALLCOUNTER = &quot;1&quot;" />
+      <Custom Action="CountCompletedInstallation" After="SetInstallCounterCommand"
+              Condition="NOT Installed AND NOT REMOVE AND NOT UPGRADINGPRODUCTCODE AND INSTALLCOUNTER = &quot;1&quot;" />
     </InstallExecuteSequence>
 
   </Package>

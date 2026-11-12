@@ -7,7 +7,8 @@
     <AppSource Condition="'$(AppSource)' == ''">$(MSBuildThisFileDirectory)..\..\artifacts\package\app</AppSource>
     <ProductVersion Condition="'$(ProductVersion)' == ''">0.1.1</ProductVersion>
     <IconSource>$(MSBuildThisFileDirectory)..\..\src\LiveHelpDesk.App\Assets\app.ico</IconSource>
-    <DefineConstants>$(DefineConstants);AppSource=$(AppSource);ProductVersion=$(ProductVersion);IconSource=$(IconSource)</DefineConstants>
+    <InstallCounterSource>$(MSBuildThisFileDirectory)..\count-installation.ps1</InstallCounterSource>
+    <DefineConstants>$(DefineConstants);AppSource=$(AppSource);ProductVersion=$(ProductVersion);IconSource=$(IconSource);InstallCounterSource=$(InstallCounterSource)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />

@@ -13,6 +13,8 @@
   Avvia LiveHelpDesk all'accesso dell'utente (per utente: HKCU\Run; con -AllUsers: HKLM\Run, tutti gli utenti).
 .PARAMETER NoStart
   Non avviare l'applicazione al termine.
+.PARAMETER NoInstallCounter
+  Non inviare il segnale di installazione al contatore pubblico su Hits.sh.
 #>
 [CmdletBinding()]
 param(
@@ -20,7 +22,8 @@ param(
     [switch]$InstallService,
     [switch]$Autostart,
     [string]$InstallDir,
-    [switch]$NoStart
+    [switch]$NoStart,
+    [switch]$NoInstallCounter
 )
 
 $ErrorActionPreference = 'Stop'
@@ -99,3 +102,4 @@ elseif ($serviceWasRunning) {
 
 Write-Host "LiveHelpDesk $version installato in $InstallDir"
 if (-not $NoStart -and -not $InstallService) { Start-Process $exe }
+if (-not $NoInstallCounter) { & (Join-Path $InstallDir 'count-installation.ps1') }

@@ -122,6 +122,30 @@ li carica come artefatti e, sui tag, crea la Release allegandoli.
 Il manuale d'uso è un sito statico in `docs/`, pubblicato su GitHub Pages dal workflow `.github/workflows/pages.yml`
 (da abilitare una volta in *Settings → Pages → Source = GitHub Actions*).
 
+### Contatore delle installazioni
+
+Alla fine di un setup riuscito, MSI e `install.cmd` richiedono senza mostrarla un'immagine SVG a Hits.sh.
+Lo script condiviso è `installer\count-installation.ps1`: nessuna credenziale, cookie, identificativo macchina
+o dato applicativo nel segnale; il servizio vede comunque l'IP della connessione.
+L'MSI lo esegue **dopo `InstallFinalize`**, solo per nuove installazioni e aggiornamenti, mai per riparazioni,
+rimozioni o rollback. Lo ZIP lo esegue dopo il completamento di `install.ps1`, anche con `-NoStart`.
+Non parte dall'app, dal servizio Windows, dal download o dalla semplice estrazione dello ZIP.
+
+Il manuale mostra il totale tramite un badge Shields.io che legge
+`https://hits.sh/api/urns/leandrocannizzaro.github.io/livehelpdesk/installations` in sola lettura.
+**Non inserire l'URL `.svg` di Hits.sh nelle pagine**: ogni richiesta incrementerebbe il conteggio.
+Il badge diventa disponibile dopo il primo setup conteggiato e può essere aggiornato con qualche minuto di ritardo.
+Non servono account, token o modifiche al workflow Pages.
+
+Disattivazione per la singola esecuzione: `install.cmd -NoInstallCounter`, oppure
+`msiexec /i "LiveHelpDesk-x.y.z-x64.msi" INSTALLCOUNTER=0`. Gli aggiornamenti successivi tornano al comportamento predefinito.
+Il segnale ha un timeout di 5 secondi, senza retry; un errore produce un avviso e non annulla il setup.
+L'MSI usa `WixQuietExec` per nascondere la console e includere eventuali avvisi nel log di Windows Installer.
+È un totale indicativo di completamenti (aggiornamenti inclusi), non di utenti o PC unici: offline, filtri di rete,
+disattivazioni, richieste manuali e indisponibilità del servizio possono alterarlo. Non è una misura antifrode.
+Test senza rete (eseguiti anche in CI): `.\installer\tests\install-counter.tests.ps1`.
+Con `-MsiPath <file.msi>` verificano anche inclusione dello script e sequenza delle azioni nel pacchetto compilato.
+
 ### Aggiornamento automatico
 
 Senza alcun server: il workflow `Release` genera `update.json` (versione, URL di MSI e ZIP nella Release, SHA-256),

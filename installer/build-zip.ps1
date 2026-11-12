@@ -43,6 +43,7 @@ try {
         Copy-Item (Join-Path $root $script) $staging -Force
     }
     Copy-Item $Package (Join-Path $staging 'app') -Recurse -Force
+    Copy-Item (Join-Path $PSScriptRoot 'count-installation.ps1') (Join-Path $staging 'app') -Force
 
     New-Item $Output -ItemType Directory -Force | Out-Null
     $zip = Join-Path $Output "LiveHelpDesk-$Version-win-x64.zip"

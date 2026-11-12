@@ -37,6 +37,12 @@
         <a class="btn ghost" href="#come-funziona">Come funziona</a>
       </div>
       <p class="download-meta" id="download-meta">Installer per Windows (<code>.msi</code>): doppio clic e segui la procedura. Oppure scegli l'<a id="download-zip" href="https://github.com/LeandroCannizzaro/LiveHelpDesk/releases/latest">archivio portatile .zip</a> o guarda <a href="https://github.com/LeandroCannizzaro/LiveHelpDesk/releases">tutte le versioni</a>.</p>
+      <p id="installazioni">
+        <a href="https://hits.sh/leandrocannizzaro.github.io/livehelpdesk/installations/" target="_blank" rel="noopener noreferrer">
+          <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fhits.sh%2Fapi%2Furns%2Fleandrocannizzaro.github.io%2Flivehelpdesk%2Finstallations&amp;query=%24.total&amp;label=Installazioni%20completate&amp;color=2563eb&amp;cacheSeconds=300" alt="Totale delle installazioni completate: apri le statistiche" referrerpolicy="no-referrer" />
+        </a>
+        <small>Include gli aggiornamenti; non conta le visite a questa pagina. Disponibile dopo il primo setup conteggiato, con qualche minuto di ritardo.</small>
+      </p>
       <div class="tags">
         <span>Windows 10 / 11</span>
         <span>Dynamics 365</span>
@@ -146,6 +152,8 @@
           <tr><td><code>uninstall.cmd</code></td><td>Disinstalla. Aggiungi <code>-RemoveData</code> per cancellare anche le impostazioni.</td></tr>
         </table>
         <div class="tip"><div>🗂️</div><div>In entrambi i casi i tuoi dati (configurazione, regole, canali) non vengono mai toccati da un aggiornamento o da una disinstallazione, a meno che tu non lo chieda esplicitamente.</div></div>
+        <p><b>Contatore delle installazioni.</b> Al termine di ogni setup riuscito (anche un aggiornamento), viene richiesta un'immagine a Hits.sh senza aprire finestre. Il totale pubblico è visibile <a href="#installazioni">in cima a questa pagina</a>. Non conta utenti o PC unici; riparazioni MSI, disinstallazioni e avvii dell'app non lo incrementano. Se la rete o il servizio non sono disponibili, il setup riesce comunque e quel completamento potrebbe non essere conteggiato: non vengono effettuati nuovi tentativi.</p>
+        <p>Per non inviare il segnale in un setup ZIP usa <code>install.cmd -NoInstallCounter</code>; per un MSI esegui <code>msiexec /i "LiveHelpDesk-x.y.z-x64.msi" INSTALLCOUNTER=0</code>. L'opzione vale per quella esecuzione del setup, non per gli aggiornamenti successivi.</p>
         <div class="note"><div>⬆️</div><div><b>Aggiornamenti</b>LiveHelpDesk controlla da solo se esce una nuova versione. Quando c'è, nella barra laterale compare il pulsante «⬆ Versione x.y.z»: aprilo e premi «Aggiorna e riavvia» (in <i>Impostazioni → Aggiornamenti</i>). Il programma scarica la nuova versione, si chiude, la installa e riparte da solo; Windows potrebbe chiederti la conferma da amministratore. Puoi controllare anche a mano con «Controlla aggiornamenti»; «Note di rilascio» apre le <a href="release-notes.html">novità di ogni versione</a>.</div></div>
         <div class="warn"><div>⚠️</div><div><b>Avviso di Windows (SmartScreen)</b>Il programma non è firmato con un certificato commerciale, quindi al primo avvio Windows potrebbe chiedere una conferma. È normale per i programmi distribuiti internamente: scegli «Ulteriori informazioni → Esegui comunque».</div></div>
       </article>
@@ -545,7 +553,8 @@
           <li><b>I dati restano sul tuo PC.</b> Configurazione, regole, canali e cronologia sono salvati localmente, non su server esterni: i dati del monitoraggio in <code>C:\ProgramData\LiveHelpDesk</code> (una cartella separata per ogni utente Windows), le preferenze dell'app, il profilo del browser interno e i registri in <code>%LocalAppData%\LiveHelpDesk</code>.</li>
           <li><b>Le credenziali sono protette.</b> L'accesso a Dynamics è gestito dal monitoraggio; l'app non vede mai password o token. Le chiavi dei canali vengono cifrate con la protezione di Windows legata all'account che esegue il monitoraggio, e non sono più mostrate.</li>
           <li><b>Puoi limitare cosa esce dall'azienda.</b> Con il dettaglio «Minimo» gli avvisi verso SMS e WhatsApp non contengono il titolo del ticket né il testo dei messaggi.</li>
-          <li><b>Comunichi solo con chi decidi tu.</b> Dynamics per leggere i ticket, e i servizi dei canali che scegli di attivare (il tuo server di posta, Teams, Twilio).</li>
+          <li><b>Connessioni esterne.</b> Dynamics per leggere i ticket, i servizi dei canali che scegli di attivare (il tuo server di posta, Teams, Twilio) e GitHub Pages/Releases per gli aggiornamenti.</li>
+          <li><b>Conteggio dei setup.</b> Il setup richiede una sola immagine a <code>hits.sh</code>: non invia nomi, identificativi del PC, account, ticket o credenziali. Come per ogni connessione HTTPS, il servizio vede l'indirizzo IP di rete. Il segnale è disattivabile per ogni setup come spiegato in <a href="#installazione">Installazione</a>. Il badge di questo manuale usa Shields.io per leggere il totale senza incrementarlo; questi servizi esterni ricevono le normali informazioni di connessione. Il contatore pubblico è indicativo, non certificato né protetto da incrementi manuali.</li>
         </ul>
       </article>
 
