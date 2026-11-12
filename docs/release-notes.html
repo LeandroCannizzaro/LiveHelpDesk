@@ -33,6 +33,7 @@
     <aside class="toc">
       <strong>Versioni</strong>
       <ol>
+        <li><a href="#v0.3.1">0.3.1</a></li>
         <li><a href="#v0.3.0">0.3.0</a></li>
         <li><a href="#v0.2.0">0.2.0</a></li>
         <li><a href="#v0.1.1">0.1.1</a></li>
@@ -40,6 +41,22 @@
     </aside>
 
     <main class="content">
+
+      <article id="v0.3.1" class="section">
+        <div class="eyebrow">Versione 0.3.1</div>
+        <h2>Contatore anonimo delle installazioni</h2>
+
+        <h3>✨ Novità</h3>
+        <ul>
+          <li><b>Contatore delle installazioni.</b> Al termine di un setup riuscito (MSI o archivio .zip, aggiornamenti compresi) viene richiesta, senza aprire finestre, una sola immagine a Hits.sh. Il segnale non contiene nomi, identificativi del PC, account, ticket o credenziali; come per ogni connessione, il servizio vede l'indirizzo IP. Il totale è visibile in cima al <a href="index.html#installazioni">manuale</a>. Non parte dall'app, dal servizio Windows, da riparazioni, rimozioni o dal semplice download.</li>
+          <li><b>Si può disattivare.</b> Per un setup da archivio usa <code>install.cmd -NoInstallCounter</code>; per l'MSI usa <code>msiexec /i "LiveHelpDesk-x.y.z-x64.msi" INSTALLCOUNTER=0</code>. Se la rete non è disponibile il setup si completa comunque.</li>
+        </ul>
+
+        <h3>🔄 Modifiche</h3>
+        <ul>
+          <li>Il manuale elenca ora anche GitHub Pages e Releases tra le connessioni esterne usate per gli aggiornamenti e descrive il conteggio dei setup nella sezione sulla privacy.</li>
+        </ul>
+      </article>
 
       <article id="v0.3.0" class="section">
         <div class="eyebrow">Versione 0.3.0</div>
