@@ -6,7 +6,8 @@
     <!-- Both come from installer\build-msi.ps1: the published app folder and a numeric MSI version. -->
     <AppSource Condition="'$(AppSource)' == ''">$(MSBuildThisFileDirectory)..\..\artifacts\package\app</AppSource>
     <ProductVersion Condition="'$(ProductVersion)' == ''">0.1.1</ProductVersion>
-    <DefineConstants>$(DefineConstants);AppSource=$(AppSource);ProductVersion=$(ProductVersion)</DefineConstants>
+    <IconSource>$(MSBuildThisFileDirectory)..\..\src\LiveHelpDesk.App\Assets\app.ico</IconSource>
+    <DefineConstants>$(DefineConstants);AppSource=$(AppSource);ProductVersion=$(ProductVersion);IconSource=$(IconSource)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />

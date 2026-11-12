@@ -80,8 +80,6 @@ pre code { background: none; color: inherit; padding: 0; }
 }
 .brand .logo {
   width: 30px; height: 30px; border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), var(--brand));
-  display: grid; place-items: center; font-size: 1rem;
 }
 .topbar nav { margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap; }
 .topbar nav a { color: #cbd5e1; font-size: .92rem; }

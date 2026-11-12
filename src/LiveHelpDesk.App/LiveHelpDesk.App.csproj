@@ -7,6 +7,8 @@
     <RootNamespace>LiveHelpDesk.App</RootNamespace>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The exe icon: Explorer, taskbar, Start menu shortcut and the header of the Windows toasts all take it from here. -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
@@ -26,6 +28,10 @@
     <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
     <!-- Reads the Windows service's state (installed, running) without administrator rights. -->
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\app.png" />
   </ItemGroup>
 
   <ItemGroup>

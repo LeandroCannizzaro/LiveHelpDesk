@@ -7,9 +7,10 @@ namespace LiveHelpDesk.App.Views;
 /// <summary>A small modal question with two answers. Closing it any other way counts as "no".</summary>
 public sealed class ConfirmDialog : Window
 {
-    private ConfirmDialog(string message, string yes, string no)
+    private ConfirmDialog(Window owner, string message, string yes, string no)
     {
         Title = "LiveHelpDesk";
+        Icon = owner.Icon;
         Width = 440;
         SizeToContent = SizeToContent.Height;
         CanResize = false;
@@ -42,5 +43,5 @@ public sealed class ConfirmDialog : Window
     }
 
     public static async Task<bool> AskAsync(Window owner, string message, string yes = "Sì, riattiva", string no = "Annulla") =>
-        await new ConfirmDialog(message, yes, no).ShowDialog<bool>(owner);
+        await new ConfirmDialog(owner, message, yes, no).ShowDialog<bool>(owner);
 }

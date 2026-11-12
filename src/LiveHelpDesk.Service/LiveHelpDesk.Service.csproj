@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>LiveHelpDesk.Service</AssemblyName>
     <RootNamespace>LiveHelpDesk.Service</RootNamespace>
+    <ApplicationIcon>..\LiveHelpDesk.App\Assets\app.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 

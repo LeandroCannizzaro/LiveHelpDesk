@@ -19,6 +19,10 @@
     <MajorUpgrade DowngradeErrorMessage="È già installata una versione più recente di LiveHelpDesk." />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
+    <!-- The icon of the Start menu shortcut and of "App e funzionalità" / Programs and Features. -->
+    <Icon Id="AppIcon.ico" SourceFile="$(IconSource)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+
     <!-- Asks the running app to close (a message, never a kill) so its files can be replaced. -->
     <util:CloseApplication Id="CloseApp" Target="LiveHelpDesk.exe" CloseMessage="yes" RebootPrompt="no" />
 
@@ -56,7 +60,7 @@
          needs its own component with an HKCU key as KeyPath, not the exe in Program Files. -->
     <StandardDirectory Id="ProgramMenuFolder">
       <Component Id="StartMenuShortcut">
-        <Shortcut Id="StartMenuShortcut" Name="LiveHelpDesk" Target="[#AppExe]" WorkingDirectory="INSTALLFOLDER" />
+        <Shortcut Id="StartMenuShortcut" Name="LiveHelpDesk" Target="[#AppExe]" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon.ico" />
         <RegistryValue Root="HKCU" Key="Software\LiveHelpDesk" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </StandardDirectory>

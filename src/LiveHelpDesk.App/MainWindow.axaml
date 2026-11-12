@@ -3,6 +3,7 @@
         xmlns:views="using:LiveHelpDesk.App.Views"
         x:Class="LiveHelpDesk.App.MainWindow"
         Title="LiveHelpDesk"
+        Icon="/Assets/app.png"
         Width="1280" Height="820" MinWidth="760" MinHeight="480">
   <Grid x:Name="Root" ColumnDefinitions="Auto,*">
     <views:SidebarView x:Name="SideBar" Grid.Column="0" />

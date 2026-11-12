@@ -1,6 +1,8 @@
 # LiveHelpDesk
 
-Monitor proattivo dei ticket di assistenza su Dynamics 365: un **servizio Windows** controlla Dynamics in continuo e,
+<img src="docs/icon.svg" alt="Logo di LiveHelpDesk" width="96" align="right" />
+
+Monitor proattivo
 secondo filtri configurabili, avvisa su toast, overlay, e-mail, Teams, WhatsApp e SMS. L'**app desktop Avalonia**
 mostra il sito Dynamics in una WebView e un'icona/overlay che lampeggia quando serve attenzione.
 
@@ -171,3 +173,5 @@ Lo script avvisa se manca WebView2 Runtime, chiude app e servizio prima di aggio
 
 Fasi 1-5 (scheletro, nucleo, servizio, canali esterni, app) in corso; mancano l'editor delle regole e dei canali nell'app.
 Installer MSI e archivio ZIP disponibili (`installer\build-msi.ps1`, `installer\build-zip.ps1`) e pubblicati dal workflow `Release`. Repository privato.
+
+L'icona (una campana) usa un glifo di [Phosphor Icons](https://phosphoricons.com), licenza MIT: vedi [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

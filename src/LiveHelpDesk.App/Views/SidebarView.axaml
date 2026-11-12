@@ -92,8 +92,10 @@
       </StackPanel>
       <StackPanel Spacing="4">
         <Grid x:Name="Header" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-          <TextBlock Classes="expandedOnly" Text="LiveHelpDesk" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"
-                     Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+          <StackPanel Classes="expandedOnly" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="8,0,0,0">
+            <Image Source="/Assets/app.png" Width="24" Height="24" />
+            <TextBlock Text="LiveHelpDesk" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
           <Button x:Name="SidebarToggle" Grid.Column="1" Content="☰" Background="Transparent" Padding="10,6" />
         </Grid>
         <Button x:Name="OverlayToggle" Classes="overlayGuard" Margin="0,0,0,8">
